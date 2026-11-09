@@ -15,6 +15,7 @@ from jarvis_core.parser import (
     LogKind,
     ParseWarning,
     WarningCode,
+    looks_like_weigh_in,
     parse_log,
     parse_weigh_in,
 )
@@ -90,7 +91,7 @@ def suggest(
 
     if code == "not_understood":
         fixes: list[Fix] = []
-        if mode == "workout" and parse_weigh_in(line):
+        if mode == "workout" and looks_like_weigh_in(line):
             fixes.append(Fix("Log as a weigh-in", n, text=line, mode="weight"))
         m = REPS_WEIGHT_RE.match(line)
         if m:

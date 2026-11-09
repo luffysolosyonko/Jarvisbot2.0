@@ -26,7 +26,7 @@ import re
 from dataclasses import dataclass, field, replace
 from typing import Literal
 
-PARSER_VERSION = 2
+PARSER_VERSION = 3
 """Bump when parsing rules change; a rebuild job re-parses every stored log."""
 
 KG_TO_LB = 2.20462
@@ -434,9 +434,25 @@ def _note(text: str) -> str | None:
     return t[:200] if re.search(r"[a-zA-Z]", t) else None
 
 
+# What Weight mode accepts, in lb.
+WEIGH_IN_MIN_LB = 1.0
+WEIGH_IN_MAX_LB = 1000.0
+# Guessing whether text with no mode is a weigh-in (instead of set shorthand like "8"
+# or "8 135") only counts weights a person plausibly is.
+PLAUSIBLE_MIN_LB = 60.0
+PLAUSIBLE_MAX_LB = 600.0
+
+
+def looks_like_weigh_in(text: str) -> bool:
+    """A weigh-in in the plausible body-weight range: used to guess the mode."""
+    w = parse_weigh_in(text)
+    return w is not None and PLAUSIBLE_MIN_LB <= w.weight_lb <= PLAUSIBLE_MAX_LB
+
+
 def parse_weigh_in(text: str) -> WeighIn | None:
     """Without a unit, under 100 is kg and 100+ is lb. A single digit after a space is
-    a missed decimal point ("182 4" -> 182.4). Other words are kept as a note."""
+    a missed decimal point ("182 4" -> 182.4). Other words are kept as a note.
+    Accepts 1 to 1000 lb."""
     text = URL_RE.sub(" ", text or "")
     if any(SET_HEAD_RE.match(line) for line in text.splitlines()):
         return None  # "8x 25lb curl" is not a weigh-in
@@ -453,7 +469,7 @@ def parse_weigh_in(text: str) -> WeighIn | None:
     u = (m.group(2) or "").lower()
     is_kg = u.startswith("kg") if u else val < 100
     lb = val * KG_TO_LB if is_kg else val
-    if not 60 <= lb <= 600:
+    if not WEIGH_IN_MIN_LB <= lb <= WEIGH_IN_MAX_LB:
         return None
     rest = text[: m.start()] + " " + text[m.end() :]
     return WeighIn(
@@ -487,7 +503,7 @@ def detect_kind(text: str, default_unit: str = "lb", bar_lb: float = 45.0) -> Lo
     lines, _ = parse_workout_lines(text, default_unit, bar_lb)
     if any(s.kind == "set" for s in lines):
         return "workout"
-    return "weight" if parse_weigh_in(text) else "workout"
+    return "weight" if looks_like_weigh_in(text) else "workout"
 
 
 def parse_log(

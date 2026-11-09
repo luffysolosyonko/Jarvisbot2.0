@@ -8,6 +8,7 @@ from jarvis_core.parser import (
     DayContext,
     ParsedSet,
     detect_kind,
+    looks_like_weigh_in,
     parse_log,
     parse_set_line,
     parse_weigh_in,
@@ -229,6 +230,21 @@ def test_weigh_in_note_and_yesterday() -> None:
     assert w and w.day_offset == -1 and w.weight_lb == 170.2 and w.note is None
 
 
-@pytest.mark.parametrize("text", ["8x 20-25lb bicep curl", "hello", "12", "900lb"])
+@pytest.mark.parametrize("text", ["8x 20-25lb bicep curl", "hello", "1200lb", "0.5lb"])
 def test_not_weigh_ins(text: str) -> None:
     assert parse_weigh_in(text) is None
+
+
+@pytest.mark.parametrize(
+    ("text", "lb"),
+    [("1lb", 1.0), ("1000lb", 1000.0), ("900lb", 900.0), ("12", 26.5), ("400kg", 881.8)],
+)
+def test_weigh_in_range_is_1_to_1000_lb(text: str, lb: float) -> None:
+    w = parse_weigh_in(text)
+    assert w is not None and w.weight_lb == lb
+
+
+@pytest.mark.parametrize("text", ["12", "8", "900lb"])
+def test_mode_guess_only_counts_plausible_body_weights(text: str) -> None:
+    assert not looks_like_weigh_in(text)
+    assert looks_like_weigh_in("182.4")
