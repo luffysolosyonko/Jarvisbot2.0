@@ -109,8 +109,8 @@ describe('Composer', () => {
   it('Weight mode has its own label and placeholder', async () => {
     wrap(<ComposerHarness onSend={vi.fn()} />);
     await userEvent.click(screen.getByRole('radio', { name: 'Weight' }));
-    expect(screen.getByLabelText('Log weight')).toHaveAttribute('placeholder', '(weight)kg/lb');
-    expect(screen.getByText('e.g. 70.3kg or 155lb')).toBeInTheDocument();
+    expect(screen.getByLabelText('Log weight')).toHaveAttribute('placeholder', '(weight)kg/lbs');
+    expect(screen.getByText('e.g. 70.3kg or 155lbs')).toBeInTheDocument();
   });
 
   it('Ask is a toggle: the question box, no preview, nothing selected in the switch', async () => {
