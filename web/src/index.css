@@ -538,7 +538,7 @@ input[type='number']::-webkit-outer-spin-button {
 /* One ruled row of three numbers. */
 .ruled-stats {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, 1fr);
   border-top: 1px solid var(--rule);
   border-bottom: 1px solid var(--rule);
   margin: var(--s5) 0;

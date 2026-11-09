@@ -104,10 +104,6 @@ export function ProgressPage() {
                   </span>
                 </div>
                 <div>
-                  <span className="value">{Math.round(fromLb(d.week.volume_lb, unit)).toLocaleString('en-US')}</span>
-                  <span className="caps">{unit} volume</span>
-                </div>
-                <div>
                   <span className="value">{d.week.sessions}</span>
                   <span className="caps">Sessions</span>
                 </div>
