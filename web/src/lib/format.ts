@@ -57,12 +57,6 @@ export function longDate(iso: string): string {
   return `${DAYS[d.getDay()]}, ${MONTHS[d.getMonth()]} ${d.getDate()}`;
 }
 
-export function dayLabel(iso: string, todayIso: string): string {
-  if (iso === todayIso) return `Today · ${longDate(iso)}`;
-  const diff = Math.round((parseDate(todayIso).getTime() - parseDate(iso).getTime()) / 86_400_000);
-  if (diff === 1) return `Yesterday · ${longDate(iso)}`;
-  return longDate(iso);
-}
 
 /** "Bench press" from "bench press" — sentence case for exercise names. */
 export function exerciseName(name: string | null | undefined): string {
@@ -103,4 +97,23 @@ export function dayIn(iso: string, tz: string | undefined): string {
   } catch {
     return isoDate(new Date(iso));
   }
+}
+
+const MONTHS_LONG = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+
+/** Discord-style message time: "Today at 9:27 AM", "Yesterday at 9:27 AM", "11/5/2026 9:27 AM". */
+export function messageTime(iso: string, tz: string | undefined, todayIso: string): string {
+  const day = dayIn(iso, tz);
+  const time = clockTime(iso, tz);
+  if (day === todayIso) return `Today at ${time}`;
+  const diff = Math.round((parseDate(todayIso).getTime() - parseDate(day).getTime()) / 86_400_000);
+  if (diff === 1) return `Yesterday at ${time}`;
+  const d = parseDate(day);
+  return `${d.getMonth() + 1}/${d.getDate()}/${d.getFullYear()} ${time}`;
+}
+
+/** The feed's day divider: "November 5, 2026". */
+export function dividerDate(iso: string): string {
+  const d = parseDate(iso);
+  return `${MONTHS_LONG[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
 }

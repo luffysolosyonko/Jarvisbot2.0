@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { buildRows } from '@/lib/chartRows';
 import { reachText, setRefText } from '@/lib/describe';
+import { dividerDate, messageTime } from '@/lib/format';
 import { monthLabel, shiftMonth } from '@/lib/month';
 import { applyFix, replaceLine } from '@/lib/text';
 import type { Fix } from '@/lib/types';
@@ -45,6 +46,14 @@ describe('charts and dates', () => {
 
   it('converts chart values to kg', () => {
     expect(buildRows([{ date: '2026-11-01', value: 220.462 }], [], [], 'kg').rows[0].main).toBe(100);
+  });
+
+  it('times messages like Discord', () => {
+    const tz = 'America/Chicago';
+    expect(messageTime('2026-11-05T15:27:00Z', tz, '2026-11-05')).toBe('Today at 9:27 AM');
+    expect(messageTime('2026-11-05T15:27:00Z', tz, '2026-11-06')).toBe('Yesterday at 9:27 AM');
+    expect(messageTime('2026-11-05T15:27:00Z', tz, '2026-11-09')).toBe('11/5/2026 9:27 AM');
+    expect(dividerDate('2026-11-05')).toBe('November 5, 2026');
   });
 
   it('labels and steps months across years', () => {

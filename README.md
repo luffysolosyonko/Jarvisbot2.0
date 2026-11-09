@@ -17,8 +17,10 @@ is now a button.
 
 ## What it does
 
-- **A notebook, not a form.** One feed, oldest to newest, with a plain text box
-  at the bottom, like a chat. Pick a mode, **Workout**, **Weight** or **Ask**,
+- **A notebook, not a form.** One feed, oldest to newest, laid out like a chat
+  (Discord without the avatars): your name, the time, what you typed, and a
+  check "reaction" once it's logged; click it for the parsed sets. A plain text
+  box sits at the bottom. Pick a mode, **Workout**, **Weight** or **Ask**,
   type, press Enter. Shift+Enter starts a new line, so a whole session can go
   in at once. A small line above the box shows the date and time the entry will
   be logged at; that's its timestamp, so there's no date field to fill in.
@@ -33,17 +35,16 @@ is now a button.
   (with undo); edits re-parse, like the bot re-parsed edited messages.
 - **Every bot command is a button.** Tools: Today, Stats (7/30/90 days), Lift,
   Estimate (maxes for 3–12 reps), Predict weight, Predict lift (the date
-  you'll hit a target), Volume, Charts, Search, Aliases, Export (CSV) and AI
-  usage, plus the Syntax help cheat sheet.
+  you'll hit a target), Volume, Charts, Search, Aliases and Export (CSV), plus
+  the Syntax help cheat sheet.
 - **History and Progress.** A month calendar marks workout days (filled) and
   weigh-in days (outlined); click a day for its entries. Progress shows body
   weight with a 7-day average and a dashed projection, this week's volume, and
   top lifts with e1RM charts and forecasts.
-- **Ask, on purpose.** Only Ask mode calls Claude. It's marked in the accent
-  color, sends only the data relevant to the question, and shows the tokens
-  each answer used. Questions and answers are saved, so they're still in the
-  notebook after a reload; "Clear questions from view" hides them (the
-  database keeps them).
+- **Ask, on purpose.** Only Ask mode calls Claude, and it sends only the data
+  relevant to the question. Questions and Jarvis's answers appear as messages,
+  are saved, and are still in the notebook after a reload; "Clear questions
+  from view" hides them (the database keeps them).
 
 ## Architecture
 

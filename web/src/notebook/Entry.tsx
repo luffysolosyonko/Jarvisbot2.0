@@ -5,29 +5,34 @@ import { Button, IconButton } from '@/components/Button';
 import { ICON } from '@/components/icons';
 import { SetRows } from '@/components/SetRows';
 import { useToast } from '@/components/Toast';
-import { useEditLog, useTz } from '@/hooks/queries';
+import { useEditLog, useMe, useTz } from '@/hooks/queries';
 import { errorMessage } from '@/lib/api';
-import { clockTime, weight } from '@/lib/format';
+import { authorName, logSummary } from '@/lib/describe';
+import { messageTime, todayIn, weight } from '@/lib/format';
 import type { Log, LogMode, Unit } from '@/lib/types';
 
 import { FixList } from './FixList';
 
 /**
- * One saved log: my text on top (unparsed lines marked "Not logged"), the parsed rows
- * underneath, and Edit / Fix / Delete (shown on hover, always on touch).
+ * One saved log as a chat message: your name and the time, what you typed, and a
+ * check "reaction" once it's logged (click it for the parsed sets). Edit, Fix and
+ * Delete show on hover, always on touch.
  */
 export function Entry({ log, unit, highlight = false }: { log: Log; unit: Unit; highlight?: boolean }) {
   const [editing, setEditing] = useState(false);
   const [fixing, setFixing] = useState(false);
+  const [details, setDetails] = useState(false);
   const [draft, setDraft] = useState(log.raw_text);
   const edit = useEditLog();
   const { deleteWithUndo } = useToast();
-  const editId = useId();
+  const { data: me } = useMe();
   const tz = useTz();
-  const time = (iso: string) => clockTime(iso, tz);
+  const editId = useId();
+  const detailsId = useId();
 
   const badLines = new Set(log.warnings.map((w) => w.line));
   const lines = log.raw_text.split('\n');
+  const when = messageTime(log.logged_at, tz, todayIn(tz));
 
   function save(text: string, mode?: LogMode | null) {
     edit.mutate(
@@ -53,33 +58,37 @@ export function Entry({ log, unit, highlight = false }: { log: Log; unit: Unit; 
   }
 
   return (
-    <article id={`log-${log.id}`} className={`entry${highlight ? ' highlight' : ''}`} aria-label={`${log.kind === 'weight' ? 'Weigh-in' : 'Workout'} at ${time(log.logged_at)}`}>
-      <div className="entry-head">
-        <span className="t-caption secondary">{time(log.logged_at)}</span>
-        <span className="t-caption secondary">· {log.kind === 'weight' ? 'Weight' : 'Workout'}</span>
-        {log.pending ? (
-          <span className="status secondary" role="status">
-            Saving…
-          </span>
-        ) : (
-          <span className="status success" role="img" aria-label="Logged" title="Logged">
-            <Check {...ICON} aria-hidden="true" />
-          </span>
-        )}
+    <article id={`log-${log.id}`} className={`msg${highlight ? ' highlight' : ''}`} aria-label={`${log.kind === 'weight' ? 'Weigh-in' : 'Workout'}, ${when}`}>
+      <div className="msg-head">
+        <span className="msg-author">{authorName(me)}</span>
+        <time className="msg-time" dateTime={log.logged_at}>
+          {when}
+        </time>
         {log.pending ? null : (
-        <div className="entry-actions">
-          <IconButton label="Edit entry" onClick={() => { setEditing(true); setFixing(false); }}>
-            <Pencil {...ICON} />
-          </IconButton>
-          {log.warnings.length ? (
-            <IconButton label="Fix unlogged lines" onClick={() => { setFixing((f) => !f); setEditing(false); }} aria-expanded={fixing}>
-              <Wrench {...ICON} />
+          <div className="entry-actions">
+            <IconButton
+              label="Edit entry"
+              onClick={() => {
+                setEditing(true);
+                setFixing(false);
+              }}>
+              <Pencil {...ICON} />
             </IconButton>
-          ) : null}
-          <IconButton label="Delete entry" onClick={() => deleteWithUndo(log.id)}>
-            <Trash2 {...ICON} />
-          </IconButton>
-        </div>
+            {log.warnings.length ? (
+              <IconButton
+                label="Fix unlogged lines"
+                onClick={() => {
+                  setFixing((f) => !f);
+                  setEditing(false);
+                }}
+                aria-expanded={fixing}>
+                <Wrench {...ICON} />
+              </IconButton>
+            ) : null}
+            <IconButton label="Delete entry" onClick={() => deleteWithUndo(log.id)}>
+              <Trash2 {...ICON} />
+            </IconButton>
+          </div>
         )}
       </div>
 
@@ -90,43 +99,77 @@ export function Entry({ log, unit, highlight = false }: { log: Log; unit: Unit; 
           </label>
           <textarea
             id={editId}
-            className="textarea mono"
+            className="textarea"
             rows={Math.min(8, Math.max(2, draft.split('\n').length))}
             value={draft}
             autoFocus
             onChange={(e) => setDraft(e.target.value)}
             onKeyDown={onKeyDown}
           />
-          {edit.error ? <p className="error-text" role="alert">{errorMessage(edit.error)}</p> : null}
+          {edit.error ? (
+            <p className="error-text" role="alert">
+              {errorMessage(edit.error)}
+            </p>
+          ) : null}
           <div className="row">
             <Button size="small" variant="primary" loading={edit.isPending} disabled={!draft.trim()} onClick={() => save(draft)}>
               Save
             </Button>
-            <Button size="small" variant="ghost" onClick={() => { setEditing(false); setDraft(log.raw_text); }}>
+            <Button
+              size="small"
+              variant="ghost"
+              onClick={() => {
+                setEditing(false);
+                setDraft(log.raw_text);
+              }}>
               Cancel
             </Button>
-            <span className="hint">Saving re-reads every line.</span>
+            <span className="hint">Escape to cancel · Enter to save</span>
           </div>
         </div>
       ) : (
-        <div className="stack-2 entry-body">
-          <div className="raw">
-            {lines.map((line, i) => (
-              <div key={i} className="raw-line">
-                <span>{line || ' '}</span>
-                {badLines.has(i + 1) ? (
-                  <span className="status danger no-shrink">
-                    Not logged
-                    {!fixing ? (
-                      <button type="button" className="link-btn" onClick={() => setFixing(true)}>
-                        Fix
-                      </button>
-                    ) : null}
-                  </span>
-                ) : null}
-              </div>
-            ))}
-          </div>
+        <div className="msg-body">
+          {lines.map((line, i) => (
+            <div key={i} className="raw-line">
+              <span>{line || ' '}</span>
+              {badLines.has(i + 1) ? (
+                <span className="status danger no-shrink">
+                  Not logged
+                  {!fixing ? (
+                    <button type="button" className="link-btn" onClick={() => setFixing(true)}>
+                      Fix
+                    </button>
+                  ) : null}
+                </span>
+              ) : null}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!editing ? (
+        <div className="msg-reactions">
+          {log.pending ? (
+            <span className="hint" role="status">
+              Saving…
+            </span>
+          ) : (
+            <button
+              type="button"
+              className="reaction"
+              aria-expanded={details}
+              aria-controls={detailsId}
+              aria-label={`Logged: ${logSummary(log, unit)}. ${details ? 'Hide' : 'Show'} details`}
+              onClick={() => setDetails((d) => !d)}>
+              <Check {...ICON} className="success" aria-hidden="true" />
+              <span>{logSummary(log, unit)}</span>
+            </button>
+          )}
+        </div>
+      ) : null}
+
+      {details && !editing ? (
+        <div id={detailsId} className="msg-details">
           {log.weigh_in ? (
             <p className="t-label mono">
               → {weight(log.weigh_in.weight_lb, unit)}
@@ -136,12 +179,16 @@ export function Entry({ log, unit, highlight = false }: { log: Log; unit: Unit; 
             <SetRows sets={log.sets} unit={unit} caption="Parsed sets" />
           )}
         </div>
-      )}
+      ) : null}
 
       {fixing && !editing && log.warnings.length ? (
         <div className="stack-2 entry-fix">
           <FixList warnings={log.warnings} text={log.raw_text} onApply={(text, mode) => save(text, mode)} />
-          {edit.error ? <p className="error-text" role="alert">{errorMessage(edit.error)}</p> : null}
+          {edit.error ? (
+            <p className="error-text" role="alert">
+              {errorMessage(edit.error)}
+            </p>
+          ) : null}
         </div>
       ) : null}
     </article>

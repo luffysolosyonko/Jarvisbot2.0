@@ -685,33 +685,9 @@ a:hover {
   padding-bottom: var(--s4);
 }
 
-.feed-day {
-  margin: var(--s4) 0 0;
-  font-size: 14px;
-  line-height: 20px;
-  font-weight: 600;
-  color: var(--ink-secondary);
-}
 
-.entry {
-  position: relative;
-  scroll-margin-top: calc(var(--nav-h) + var(--s3)); /* clear the sticky nav when jumped to */
-  padding: var(--s3) 0;
-  border-bottom: 1px solid var(--border);
-}
 
-.entry.highlight {
-  outline: 2px solid var(--accent);
-  outline-offset: 4px;
-  border-radius: var(--radius-control);
-}
 
-.entry-head {
-  display: flex;
-  align-items: center;
-  gap: var(--s2);
-  min-height: 32px;
-}
 
 .entry-actions {
   margin-left: auto;
@@ -720,8 +696,8 @@ a:hover {
   opacity: 0;
 }
 
-.entry:hover .entry-actions,
-.entry:focus-within .entry-actions {
+.msg:hover .entry-actions,
+.msg:focus-within .entry-actions {
   opacity: 1;
 }
 
@@ -763,10 +739,6 @@ a:hover {
   margin-top: var(--s2);
 }
 
-.reply {
-  padding: var(--s3) 0;
-  border-bottom: 1px solid var(--border);
-}
 
 .composer {
   position: sticky;
@@ -961,7 +933,7 @@ a:hover {
 .list-item { display: flex; align-items: center; justify-content: space-between; gap: var(--s3); min-height: var(--touch); }
 .auth-head { margin-bottom: var(--s5); }
 .auth-links { margin-top: var(--s3); }
-.entry-body { margin-top: var(--s1); }
+
 .entry-edit { margin-top: var(--s2); }
 .entry-fix { margin-top: var(--s3); }
 .raw-line { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s2); }
@@ -1058,4 +1030,107 @@ figure .legend { margin-top: var(--s2); }
   background-position: 0 12px;
   line-height: 24px;
   font-size: 16px;
+}
+
+/* ---------- messages (like Discord, without avatars) ---------- */
+.msg {
+  position: relative;
+  padding: var(--s2) var(--s2);
+  margin: 0 calc(var(--s2) * -1);
+  border-radius: var(--radius-control);
+  scroll-margin-top: calc(var(--nav-h) + var(--s3));
+}
+
+.msg:hover {
+  background: var(--surface);
+}
+
+.msg.highlight {
+  outline: 2px solid var(--accent);
+  outline-offset: 0;
+}
+
+.msg-head {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s2);
+  min-height: 24px;
+}
+
+.msg-author {
+  font-weight: 600;
+  font-size: 16px;
+  line-height: 24px;
+}
+
+.msg-author.jarvis {
+  color: var(--accent);
+}
+
+.msg-time {
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--ink-secondary);
+}
+
+.msg-head .entry-actions {
+  position: absolute;
+  top: var(--s1);
+  right: var(--s1);
+}
+
+.msg-body {
+  font-size: 16px;
+  line-height: 24px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.msg-reactions {
+  margin-top: var(--s1);
+}
+
+.reaction {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s1);
+  min-height: 32px;
+  padding: 0 var(--s2);
+  border: none;
+  border-radius: var(--radius-control);
+  background: var(--surface);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 14px;
+  line-height: 20px;
+  cursor: pointer;
+  transition: background-color 150ms ease;
+}
+
+.reaction:hover,
+.reaction[aria-expanded='true'] {
+  background: var(--border);
+}
+
+.msg-details {
+  margin-top: var(--s2);
+}
+
+/* "November 5, 2026" between days, with a rule on each side. */
+.day-divider {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  margin: var(--s4) 0 var(--s2);
+  font-size: 12px;
+  line-height: 16px;
+  font-weight: 600;
+  color: var(--ink-secondary);
+}
+
+.day-divider::before,
+.day-divider::after {
+  content: '';
+  flex: 1;
+  border-top: 1px solid var(--border);
 }

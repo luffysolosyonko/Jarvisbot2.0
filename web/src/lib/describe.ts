@@ -1,5 +1,5 @@
 import { exerciseName, longDate, parseDate, weight } from './format';
-import type { Forecast, ParseResult, SetRef, Unit } from './types';
+import type { Forecast, Log, Me, ParseResult, SetRef, Unit } from './types';
 
 /** "5 + 1f × 155 lb" */
 export function setRefText(s: SetRef | null, unit: Unit): string {
@@ -28,4 +28,16 @@ export function summarize(r: ParseResult, unit: Unit): string {
   const fresh = r.exercises.filter((e) => e.is_new).map((e) => exerciseName(e.matched));
   const sets = `${r.sets.length} set${r.sets.length === 1 ? '' : 's'}`;
   return `${sets} · ${names.join(', ')}${fresh.length ? ` (new: ${fresh.join(', ')})` : ''}`;
+}
+
+/** What a saved log recorded, in a few words: "5 sets · Bench" or "185 lb". */
+export function logSummary(log: Log, unit: Unit): string {
+  if (log.weigh_in) return weight(log.weigh_in.weight_lb, unit);
+  const names = [...new Set(log.sets.map((s) => exerciseName(s.matched_exercise ?? s.exercise)))];
+  return `${log.sets.length} set${log.sets.length === 1 ? '' : 's'} · ${names.join(', ')}`;
+}
+
+/** The name shown on your messages in the notebook. */
+export function authorName(me: Me | undefined): string {
+  return me?.display_name || me?.email?.split('@')[0] || 'You';
 }

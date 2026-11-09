@@ -10,7 +10,7 @@ import { useTitle } from '@/hooks/useTitle';
 import { errorMessage } from '@/lib/api';
 import { deviceTimeZone, fromLb, num, toLb } from '@/lib/format';
 import type { Me, Unit } from '@/lib/types';
-import { AliasesTool, ExportTool, UsageTool } from '@/tools/ToolViews';
+import { AliasesTool, ExportTool } from '@/tools/ToolViews';
 
 function BarWeight({ me }: { me: Me }) {
   const unit = me.settings.set_unit;
@@ -93,9 +93,6 @@ export function SettingsPage() {
             </Section>
             <Section title="Export">
               <ExportTool />
-            </Section>
-            <Section title="AI usage">
-              <UsageTool />
             </Section>
             <Section title="Account">
               <div className="stack-3">

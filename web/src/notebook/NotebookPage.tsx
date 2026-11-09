@@ -8,7 +8,8 @@ import { useAsk, useAskHistory, useClearAskHistory, useLogs, useMe, useSaveLog, 
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useTitle } from '@/hooks/useTitle';
 import { errorMessage } from '@/lib/api';
-import { clockTime, dayIn, dayLabel, isoDate, parseDate, todayIn } from '@/lib/format';
+import { authorName } from '@/lib/describe';
+import { dayIn, dividerDate, isoDate, messageTime, parseDate, todayIn } from '@/lib/format';
 import { load, save } from '@/lib/storage';
 import type { Log, Mode } from '@/lib/types';
 import { ToolPanel } from '@/tools/ToolPanel';
@@ -27,7 +28,7 @@ const isMode = (v: unknown): v is Mode => v === 'workout' || v === 'weight' || v
 type PendingAsk = { id: string; question: string; at: string; error?: string };
 
 /** A question as shown in the feed: saved (with its answer) or pending. */
-type AskView = { key: string; question: string; at: string; answer?: string; tokens?: number; error?: string; retryId?: string };
+type AskView = { key: string; question: string; at: string; answer?: string; error?: string; retryId?: string };
 
 type FeedItem = { kind: 'log'; at: string; day: string; log: Log } | { kind: 'ask'; at: string; day: string; item: AskView };
 
@@ -37,32 +38,40 @@ function addDays(iso: string, n: number): string {
   return isoDate(d);
 }
 
-function AskReply({ item, onRetry, tz }: { item: AskView; onRetry: () => void; tz: string | undefined }) {
+/** A question and Jarvis's answer, as two chat messages. */
+function AskReply({ item, onRetry, author, tz, today }: { item: AskView; onRetry: () => void; author: string; tz: string | undefined; today: string }) {
+  const when = messageTime(item.at, tz, today);
   return (
-    <article className="reply stack-2" aria-label="Question to Jarvis">
-      <div className="t-caption secondary">{clockTime(item.at, tz)} · You asked</div>
-      <p className="t-body">{item.question}</p>
-      <div className="t-caption accent semibold">Jarvis</div>
-      {item.answer !== undefined ? (
-        <>
-          <p className="t-body prewrap">{item.answer}</p>
-          {item.tokens !== undefined ? (
-            <p className="t-caption secondary mono">{item.tokens.toLocaleString('en-US')} tokens used</p>
-          ) : null}
-        </>
-      ) : item.error ? (
-        <div className="stack-2" role="alert">
-          <p className="danger">{item.error}</p>
-          <Button size="small" onClick={onRetry}>
-            Try again
-          </Button>
+    <div aria-label="Question to Jarvis" role="group">
+      <article className="msg">
+        <div className="msg-head">
+          <span className="msg-author">{author}</span>
+          <time className="msg-time" dateTime={item.at}>
+            {when}
+          </time>
         </div>
-      ) : (
-        <p className="secondary" aria-live="polite">
-          Asking Jarvis…
-        </p>
-      )}
-    </article>
+        <div className="msg-body">{item.question}</div>
+      </article>
+      <article className="msg">
+        <div className="msg-head">
+          <span className="msg-author jarvis">Jarvis</span>
+        </div>
+        {item.answer !== undefined ? (
+          <div className="msg-body">{item.answer}</div>
+        ) : item.error ? (
+          <div className="stack-2" role="alert">
+            <p className="danger">{item.error}</p>
+            <Button size="small" onClick={onRetry}>
+              Try again
+            </Button>
+          </div>
+        ) : (
+          <p className="msg-body secondary" aria-live="polite">
+            Thinking…
+          </p>
+        )}
+      </article>
+    </div>
   );
 }
 
@@ -152,7 +161,7 @@ export function NotebookPage() {
           kind: 'ask' as const,
           at: m.asked_at,
           day: dayIn(m.asked_at, tz),
-          item: { key: `s${m.id}`, question: m.question, at: m.asked_at, answer: m.answer, tokens: m.input_tokens + m.output_tokens },
+          item: { key: `s${m.id}`, question: m.question, at: m.asked_at, answer: m.answer },
         })),
       ...pendingAsks.map((p) => ({
         kind: 'ask' as const,
@@ -260,7 +269,7 @@ export function NotebookPage() {
             <EmptyState message="Type a set like 8x 160lb bench in the box below to start your notebook." />
           ) : (
             feed.map((f) => {
-              const header = f.day !== lastDay ? <h2 className="feed-day">{dayLabel(f.day, today)}</h2> : null;
+              const header = f.day !== lastDay ? <h2 className="day-divider">{dividerDate(f.day)}</h2> : null;
               lastDay = f.day;
               return (
                 <div key={f.kind === 'log' ? `l${f.log.id}` : f.item.key}>
@@ -268,7 +277,7 @@ export function NotebookPage() {
                   {f.kind === 'log' ? (
                     <Entry log={f.log} unit={unit} highlight={highlight === f.log.id} />
                   ) : (
-                    <AskReply item={f.item} tz={tz} onRetry={() => runAsk(f.item.question, f.item.retryId)} />
+                    <AskReply item={f.item} author={authorName(me.data)} tz={tz} today={today} onRetry={() => runAsk(f.item.question, f.item.retryId)} />
                   )}
                 </div>
               );

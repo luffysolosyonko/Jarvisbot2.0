@@ -78,7 +78,6 @@ export function Composer({ mode, onModeChange, text, onTextChange, onSend, sendi
       <div className="composer-meta">
         {isAsk ? (
           <>
-            <span className="accent semibold">Ask mode: this goes to Claude and uses tokens. Nothing is logged.</span>
             {onClearAsks ? (
               <button type="button" className="link-btn" onClick={onClearAsks}>
                 Clear questions from view

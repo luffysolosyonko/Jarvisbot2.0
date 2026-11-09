@@ -19,7 +19,6 @@ import type {
   Stats,
   TodayLogs,
   Unit,
-  Usage,
   Volume,
   WeightForecast,
 } from '@/lib/types';
@@ -146,7 +145,6 @@ export function useAsk() {
     mutationFn: (question: string) =>
       api<AskAnswer>('/ask', { method: 'POST', body: { question }, timeoutMs: 30_000 }),
     onSettled: () => {
-      void qc.invalidateQueries({ queryKey: ['usage'] });
       void qc.invalidateQueries({ queryKey: ['ask-history'] });
     },
   });
@@ -250,9 +248,6 @@ export function useSearch(q: string) {
   });
 }
 
-export function useUsage() {
-  return useQuery({ queryKey: ['usage'], queryFn: () => api<Usage>('/usage') });
-}
 
 export function useAliases() {
   return useQuery({

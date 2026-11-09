@@ -11,7 +11,6 @@ export type ToolId =
   | 'search'
   | 'aliases'
   | 'export'
-  | 'usage'
   | 'help';
 
 export const TOOLS: { id: ToolId; label: string; command: string }[] = [
@@ -26,7 +25,6 @@ export const TOOLS: { id: ToolId; label: string; command: string }[] = [
   { id: 'search', label: 'Search', command: '/search' },
   { id: 'aliases', label: 'Aliases', command: '/alias' },
   { id: 'export', label: 'Export', command: '/export' },
-  { id: 'usage', label: 'AI usage', command: '/usage' },
   { id: 'help', label: 'Syntax help', command: '/howto' },
 ];
 

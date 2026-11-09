@@ -223,13 +223,6 @@ export type CalendarMonth = {
 
 export type SearchResult = { query: string; logs: Log[]; truncated: boolean };
 
-export type Usage = {
-  today: number;
-  week: number;
-  month: number;
-  questions_month: number;
-  daily_token_cap: number;
-};
 
 export type Alias = { id: number; short: string; full: string };
 export type AliasMatch = { written: string; matched: string; sets: number };

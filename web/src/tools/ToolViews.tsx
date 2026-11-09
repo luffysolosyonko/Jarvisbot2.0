@@ -20,7 +20,6 @@ import {
   useSearch,
   useStats,
   useToday,
-  useUsage,
   useVolume,
   useWeightForecast,
 } from '@/hooks/queries';
@@ -509,20 +508,3 @@ export function ExportTool() {
   );
 }
 
-export function UsageTool() {
-  const q = useUsage();
-  return (
-    <QueryView query={q}>
-      {(u) => (
-        <div className="stack-3">
-          <div className="stats">
-            <Stat label="Today" value={`${u.today.toLocaleString('en-US')} tokens`} note={`of ${u.daily_token_cap.toLocaleString('en-US')} a day`} />
-            <Stat label="Last 7 days" value={`${u.week.toLocaleString('en-US')} tokens`} />
-            <Stat label="This month" value={`${u.month.toLocaleString('en-US')} tokens`} note={`${u.questions_month} question${u.questions_month === 1 ? '' : 's'}`} />
-          </div>
-          <p className="hint">Claude tokens. Only Ask mode uses them; logging never does.</p>
-        </div>
-      )}
-    </QueryView>
-  );
-}

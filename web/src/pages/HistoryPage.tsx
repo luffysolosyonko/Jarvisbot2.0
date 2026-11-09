@@ -79,7 +79,7 @@ export function HistoryPage() {
             setMonth(today.slice(0, 7));
             setSelected(today);
           }}>
-          Jump to today
+          Present
         </Button>
       </div>
       <section className="section">

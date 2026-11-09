@@ -35,8 +35,8 @@ class Settings(BaseSettings):
     llm_model: str = "claude-haiku-5-5"
     anthropic_api_key: str = Field(default="", repr=False)
     llm_timeout_s: float = 15.0
-    ask_daily_token_cap: int = 50_000
-    ask_demo_daily_token_cap: int = 10_000
+    ask_daily_token_cap: int = 500_000
+    ask_demo_daily_token_cap: int = 500_000
 
     @property
     def cors_origin_list(self) -> list[str]:

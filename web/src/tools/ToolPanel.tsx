@@ -19,7 +19,6 @@ import {
   SearchTool,
   StatsTool,
   TodayTool,
-  UsageTool,
   VolumeTool,
 } from './ToolViews';
 
@@ -48,8 +47,6 @@ function Body({ id, onJump }: { id: ToolId; onJump: (log: Log) => void }) {
       return <AliasesTool />;
     case 'export':
       return <ExportTool />;
-    case 'usage':
-      return <UsageTool />;
     case 'help':
       return <SyntaxHelp />;
   }

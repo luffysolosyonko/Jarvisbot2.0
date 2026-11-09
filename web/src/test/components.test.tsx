@@ -104,11 +104,12 @@ describe('Composer', () => {
     expect(apiMock).toHaveBeenCalledWith('/parse', expect.objectContaining({ body: { text: '5x 155lb 1x bench', mode: 'workout' } }));
   });
 
-  it('Ask mode is clearly marked', async () => {
+  it('Ask mode has the question box and no logging line', async () => {
     wrap(<ComposerHarness onSend={vi.fn()} />);
     await userEvent.click(screen.getByRole('radio', { name: 'Ask' }));
-    expect(screen.getByText(/goes to Claude/)).toBeInTheDocument();
     expect(screen.getByLabelText('Question for Jarvis')).toHaveAttribute('placeholder', 'Is my bench still improving?');
+    expect(document.querySelector('time')).toBeNull();
+    expect(screen.queryByText(/tokens/)).not.toBeInTheDocument();
   });
 
   it('has one simple send button in every mode', async () => {
@@ -195,7 +196,9 @@ describe('Entry', () => {
       return {};
     });
     wrap(<Entry log={LOG} unit="lb" />);
-    expect(screen.getByRole('img', { name: 'Logged' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Logged: 1 set · Bench/ })).toBeInTheDocument();
+    expect(document.querySelector('time')).toHaveAttribute('dateTime', '2026-11-09T17:00:00Z');
+    expect(screen.getByText('You')).toBeInTheDocument();
     expect(screen.getByText('Not logged')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Fix' }));
     await userEvent.click(screen.getByRole('button', { name: 'Add unit: lb' }));
