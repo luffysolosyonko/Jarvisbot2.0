@@ -5,6 +5,7 @@ import type {
   Alias,
   AliasMatch,
   AskAnswer,
+  AskMessage,
   CalendarMonth,
   Dashboard,
   ExerciseDetail,
@@ -144,7 +145,27 @@ export function useAsk() {
   return useMutation({
     mutationFn: (question: string) =>
       api<AskAnswer>('/ask', { method: 'POST', body: { question }, timeoutMs: 30_000 }),
-    onSettled: () => void qc.invalidateQueries({ queryKey: ['usage'] }),
+    onSettled: () => {
+      void qc.invalidateQueries({ queryKey: ['usage'] });
+      void qc.invalidateQueries({ queryKey: ['ask-history'] });
+    },
+  });
+}
+
+/** Saved questions and answers still in view, oldest first. */
+export function useAskHistory() {
+  return useQuery({
+    queryKey: ['ask-history'],
+    queryFn: () => api<{ messages: AskMessage[] }>('/ask/history').then((r) => r.messages),
+  });
+}
+
+/** Hide every saved question from view (they stay in the database). */
+export function useClearAskHistory() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => api<{ cleared: number }>('/ask/history/clear', { method: 'POST' }),
+    onSuccess: () => qc.setQueryData(['ask-history'], []),
   });
 }
 

@@ -9,7 +9,7 @@ from __future__ import annotations
 from datetime import UTC, datetime, time
 
 from fastapi import APIRouter, Request
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
 from jarvis_api import schemas
@@ -17,7 +17,7 @@ from jarvis_api.config import Settings
 from jarvis_api.deps import DB, AppSettings, CurrentUser, Limiter
 from jarvis_api.errors import ApiError
 from jarvis_api.llm import LLMError, LLMProvider
-from jarvis_api.models import AiUsage, User
+from jarvis_api.models import AiUsage, AskMessage, User
 from jarvis_api.services.logs import load_user_data
 from jarvis_api.services.users import user_tz
 from jarvis_core import ai
@@ -111,8 +111,20 @@ def ask(
         status, code, message = ERRORS[exc.code]
         raise ApiError(status, code, message) from exc
 
-    record_usage(db, user, reply.model, reply.usage, set(topics), now)
+    saved = AskMessage(
+        user_id=user.id,
+        asked_at=now,
+        question=body.question,
+        answer=reply.text,
+        input_tokens=reply.usage.input_tokens,
+        output_tokens=reply.usage.output_tokens,
+    )
+    db.add(saved)
+    record_usage(db, user, reply.model, reply.usage, set(topics), now)  # commits both
     return schemas.AskOut(
+        id=saved.id,
+        asked_at=saved.asked_at,
+        question=saved.question,
         answer=reply.text,
         input_tokens=reply.usage.input_tokens,
         output_tokens=reply.usage.output_tokens,
@@ -120,3 +132,40 @@ def ask(
         daily_token_cap=cap,
         topics=sorted(topics),
     )
+
+
+HISTORY_LIMIT = 100
+
+
+@router.get("/ask/history")
+def ask_history(user: CurrentUser, db: DB) -> schemas.AskHistoryOut:
+    """Questions and answers still in view, oldest first (the newest 100)."""
+    rows = db.scalars(
+        select(AskMessage)
+        .where(AskMessage.user_id == user.id, AskMessage.hidden.is_(False))
+        .order_by(AskMessage.asked_at.desc(), AskMessage.id.desc())
+        .limit(HISTORY_LIMIT)
+    ).all()
+    return schemas.AskHistoryOut(
+        messages=[
+            schemas.AskMessageOut(
+                id=m.id,
+                asked_at=m.asked_at,
+                question=m.question,
+                answer=m.answer,
+                input_tokens=m.input_tokens,
+                output_tokens=m.output_tokens,
+            )
+            for m in reversed(rows)
+        ]
+    )
+
+
+@router.post("/ask/history/clear")
+def clear_ask_history(user: CurrentUser, db: DB) -> schemas.ClearedOut:
+    """Hide every question from view. They stay in the database."""
+    visible = (AskMessage.user_id == user.id, AskMessage.hidden.is_(False))
+    count = db.scalar(select(func.count(AskMessage.id)).where(*visible)) or 0
+    db.execute(update(AskMessage).where(*visible).values(hidden=True))
+    db.commit()
+    return schemas.ClearedOut(cleared=count)

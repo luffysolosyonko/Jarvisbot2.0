@@ -2,6 +2,7 @@
  * Color tokens. One accent, used only for the primary action, the selected nav item,
  * the active mode and the main chart series. Every text/background pair meets WCAG AA
  * (see contrast.test.ts). index.css defines the same values as CSS variables.
+ * The app is dark only.
  */
 export type ColorTokens = {
   bg: string;
@@ -13,18 +14,6 @@ export type ColorTokens = {
   onAccent: string;
   success: string;
   danger: string;
-};
-
-export const light: ColorTokens = {
-  bg: '#F7F6F2',
-  surface: '#FFFFFF',
-  ink: '#16181D',
-  inkSecondary: '#4A4F59',
-  border: '#DAD7CE',
-  accent: '#C2410C',
-  onAccent: '#FFFFFF',
-  success: '#15803D',
-  danger: '#B91C1C',
 };
 
 export const dark: ColorTokens = {
@@ -39,8 +28,9 @@ export const dark: ColorTokens = {
   danger: '#F87171',
 };
 
-export const palettes = { light, dark } as const;
-export type Scheme = keyof typeof palettes;
+/** One theme: the dark palette from the original app. */
+export const colors = dark;
+export const palettes = { dark } as const;
 
 /** Strict 8px grid. 4 is only for icon-to-label gaps. */
 export const space = { xxs: 4, xs: 8, sm: 16, md: 24, lg: 32, xl: 48, xxl: 64 } as const;

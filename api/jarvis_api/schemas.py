@@ -354,12 +354,32 @@ class AskIn(Strict):
 
 
 class AskOut(BaseModel):
+    id: int
+    asked_at: datetime
+    question: str
     answer: str
     input_tokens: int
     output_tokens: int
     tokens_used_today: int
     daily_token_cap: int
     topics: list[str]
+
+
+class AskMessageOut(BaseModel):
+    id: int
+    asked_at: datetime
+    question: str
+    answer: str
+    input_tokens: int
+    output_tokens: int
+
+
+class AskHistoryOut(BaseModel):
+    messages: list[AskMessageOut]  # oldest first
+
+
+class ClearedOut(BaseModel):
+    cleared: int
 
 
 # --- demo ------------------------------------------------------------------

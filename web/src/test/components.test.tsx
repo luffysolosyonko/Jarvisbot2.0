@@ -109,18 +109,41 @@ describe('Composer', () => {
     await userEvent.click(screen.getByRole('radio', { name: 'Ask' }));
     expect(screen.getByText(/goes to Claude/)).toBeInTheDocument();
     expect(screen.getByLabelText('Question for Jarvis')).toHaveAttribute('placeholder', 'Is my bench still improving?');
-    expect(screen.getByRole('button', { name: 'Ask Jarvis' })).toBeInTheDocument();
   });
 
-  it('labels the send button with what it does', async () => {
-    wrap(<ComposerHarness onSend={vi.fn()} />);
-    const input = screen.getByLabelText('Sets, one per line');
-    await userEvent.type(input, '5x 155lb bench');
-    expect(screen.getByRole('button', { name: 'Log set' })).toBeEnabled();
-    await userEvent.type(input, '{Shift>}{Enter}{/Shift}8x 135lb row');
-    expect(screen.getByRole('button', { name: 'Log sets' })).toBeEnabled();
-    await userEvent.click(screen.getByRole('radio', { name: 'Weight' }));
-    expect(screen.getByRole('button', { name: 'Save weight' })).toBeInTheDocument();
+  it('has one simple send button in every mode', async () => {
+    const onSend = vi.fn();
+    wrap(<ComposerHarness onSend={onSend} />);
+    const send = screen.getByRole('button', { name: 'Send' });
+    expect(send).toBeDisabled();
+    await userEvent.type(screen.getByLabelText('Sets, one per line'), '5x 155lb bench');
+    await userEvent.click(send);
+    expect(onSend).toHaveBeenCalledTimes(1);
+    for (const mode of ['Weight', 'Ask']) {
+      await userEvent.click(screen.getByRole('radio', { name: mode }));
+      expect(screen.getAllByRole('button', { name: 'Send' })).toHaveLength(1);
+    }
+  });
+
+  it('offers to clear questions from view in Ask mode', async () => {
+    const onClear = vi.fn();
+    wrap(
+      <Composer
+        mode="ask"
+        onModeChange={vi.fn()}
+        text=""
+        onTextChange={vi.fn()}
+        onSend={vi.fn()}
+        sending={false}
+        error={null}
+        unit="lb"
+        tz="UTC"
+        tools={null}
+        onClearAsks={onClear}
+      />,
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Clear questions from view' }));
+    expect(onClear).toHaveBeenCalled();
   });
 });
 

@@ -15,11 +15,9 @@ import {
 import { buildRows, dateAt } from '@/lib/chartRows';
 import { exerciseName, fromLb, num, shortDate } from '@/lib/format';
 import type { ExerciseVolume, Point, Projection, Unit, Window } from '@/lib/types';
-import { fonts, fontSize } from '@/theme/tokens';
-import { useTheme } from '@/theme/useTheme';
+import { colors, fonts, fontSize } from '@/theme/tokens';
 
 function useAxis() {
-  const { colors } = useTheme();
   const tick = { fill: colors.inkSecondary, fontSize: fontSize.caption, fontFamily: fonts.mono };
   return { colors, tick };
 }

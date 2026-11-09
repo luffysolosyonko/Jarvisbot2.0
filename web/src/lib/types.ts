@@ -155,12 +155,25 @@ export type ExerciseDetail = {
 export type WeightForecast = { projection: Projection | null; weigh_ins: number };
 
 export type AskAnswer = {
+  id: number;
+  asked_at: string;
+  question: string;
   answer: string;
   input_tokens: number;
   output_tokens: number;
   tokens_used_today: number;
   daily_token_cap: number;
   topics: string[];
+};
+
+/** A saved question and answer from Ask mode. */
+export type AskMessage = {
+  id: number;
+  asked_at: string;
+  question: string;
+  answer: string;
+  input_tokens: number;
+  output_tokens: number;
 };
 
 export type TodayLogs = {

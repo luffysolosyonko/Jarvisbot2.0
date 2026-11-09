@@ -144,3 +144,20 @@ class AiUsage(Base):
     input_tokens: Mapped[int] = mapped_column(Integer, default=0)
     output_tokens: Mapped[int] = mapped_column(Integer, default=0)
     topics: Mapped[str] = mapped_column(String(80), default="")
+
+
+class AskMessage(Base):
+    """A question asked in Ask mode and Jarvis's answer. `hidden` clears it from the
+    notebook without deleting it (token usage is tracked separately in ai_usage)."""
+
+    __tablename__ = "ask_messages"
+    __table_args__ = (Index("ix_ask_messages_user_at", "user_id", "asked_at"),)
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    asked_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    question: Mapped[str] = mapped_column(Text)
+    answer: Mapped[str] = mapped_column(Text)
+    input_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    output_tokens: Mapped[int] = mapped_column(Integer, default=0)
+    hidden: Mapped[bool] = mapped_column(Boolean, default=False)

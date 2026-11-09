@@ -41,7 +41,9 @@ is now a button.
   top lifts with e1RM charts and forecasts.
 - **Ask, on purpose.** Only Ask mode calls Claude. It's marked in the accent
   color, sends only the data relevant to the question, and shows the tokens
-  each answer used.
+  each answer used. Questions and answers are saved, so they're still in the
+  notebook after a reload; "Clear questions from view" hides them (the
+  database keeps them).
 
 ## Architecture
 
@@ -117,10 +119,10 @@ Colors live in [`web/src/theme/tokens.ts`](web/src/theme/tokens.ts) and as CSS
 variables in [`web/src/index.css`](web/src/index.css) (a test keeps them in
 sync); components use the variables, never raw values.
 
-- **Color.** A warm-neutral palette with one accent (`#C2410C` light, `#F97316`
-  dark), used only for the primary action, the current page, Ask mode and the
-  main chart series. Light and dark follow the system setting. Every text and
-  background pair meets WCAG AA, checked by a unit test.
+- **Color.** One dark theme (near-black `#0F1012` background) with a single
+  orange accent, `#F97316`, used only for the send button, the current page,
+  Ask mode and the main chart series. Every text and background pair meets
+  WCAG AA, checked by a unit test.
 - **Spacing.** A strict 8px grid (8, 16, 24, 32, 48, 64; 4 only for
   icon-to-label gaps). 48px between sections, 24px between items, touch
   targets of 44px or more. Content sits in a centered 640px column.
@@ -202,7 +204,6 @@ Highlights:
 - Android and iOS builds (an Expo version existed before the web rewrite; see
   the git history)
 - A nightly job that resets the demo account (run the seed by hand for now)
-- Saving Ask conversations on the server (they're kept in the browser now)
 - End-to-end browser tests (Playwright)
 - Alcohol and BAC tracking from Jarvis 1.0 (left out to keep the scope to
   workouts and weight)

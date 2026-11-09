@@ -1,16 +1,16 @@
-/* Jarvis design system: tokens, type scale, layout and components.
+/* Jarvis design system: tokens, type scale, layout and components. Dark theme only.
    Banned: gradients, glass, glows/heavy shadows, centered heroes, nested cards. */
 
 :root {
-  --bg: #f7f6f2;
-  --surface: #ffffff;
-  --ink: #16181d;
-  --ink-secondary: #4a4f59;
-  --border: #dad7ce;
-  --accent: #c2410c;
-  --on-accent: #ffffff;
-  --success: #15803d;
-  --danger: #b91c1c;
+  --bg: #0f1012;
+  --surface: #17191c;
+  --ink: #eceae4;
+  --ink-secondary: #a9adb5;
+  --border: #2a2d32;
+  --accent: #f97316;
+  --on-accent: #0f1012;
+  --success: #4ade80;
+  --danger: #f87171;
 
   --s1: 4px; /* icon-to-label gaps only */
   --s2: 8px;
@@ -29,22 +29,9 @@
   --font-ui: 'Manrope', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
-  color-scheme: light dark;
+  color-scheme: dark;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --bg: #0f1012;
-    --surface: #17191c;
-    --ink: #eceae4;
-    --ink-secondary: #a9adb5;
-    --border: #2a2d32;
-    --accent: #f97316;
-    --on-accent: #0f1012;
-    --success: #4ade80;
-    --danger: #f87171;
-  }
-}
 
 *,
 *::before,
@@ -1029,4 +1016,25 @@ figure .legend { margin-top: var(--s2); }
   flex-basis: 100%;
   font-size: 14px;
   line-height: 20px;
+}
+
+/* The one send button, the same in every mode. */
+.send-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: var(--touch);
+  height: var(--touch);
+  border: none;
+  border-radius: var(--radius-control);
+  background: var(--accent);
+  color: var(--on-accent);
+  cursor: pointer;
+  transition: opacity 150ms ease;
+}
+
+.send-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }

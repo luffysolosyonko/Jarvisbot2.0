@@ -4,13 +4,13 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router';
 import { Button } from '@/components/Button';
 import { EmptyState, ErrorState, SkeletonEntries } from '@/components/States';
 import { useToast } from '@/components/Toast';
-import { useAsk, useLogs, useMe, useSaveLog, useTz, useUnit } from '@/hooks/queries';
+import { useAsk, useAskHistory, useClearAskHistory, useLogs, useMe, useSaveLog, useTz, useUnit } from '@/hooks/queries';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useTitle } from '@/hooks/useTitle';
 import { errorMessage } from '@/lib/api';
 import { clockTime, dayIn, dayLabel, isoDate, parseDate, todayIn } from '@/lib/format';
 import { load, save } from '@/lib/storage';
-import type { AskAnswer, Log, Mode } from '@/lib/types';
+import type { Log, Mode } from '@/lib/types';
 import { ToolPanel } from '@/tools/ToolPanel';
 import { ToolsMenu } from '@/tools/ToolsMenu';
 import type { ToolId } from '@/tools/registry';
@@ -19,20 +19,17 @@ import { Composer } from './Composer';
 import { Entry } from './Entry';
 
 const MODE_KEY = 'jarvis.mode';
-const ASK_KEY = 'jarvis.ask';
 const DEFAULT_DAYS = 14;
 
 const isMode = (v: unknown): v is Mode => v === 'workout' || v === 'weight' || v === 'ask';
 
-type AskItem = {
-  id: string;
-  question: string;
-  at: string;
-  answer?: AskAnswer;
-  error?: string;
-};
+/** A question not saved yet: in flight, or failed (with a retry). */
+type PendingAsk = { id: string; question: string; at: string; error?: string };
 
-type FeedItem = { kind: 'log'; at: string; day: string; log: Log } | { kind: 'ask'; at: string; day: string; item: AskItem };
+/** A question as shown in the feed: saved (with its answer) or pending. */
+type AskView = { key: string; question: string; at: string; answer?: string; tokens?: number; error?: string; retryId?: string };
+
+type FeedItem = { kind: 'log'; at: string; day: string; log: Log } | { kind: 'ask'; at: string; day: string; item: AskView };
 
 function addDays(iso: string, n: number): string {
   const d = parseDate(iso);
@@ -40,24 +37,18 @@ function addDays(iso: string, n: number): string {
   return isoDate(d);
 }
 
-function AskReply({ item, onRetry, tz }: { item: AskItem; onRetry: () => void; tz: string | undefined }) {
-  const a = item.answer;
+function AskReply({ item, onRetry, tz }: { item: AskView; onRetry: () => void; tz: string | undefined }) {
   return (
     <article className="reply stack-2" aria-label="Question to Jarvis">
-      <div className="t-caption secondary">
-        {clockTime(item.at, tz)} · You asked
-      </div>
+      <div className="t-caption secondary">{clockTime(item.at, tz)} · You asked</div>
       <p className="t-body">{item.question}</p>
       <div className="t-caption accent semibold">Jarvis</div>
-      {a ? (
+      {item.answer !== undefined ? (
         <>
-          <p className="t-body prewrap">
-            {a.answer}
-          </p>
-          <p className="t-caption secondary mono">
-            {(a.input_tokens + a.output_tokens).toLocaleString('en-US')} tokens used · {a.tokens_used_today.toLocaleString('en-US')} of{' '}
-            {a.daily_token_cap.toLocaleString('en-US')} today
-          </p>
+          <p className="t-body prewrap">{item.answer}</p>
+          {item.tokens !== undefined ? (
+            <p className="t-caption secondary mono">{item.tokens.toLocaleString('en-US')} tokens used</p>
+          ) : null}
         </>
       ) : item.error ? (
         <div className="stack-2" role="alert">
@@ -96,7 +87,7 @@ export function NotebookPage() {
   const [text, setText] = useState('');
   const [sendError, setSendError] = useState<string | null>(null);
   const [days, setDays] = useState(DEFAULT_DAYS);
-  const [asks, setAsks] = useState<AskItem[]>(() => load<AskItem[]>(ASK_KEY, [], Array.isArray as (v: unknown) => v is AskItem[]));
+  const [pendingAsks, setPendingAsks] = useState<PendingAsk[]>([]);
   const [tool, setTool] = useState<ToolId | null>(null);
   const [highlight, setHighlight] = useState<number | null>(null);
   const wide = useMediaQuery('(min-width: 1100px)');
@@ -113,6 +104,8 @@ export function NotebookPage() {
   const logs = useLogs(from, addDays(today, 1));
   const save_ = useSaveLog(today);
   const ask = useAsk();
+  const askHistory = useAskHistory();
+  const clearAsks = useClearAskHistory();
 
   const setMode = (m: Mode) => {
     setModeState(m);
@@ -120,7 +113,6 @@ export function NotebookPage() {
     setSendError(null);
   };
 
-  useEffect(() => save(ASK_KEY, asks.slice(-20)), [asks]);
 
   // Ctrl/Cmd+K from another page lands here with the input focused.
   useEffect(() => {
@@ -154,17 +146,28 @@ export function NotebookPage() {
   const feed: FeedItem[] = useMemo(() => {
     const items: FeedItem[] = [
       ...visible.map((log) => ({ kind: 'log' as const, at: log.logged_at, day: log.local_date, log })),
-      ...asks
-        .filter((a) => a.at.slice(0, 10) >= from)
-        .map((item) => ({ kind: 'ask' as const, at: item.at, day: dayIn(item.at, tz), item })),
+      ...(askHistory.data ?? [])
+        .filter((m) => dayIn(m.asked_at, tz) >= from)
+        .map((m) => ({
+          kind: 'ask' as const,
+          at: m.asked_at,
+          day: dayIn(m.asked_at, tz),
+          item: { key: `s${m.id}`, question: m.question, at: m.asked_at, answer: m.answer, tokens: m.input_tokens + m.output_tokens },
+        })),
+      ...pendingAsks.map((p) => ({
+        kind: 'ask' as const,
+        at: p.at,
+        day: dayIn(p.at, tz),
+        item: { key: `p${p.id}`, question: p.question, at: p.at, error: p.error, retryId: p.id },
+      })),
     ];
     return items.sort((a, b) => a.at.localeCompare(b.at));
-  }, [visible, asks, from, tz]);
+  }, [visible, askHistory.data, pendingAsks, from, tz]);
 
 
   // Start at the newest entry, like a chat; follow new entries as they arrive.
   const count = feed.length;
-  const settled = asks.filter((a) => a.answer || a.error).length; // an answer arriving grows the feed too
+  const settled = pendingAsks.filter((a) => a.error).length; // a failure shows up in place, too
   // Scroll the page itself: the composer is sticky, so aligning the last entry with the
   // viewport bottom would leave it hidden behind the composer.
   // Only when the feed grows: clearing ?log= after a jump mustn't scroll away from it.
@@ -187,10 +190,11 @@ export function NotebookPage() {
 
   function runAsk(question: string, id: string = crypto.randomUUID()) {
     const at = new Date().toISOString();
-    setAsks((xs) => [...xs.filter((x) => x.id !== id), { id, question, at }]);
+    setPendingAsks((xs) => [...xs.filter((x) => x.id !== id), { id, question, at }]);
     ask.mutate(question, {
-      onSuccess: (answer) => setAsks((xs) => xs.map((x) => (x.id === id ? { ...x, answer } : x))),
-      onError: (e) => setAsks((xs) => xs.map((x) => (x.id === id ? { ...x, error: errorMessage(e) } : x))),
+      // Saved on the server: it comes back in the history, so drop the local copy.
+      onSuccess: () => setPendingAsks((xs) => xs.filter((x) => x.id !== id)),
+      onError: (e) => setPendingAsks((xs) => xs.map((x) => (x.id === id ? { ...x, error: errorMessage(e) } : x))),
     });
   }
 
@@ -259,12 +263,12 @@ export function NotebookPage() {
               const header = f.day !== lastDay ? <h2 className="feed-day">{dayLabel(f.day, today)}</h2> : null;
               lastDay = f.day;
               return (
-                <div key={f.kind === 'log' ? `l${f.log.id}` : `a${f.item.id}`}>
+                <div key={f.kind === 'log' ? `l${f.log.id}` : f.item.key}>
                   {header}
                   {f.kind === 'log' ? (
                     <Entry log={f.log} unit={unit} highlight={highlight === f.log.id} />
                   ) : (
-                    <AskReply item={f.item} tz={tz} onRetry={() => runAsk(f.item.question, f.item.id)} />
+                    <AskReply item={f.item} tz={tz} onRetry={() => runAsk(f.item.question, f.item.retryId)} />
                   )}
                 </div>
               );
@@ -286,6 +290,14 @@ export function NotebookPage() {
           unit={unit}
           tz={tz}
           tools={<ToolsMenu onPick={setTool} />}
+          onClearAsks={
+            (askHistory.data?.length ?? 0) + pendingAsks.length > 0
+              ? () => {
+                  setPendingAsks([]);
+                  clearAsks.mutate();
+                }
+              : undefined
+          }
           inputRef={inputRef}
         />
       </main>

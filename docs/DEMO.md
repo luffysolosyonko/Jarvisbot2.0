@@ -39,8 +39,7 @@ Run every command from the repo root unless it says otherwise. Use PowerShell.
 5. [ ] **Open Chrome** at <http://localhost:5173> and click **Try the demo**.
    The Notebook should show the last two weeks of entries.
 6. [ ] Zoom the browser to 110–125% (Ctrl +) so text reads well over screen
-   share. Pick light or dark in Windows (Settings > Personalization > Colors);
-   the app follows it.
+   share.
 7. [ ] Clear the input, switch to **Workout** mode, close any open tool panel.
 
 ## 5-minute script
@@ -55,7 +54,7 @@ Run every command from the repo root unless it says otherwise. Use PowerShell.
 | 2:30 | Tools | **Tools > Predict lift**, pick **Bench**, target `225`, **Get date** | Every slash command is a button with dropdowns. The forecast is a regression over recent sessions, with the date you'd hit the target at this pace. |
 | 3:15 | History | Click a filled day in the calendar | Filled = workout, outlined = weigh-in only. The day's entries can be edited, fixed or deleted (with undo). |
 | 3:45 | Progress | Scroll; click **Bench** | Body weight with a 7-day average and a dashed projection, weekly volume, top lifts. Bench shows the deload dip and the forecast line. |
-| 4:15 | Notebook, Ask | Switch to **Ask** (accent color), ask "Is my bench still improving?" | Only Ask mode calls Claude. The answer uses only this account's data and shows the tokens used. |
+| 4:15 | Notebook, Ask | Switch to **Ask** (accent color), ask "Is my bench still improving?" | Only Ask mode calls Claude. The answer uses only this account's data and shows the tokens used. It's saved: reload and it's still there; **Clear questions from view** hides it. |
 
 If there's time for questions, the strongest code to show: the `jarvis_core`
 parser tests, the test that logging makes zero LLM calls

@@ -15,7 +15,7 @@ from sqlalchemy.orm import Session
 from jarvis_api.config import Settings
 from jarvis_api.llm import AnthropicProvider, LLMError, LLMReply, make_provider
 from jarvis_api.main import create_app
-from jarvis_api.models import AiUsage
+from jarvis_api.models import AiUsage, AskMessage
 from jarvis_api.ratelimit import RateLimiter
 from jarvis_core.ai import Usage
 
@@ -250,3 +250,36 @@ def test_make_provider_from_settings(settings: Settings) -> None:
         )
         is None
     )
+
+
+def test_questions_are_saved_and_can_be_cleared_from_view(
+    settings: Settings, engine: Engine, db: Session
+) -> None:
+    client = make_client(settings, engine, FakeProvider("Bench is up 10 lb."))
+    h = auth("alice")
+    r = client.post("/api/v1/ask", headers=h, json={"question": "Is my bench going up?"})
+    assert r.status_code == 200, r.text
+    assert r.json()["id"] > 0 and r.json()["question"] == "Is my bench going up?"
+    client.post("/api/v1/ask", headers=h, json={"question": "How is my squat?"})
+
+    history = client.get("/api/v1/ask/history", headers=h).json()["messages"]
+    assert [(m["question"], m["answer"]) for m in history] == [
+        ("Is my bench going up?", "Bench is up 10 lb."),
+        ("How is my squat?", "Bench is up 10 lb."),
+    ]
+    assert history[0]["input_tokens"] == 1200 and history[0]["output_tokens"] == 80
+    assert client.get("/api/v1/ask/history", headers=auth("bob")).json()["messages"] == []
+
+    assert client.post("/api/v1/ask/history/clear", headers=h).json() == {"cleared": 2}
+    assert client.get("/api/v1/ask/history", headers=h).json()["messages"] == []
+    stored = db.scalars(select(AskMessage)).all()  # cleared from view, still in the database
+    assert len(stored) == 2 and all(m.hidden for m in stored)
+
+
+def test_failed_questions_are_not_saved(settings: Settings, engine: Engine, db: Session) -> None:
+    client = make_client(settings, engine, FakeProvider(error=LLMError("timeout")))
+    r = client.post(
+        "/api/v1/ask", headers=auth("alice"), json={"question": "Is my bench going up?"}
+    )
+    assert r.status_code == 504
+    assert db.scalars(select(AskMessage)).all() == []

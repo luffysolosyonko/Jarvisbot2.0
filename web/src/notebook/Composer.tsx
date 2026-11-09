@@ -1,6 +1,7 @@
+import { Send } from 'lucide-react';
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from 'react';
 
-import { Button } from '@/components/Button';
+import { ICON } from '@/components/icons';
 import { Segmented } from '@/components/Segmented';
 import { clockTime, longDate, todayIn } from '@/lib/format';
 import type { LogMode, Mode, Unit } from '@/lib/types';
@@ -35,13 +36,14 @@ type Props = {
   tz: string | undefined;
   tools: ReactNode;
   inputRef?: RefObject<HTMLTextAreaElement | null>;
+  onClearAsks?: () => void; // shown in Ask mode when there are questions in view
 };
 
 /**
  * Like a chat box: pick a mode, type, press Enter. Above the box, the time the entry
  * will be logged at and a one-line read of what the text parses to.
  */
-export function Composer({ mode, onModeChange, text, onTextChange, onSend, sending, error, unit, tz, tools, inputRef }: Props) {
+export function Composer({ mode, onModeChange, text, onTextChange, onSend, sending, error, unit, tz, tools, inputRef, onClearAsks }: Props) {
   const localRef = useRef<HTMLTextAreaElement>(null);
   const ref = inputRef ?? localRef;
   const inputId = useId();
@@ -57,7 +59,7 @@ export function Composer({ mode, onModeChange, text, onTextChange, onSend, sendi
 
   const rows = Math.min(8, Math.max(1, text.split('\n').length));
   const stamp = `${longDate(todayIn(tz))} · ${clockTime(now.toISOString(), tz)}`;
-  const label = isAsk ? 'Ask Jarvis' : mode === 'weight' ? 'Save weight' : text.trim().includes('\n') ? 'Log sets' : 'Log set';
+  const canSend = !!text.trim() && !(isAsk && text.trim().length < 3) && !sending;
 
   return (
     <div className="composer stack-2">
@@ -77,7 +79,14 @@ export function Composer({ mode, onModeChange, text, onTextChange, onSend, sendi
 
       <div className="composer-meta">
         {isAsk ? (
-          <span className="accent semibold">Ask mode: this goes to Claude and uses tokens. Nothing is logged.</span>
+          <>
+            <span className="accent semibold">Ask mode: this goes to Claude and uses tokens. Nothing is logged.</span>
+            {onClearAsks ? (
+              <button type="button" className="link-btn" onClick={onClearAsks}>
+                Clear questions from view
+              </button>
+            ) : null}
+          </>
         ) : (
           <>
             <time className="secondary mono">{stamp}</time>
@@ -109,9 +118,9 @@ export function Composer({ mode, onModeChange, text, onTextChange, onSend, sendi
           spellCheck={isAsk}
           autoComplete="off"
         />
-        <Button variant="primary" loading={sending} disabled={!text.trim() || (isAsk && text.trim().length < 3)} onClick={onSend}>
-          {label}
-        </Button>
+        <button type="button" className="send-btn" aria-label="Send" title="Send (Enter)" disabled={!canSend} onClick={onSend}>
+          <Send {...ICON} aria-hidden="true" />
+        </button>
       </div>
     </div>
   );
