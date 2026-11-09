@@ -9,6 +9,7 @@
 *.jks
 *.mobileprovision
 service_account*.json
+*service-account*.json
 *-credentials.json
 google-services.json
 GoogleService-Info.plist
