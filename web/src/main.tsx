@@ -1,5 +1,4 @@
 import '@fontsource/fraunces/600.css';
-import '@fontsource/fraunces/500-italic.css';
 import '@fontsource/fraunces/600-italic.css';
 import '@fontsource/jetbrains-mono/400.css';
 import '@fontsource/jetbrains-mono/500.css';
