@@ -266,3 +266,15 @@ def test_alias_matches_list_names_counted_under_another(client: TestClient) -> N
     }
     assert written["sldl"] == "stiff leg deadlift"
     assert client.get(f"{API}/aliases/matches", headers=auth("bob")).json()["matches"] == []
+
+
+def test_display_name_can_be_set_and_cleared(client: TestClient) -> None:
+    h = auth("alice")
+    r = client.patch(f"{API}/me/settings", headers=h, json={"display_name": "  Thomas   Lee "})
+    assert r.status_code == 200 and r.json()["display_name"] == "Thomas Lee"
+    assert client.get(f"{API}/me", headers=h).json()["display_name"] == "Thomas Lee"
+    assert client.get(f"{API}/me", headers=auth("bob")).json()["display_name"] != "Thomas Lee"
+    cleared = client.patch(f"{API}/me/settings", headers=h, json={"display_name": "   "}).json()
+    assert cleared["display_name"] is None
+    too_long = client.patch(f"{API}/me/settings", headers=h, json={"display_name": "x" * 61})
+    assert_error(too_long, 422, "invalid_request")

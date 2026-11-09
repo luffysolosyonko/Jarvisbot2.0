@@ -8,9 +8,49 @@ import { QueryView } from '@/components/States';
 import { useMe, useUpdateSettings } from '@/hooks/queries';
 import { useTitle } from '@/hooks/useTitle';
 import { errorMessage } from '@/lib/api';
+import { authorName } from '@/lib/describe';
 import { deviceTimeZone, fromLb, num, toLb } from '@/lib/format';
 import type { Me, Unit } from '@/lib/types';
 import { AliasesTool, ExportTool } from '@/tools/ToolViews';
+
+/** The name on your notebook messages. Blank uses the start of your email. */
+function DisplayName({ me }: { me: Me }) {
+  const [value, setValue] = useState(me.display_name ?? '');
+  const update = useUpdateSettings();
+  const id = useId();
+  const changed = value.trim() !== (me.display_name ?? '');
+  function submit(e: FormEvent) {
+    e.preventDefault();
+    update.mutate({ display_name: value });
+  }
+  return (
+    <form className="stack-2" onSubmit={submit}>
+      <div className="form-row">
+        <div className="field field-grow">
+          <label htmlFor={id}>Name</label>
+          <input
+            id={id}
+            className="input"
+            maxLength={60}
+            autoComplete="name"
+            placeholder={authorName({ ...me, display_name: null })}
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+          />
+        </div>
+        <Button type="submit" loading={update.isPending} disabled={!changed}>
+          Save name
+        </Button>
+      </div>
+      <p className="hint">Shown on your messages in the notebook. Leave it blank to use your email.</p>
+      {update.error ? (
+        <p className="error-text" role="alert">
+          {errorMessage(update.error)}
+        </p>
+      ) : null}
+    </form>
+  );
+}
 
 function BarWeight({ me }: { me: Me }) {
   const unit = me.settings.set_unit;
@@ -70,6 +110,9 @@ export function SettingsPage() {
       <QueryView query={me}>
         {(m) => (
           <>
+            <Section title="Name">
+              <DisplayName key={m.display_name ?? ''} me={m} />
+            </Section>
             <Section title="Units">
               <div className="stack-3">
                 <p className="t-label secondary">Weights without a unit are read in this unit, and shown in it.</p>

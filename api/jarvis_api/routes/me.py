@@ -37,6 +37,8 @@ def patch_settings(
     body: schemas.SettingsPatch, user: CurrentUser, db: DB, settings: AppSettings
 ) -> schemas.MeOut:
     s = user.settings
+    if body.display_name is not None:
+        user.display_name = " ".join(body.display_name.split()) or None
     if body.tz_name is not None:
         try:
             ZoneInfo(body.tz_name)

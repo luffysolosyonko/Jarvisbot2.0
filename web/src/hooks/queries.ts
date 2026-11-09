@@ -57,7 +57,8 @@ export function useTz(): string | undefined {
 export function useUpdateSettings() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (patch: Partial<Me['settings']>) => api<Me>('/me/settings', { method: 'PATCH', body: patch }),
+    mutationFn: (patch: Partial<Me['settings']> & { display_name?: string }) =>
+      api<Me>('/me/settings', { method: 'PATCH', body: patch }),
     onSuccess: (me) => {
       qc.setQueryData(keys.me, me);
       invalidateLogData(qc);

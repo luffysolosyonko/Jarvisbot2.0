@@ -32,6 +32,8 @@ class MeOut(BaseModel):
 
 
 class SettingsPatch(Strict):
+    # The name shown on your notebook messages; blank clears it (the email is used).
+    display_name: str | None = Field(default=None, max_length=60)
     tz_name: str | None = Field(default=None, max_length=64)
     set_unit: Literal["lb", "kg"] | None = None
     bar_lb: float | None = Field(default=None, ge=0, le=100)
