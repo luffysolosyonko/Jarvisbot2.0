@@ -455,7 +455,7 @@ export function AliasesTool() {
       </div>
       <div className="stack-2">
         <h3 className="t-label semibold">Matched automatically</h3>
-        <p className="hint">Initials, word prefixes and plurals are matched to names you already use.</p>
+        <p className="hint">Names you’ve typed that count as another exercise: initials, word prefixes, plurals and your shortcuts.</p>
         <QueryView query={matches} lines={2}>
           {(list) =>
             !list.length ? (
@@ -518,7 +518,7 @@ export function UsageTool() {
           <div className="stats">
             <Stat label="Today" value={u.today.toLocaleString('en-US')} note={`of ${u.daily_token_cap.toLocaleString('en-US')} a day`} />
             <Stat label="Last 7 days" value={u.week.toLocaleString('en-US')} />
-            <Stat label="This month" value={u.month.toLocaleString('en-US')} note={`${u.questions_month} questions`} />
+            <Stat label="This month" value={u.month.toLocaleString('en-US')} note={`${u.questions_month} question${u.questions_month === 1 ? '' : 's'}`} />
           </div>
           <p className="hint">Claude tokens. Only Ask mode uses them; logging never does.</p>
         </div>

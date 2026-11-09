@@ -160,7 +160,7 @@ export function VolumeBars({ exercises, unit }: { exercises: ExerciseVolume[]; u
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} layout="vertical" margin={{ top: 0, right: 8, bottom: 0, left: 0 }}>
             <CartesianGrid horizontal={false} stroke={colors.border} />
-            <XAxis type="number" tick={tick} stroke={colors.border} tickLine={false} tickFormatter={(v: number) => num(v / 1000, 0) + 'k'} />
+            <XAxis type="number" tick={tick} stroke={colors.border} tickLine={false} tickFormatter={(v: number) => (v >= 1000 ? `${num(v / 1000, 1)}k` : num(v, 0))} />
             <YAxis type="category" dataKey="name" width={120} tick={{ ...tick, fontFamily: fonts.ui }} axisLine={false} tickLine={false} />
             <Bar dataKey="volume" fill={colors.accent} radius={[0, 4, 4, 0]} maxBarSize={20} isAnimationActive={false} />
           </BarChart>
