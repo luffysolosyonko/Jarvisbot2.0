@@ -38,9 +38,24 @@ class SettingsPatch(Strict):
 
 
 # --- parse / logs ----------------------------------------------------------
+Mode = Literal["workout", "weight"]
+
+
 class LogIn(Strict):
     text: str = Field(min_length=1, max_length=MAX_LOG_CHARS)
-    kind: Literal["workout", "weight"] | None = None
+    # The notebook's mode, like the bot's #workout and #weight channels. `kind` is the
+    # older name for the same field. Neither given: detected from the text.
+    mode: Mode | None = None
+    kind: Mode | None = None
+
+    @property
+    def effective_mode(self) -> Mode | None:
+        return self.mode or self.kind
+
+
+class LogEditIn(Strict):
+    text: str = Field(min_length=1, max_length=MAX_LOG_CHARS)
+    mode: Mode | None = None  # omitted: keep the log's mode
 
 
 class SetOut(BaseModel):
@@ -64,9 +79,29 @@ class WeighInOut(BaseModel):
     note: str | None
 
 
+class FixOut(BaseModel):
+    """A one-click repair: replace `line` with `text`, or with `template` once the
+    user fills in its `{}`. `mode` also switches the log's mode."""
+
+    label: str
+    line: int
+    text: str | None = None
+    template: str | None = None
+    placeholder: str | None = None
+    mode: Mode | None = None
+
+
 class WarningOut(BaseModel):
     line: int
     message: str
+    code: str = "not_understood"
+    fixes: list[FixOut] = []
+
+
+class ExerciseMatchOut(BaseModel):
+    written: str  # as typed (normalized)
+    matched: str  # the canonical name it's counted under
+    is_new: bool  # no sets logged under `matched` yet
 
 
 class ParseOut(BaseModel):
@@ -74,6 +109,7 @@ class ParseOut(BaseModel):
     sets: list[SetOut]
     weigh_in: WeighInOut | None
     warnings: list[WarningOut]
+    exercises: list[ExerciseMatchOut] = []
 
 
 class LogOut(BaseModel):
@@ -84,10 +120,11 @@ class LogOut(BaseModel):
     local_date: date
     sets: list[SetOut]
     weigh_in: WeighInOut | None
+    warnings: list[WarningOut] = []  # lines that weren't logged, with fixes
 
 
 class SavedLogOut(LogOut):
-    warnings: list[WarningOut]
+    pass
 
 
 class LogsOut(BaseModel):
@@ -212,6 +249,77 @@ class ExerciseDetailOut(BaseModel):
 class WeightForecastOut(BaseModel):
     projection: ProjectionOut | None
     weigh_ins: int
+
+
+# --- tools ---------------------------------------------------------------
+class TodayLogsOut(BaseModel):
+    date: date
+    logs: list[LogOut]  # oldest first
+    sets: int
+    volume_lb: float
+    exercises: list[str]
+    weight_lb: float | None
+
+
+class ExerciseVolumeOut(BaseModel):
+    exercise: str
+    sets: int
+    good_reps: int
+    volume_lb: float
+
+
+class StatsOut(BaseModel):
+    days: int
+    start: date
+    end: date
+    gym_days: int
+    gym_days_per_week: float
+    sets: int
+    good_reps: int
+    failed_reps: int
+    volume_lb: float
+    weight_start_lb: float | None
+    weight_end_lb: float | None
+    weight_change_lb: float | None
+
+
+class VolumeOut(BaseModel):
+    days: int
+    start: date
+    end: date
+    exercises: list[ExerciseVolumeOut]
+
+
+class CalendarDayOut(BaseModel):
+    date: date
+    has_workout: bool
+    has_weight: bool
+    sets: int
+    volume_lb: float
+    weight_lb: float | None
+
+
+class CalendarOut(BaseModel):
+    month: str  # YYYY-MM
+    days: list[CalendarDayOut]  # every day of the month
+    workouts: int
+    sets: int
+    volume_lb: float
+    weight_change_lb: float | None
+
+
+class SearchOut(BaseModel):
+    query: str
+    logs: list[LogOut]  # newest first
+    truncated: bool
+
+
+class UsageOut(BaseModel):
+    today: int
+    week: int  # last 7 days
+    month: int  # since the 1st
+    questions_month: int
+    daily_token_cap: int
 
 
 # --- aliases ---------------------------------------------------------------

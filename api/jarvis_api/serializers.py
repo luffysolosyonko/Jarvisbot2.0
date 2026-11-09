@@ -2,14 +2,19 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
+from dataclasses import asdict
 from datetime import date
-from typing import Literal
+from typing import TYPE_CHECKING, Literal
 
 from jarvis_api import schemas
 from jarvis_api.models import Log, LoggedSet
+from jarvis_api.services import fixes
 from jarvis_core import analysis
 from jarvis_core.parser import ParsedLog, ParsedSet
+
+if TYPE_CHECKING:
+    from jarvis_api.services.logs import UserData
 
 Canon = Callable[[str | None], str | None]
 
@@ -32,18 +37,57 @@ def set_out(s: ParsedSet | LoggedSet, canonical: Canon) -> schemas.SetOut:
     )
 
 
-def parse_out(p: ParsedLog, canonical: Canon) -> schemas.ParseOut:
+def recent_exercises(data: UserData, limit: int = 8) -> list[str]:
+    """Canonical exercise names, most recently trained first."""
+    seen: dict[str, None] = {}
+    for s in reversed(data.sets):
+        if s.exercise and s.exercise not in seen:
+            seen[s.exercise] = None
+            if len(seen) >= limit:
+                break
+    return list(seen)
+
+
+def warnings_out(p: ParsedLog, text: str, recent: Sequence[str]) -> list[schemas.WarningOut]:
+    lines = text.splitlines()
+    return [
+        schemas.WarningOut(
+            line=w.line,
+            message=w.message,
+            code=w.code,
+            fixes=[schemas.FixOut(**asdict(f)) for f in fixes.suggest(w, lines, p.kind, recent)],
+        )
+        for w in p.warnings
+    ]
+
+
+def exercise_matches(p: ParsedLog, data: UserData) -> list[schemas.ExerciseMatchOut]:
+    known = {s.exercise for s in data.sets if s.exercise}
+    out: dict[str, schemas.ExerciseMatchOut] = {}
+    for s in p.sets:
+        if s.exercise and s.exercise not in out:
+            matched = data.canonical(s.exercise) or s.exercise
+            out[s.exercise] = schemas.ExerciseMatchOut(
+                written=s.exercise, matched=matched, is_new=matched not in known
+            )
+    return list(out.values())
+
+
+def parse_out(p: ParsedLog, data: UserData, text: str) -> schemas.ParseOut:
     return schemas.ParseOut(
         kind=p.kind,
-        sets=[set_out(s, canonical) for s in p.sets],
+        sets=[set_out(s, data.canonical) for s in p.sets],
         weigh_in=schemas.WeighInOut(weight_lb=p.weigh_in.weight_lb, note=p.weigh_in.note)
         if p.weigh_in
         else None,
-        warnings=[schemas.WarningOut(line=w.line, message=w.message) for w in p.warnings],
+        warnings=warnings_out(p, text, recent_exercises(data, 3)),
+        exercises=exercise_matches(p, data),
     )
 
 
-def log_out(log: Log, canonical: Canon) -> schemas.LogOut:
+def log_out(
+    log: Log, canonical: Canon, warnings: list[schemas.WarningOut] | None = None
+) -> schemas.LogOut:
     kind: Literal["workout", "weight"] = "weight" if log.kind == "weight" else "workout"
     return schemas.LogOut(
         id=log.id,
@@ -55,6 +99,7 @@ def log_out(log: Log, canonical: Canon) -> schemas.LogOut:
         weigh_in=schemas.WeighInOut(weight_lb=log.weigh_in.weight_lb, note=log.weigh_in.note)
         if log.weigh_in
         else None,
+        warnings=warnings or [],
     )
 
 

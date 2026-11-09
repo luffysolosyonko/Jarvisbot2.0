@@ -204,20 +204,95 @@ def rebuild(db: Session, user: User, only_outdated: bool = True) -> int:
     for log in db.scalars(q.order_by(Log.local_date, Log.logged_at, Log.id)):
         if log.local_date != day:
             ctx, day = None, log.local_date
-        kind: LogKind = "weight" if log.kind == "weight" else "workout"
-        parsed = parse_log(
-            log.raw_text,
-            kind=kind,
-            default_unit=user.settings.set_unit,
-            bar_lb=user.settings.bar_lb,
-            context=ctx if kind == "workout" else None,
-        )
-        if kind == "workout":
-            ctx = parsed.context
-        db.execute(delete(LoggedSet).where(LoggedSet.log_id == log.id))
-        db.execute(delete(WeighIn).where(WeighIn.log_id == log.id))
-        db.expire(log, ["sets", "weigh_in"])
-        _store_parsed(log, parsed)
+        ctx = _reparse(db, user, log, ctx)
         count += 1
     db.commit()
     return count
+
+
+def _kind(log: Log) -> LogKind:
+    return "weight" if log.kind == "weight" else "workout"
+
+
+def _parse_stored(user: User, log: Log, ctx: DayContext | None) -> ParsedLog:
+    kind = _kind(log)
+    return parse_log(
+        log.raw_text,
+        kind=kind,
+        default_unit=user.settings.set_unit,
+        bar_lb=user.settings.bar_lb,
+        context=ctx if kind == "workout" else None,
+    )
+
+
+def _reparse(db: Session, user: User, log: Log, ctx: DayContext | None) -> DayContext | None:
+    """Re-derive one log's rows from its text. Returns the context for the next log."""
+    parsed = _parse_stored(user, log, ctx)
+    db.execute(delete(LoggedSet).where(LoggedSet.log_id == log.id))
+    db.execute(delete(WeighIn).where(WeighIn.log_id == log.id))
+    db.expire(log, ["sets", "weigh_in"])
+    _store_parsed(log, parsed)
+    return parsed.context if _kind(log) == "workout" else ctx
+
+
+def reparse_day(db: Session, user: User, day: date) -> None:
+    """Re-parse every log on `day` in order, so names carried between logs stay right
+    after one of them is edited or deleted."""
+    ctx: DayContext | None = None
+    q = select(Log).where(Log.user_id == user.id, Log.local_date == day)
+    for log in db.scalars(q.order_by(Log.logged_at, Log.id)):
+        ctx = _reparse(db, user, log, ctx)
+
+
+def get_log(db: Session, user: User, log_id: int) -> Log | None:
+    return db.scalar(select(Log).where(Log.id == log_id, Log.user_id == user.id))
+
+
+def edit_log(
+    db: Session, user: User, log: Log, text: str, kind: LogKind | None = None
+) -> ParsedLog | None:
+    """Replace a log's text and re-parse it (the bot re-parsed edited messages).
+    Returns None, changing nothing, if the new text doesn't parse."""
+    kind = kind or _kind(log)
+    ctx = day_context(db, user, log.local_date, before=log.logged_at) if kind == "workout" else None
+    parsed = parse_log(
+        text,
+        kind=kind,
+        default_unit=user.settings.set_unit,
+        bar_lb=user.settings.bar_lb,
+        context=ctx,
+    )
+    if not parsed.ok:
+        return None
+    log.raw_text = text
+    log.kind = kind
+    db.flush()
+    reparse_day(db, user, log.local_date)
+    db.commit()
+    db.refresh(log)
+    return parsed
+
+
+def delete_log(db: Session, user: User, log: Log) -> None:
+    day = log.local_date
+    db.delete(log)
+    db.flush()
+    reparse_day(db, user, day)
+    db.commit()
+
+
+def parse_logs(db: Session, user: User, logs: Sequence[Log]) -> dict[int, ParsedLog]:
+    """Re-parse stored logs (with same-day context) to recover their warnings."""
+    by_day: dict[date, list[Log]] = {}
+    for log in logs:
+        by_day.setdefault(log.local_date, []).append(log)
+    out: dict[int, ParsedLog] = {}
+    for day, day_logs in by_day.items():
+        day_logs.sort(key=lambda lg: (lg.logged_at, lg.id))
+        ctx = day_context(db, user, day, before=day_logs[0].logged_at)
+        for log in day_logs:
+            parsed = _parse_stored(user, log, ctx)
+            if _kind(log) == "workout":
+                ctx = parsed.context
+            out[log.id] = parsed
+    return out

@@ -314,10 +314,23 @@ class DayContext:
     prev: ParsedSet | None = None  # last resolved set
 
 
+WarningCode = Literal[
+    "not_understood",
+    "no_exercise",
+    "no_weight",
+    "nothing_to_repeat",
+    "no_caret_source",
+    "too_many_lines",
+    "no_sets",
+    "no_weigh_in",
+]
+
+
 @dataclass(frozen=True)
 class ParseWarning:
     line: int
     message: str
+    code: WarningCode = "not_understood"  # machine-readable, for suggested fixes
 
 
 def resolve_sets(
@@ -341,7 +354,9 @@ def resolve_sets(
                 rec = replace(prev, idx=len(out), line=s.line, inferred=True)
                 out.append(rec)
             else:
-                warnings.append(ParseWarning(s.line, "Nothing above to repeat."))
+                warnings.append(
+                    ParseWarning(s.line, "Nothing above to repeat.", "nothing_to_repeat")
+                )
             continue
 
         weight, weight_text = s.weight_lb, s.weight_text
@@ -352,7 +367,9 @@ def resolve_sets(
             inferred = True
             exercise = prev.exercise if prev else None
             if prev is None:
-                warnings.append(ParseWarning(s.line, "No set above for ^ to copy."))
+                warnings.append(
+                    ParseWarning(s.line, "No set above for ^ to copy.", "no_caret_source")
+                )
             if weight is None and prev and weight_text is None and not bodyweight:
                 weight, weight_text = prev.weight_lb, prev.weight_text
                 per_hand, estimated, bodyweight = prev.per_hand, prev.estimated, prev.bodyweight
@@ -363,9 +380,11 @@ def resolve_sets(
             current, current_weighted = exercise, not bodyweight
 
         if not exercise:
-            warnings.append(ParseWarning(s.line, "No exercise name."))
+            warnings.append(ParseWarning(s.line, "No exercise name.", "no_exercise"))
         if weight is None and not bodyweight and weight_text != "?":
-            warnings.append(ParseWarning(s.line, "No weight; add one like 135lb, 60kg, bar or uw."))
+            warnings.append(
+                ParseWarning(s.line, "No weight; add one like 135lb, 60kg, bar or uw.", "no_weight")
+            )
 
         rec = ParsedSet(
             idx=len(out),
@@ -475,16 +494,24 @@ def parse_log(
     kind = kind or detect_kind(text, default_unit, bar_lb)
     if kind == "weight":
         w = parse_weigh_in(text)
-        warns = [] if w else [ParseWarning(1, "No body weight found, e.g. 182.4 or 83kg.")]
+        warns = (
+            []
+            if w
+            else [ParseWarning(1, "No body weight found, e.g. 182.4 or 83kg.", "no_weigh_in")]
+        )
         return ParsedLog("weight", [], w, warns, context or DayContext())
 
     lines, unknown = parse_workout_lines(text, default_unit, bar_lb)
     warnings = [ParseWarning(n, "Not understood.") for n in unknown]
     if sum(1 for _ in text.splitlines()) > MAX_LINES:
-        warnings.append(ParseWarning(MAX_LINES + 1, f"Only the first {MAX_LINES} lines are read."))
+        warnings.append(
+            ParseWarning(
+                MAX_LINES + 1, f"Only the first {MAX_LINES} lines are read.", "too_many_lines"
+            )
+        )
         lines = [s for s in lines if s.line <= MAX_LINES]
     sets, ctx, more = resolve_sets(lines, context)
     warnings = sorted(warnings + more, key=lambda w: w.line)
     if not sets and not warnings:
-        warnings.append(ParseWarning(1, "No sets found, e.g. 8x 135lb bench."))
+        warnings.append(ParseWarning(1, "No sets found, e.g. 8x 135lb bench.", "no_sets"))
     return ParsedLog("workout", sets, None, warnings, ctx)
