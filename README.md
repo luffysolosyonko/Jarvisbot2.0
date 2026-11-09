@@ -121,29 +121,27 @@ Colors live in [`web/src/theme/tokens.ts`](web/src/theme/tokens.ts) and as CSS
 variables in [`web/src/index.css`](web/src/index.css) (a test keeps them in
 sync); components use the variables, never raw values.
 
-- **Color.** One color scheme, a sticky note: yellow paper (`#FFF1A8`),
-  graphite ink, and a blue-ballpoint accent (`#1F4FB8`) used only for links,
-  Ask mode and the main chart series. The Notebook
-  has a red margin line and a ruled input, like a notepad. There's no light or
-  dark mode. Every text and background pair meets WCAG AA, checked by a unit
-  test.
-- **Spacing.** A strict 8px grid (8, 16, 24, 32, 48, 64; 4 only for
-  icon-to-label gaps). 48px between sections, 24px between items, touch
-  targets of 44px or more. Content sits in a centered 640px column.
-- **Type.** Manrope for UI text and JetBrains Mono for log text and numbers,
-  with tabular figures. Six sizes (32/40 to 12/16) and two weights. Sentence
-  case throughout.
-- **Components.** Flat sections divided by whitespace and one hairline rule; no
-  cards in cards, shadows, gradients, blur or glow. Buttons have no borders:
-  the primary action (Send, Sign in) stands out by its graphite fill, weight
-  and position, not a bright color. The nav is text only, with an underline
-  for the current page (icons only at phone width, where labels don't fit).
-  Data sits in right-aligned tables. Lucide icons at stroke 1.75, and
-  every icon-only button has an `aria-label`. Every view has a skeleton,
-  a one-sentence empty state with one action, and an error state with retry.
+- **Color.** Strict monochrome: a `#FFFFFF` background, `#333333` text and
+  greys in between, with no accent hue. The darkest grey marks the primary
+  action, the current page, workout days and the main chart series. There's no
+  light or dark mode. Every text and background pair meets WCAG AA, checked by
+  a unit test.
+- **Shape.** Square corners on every button, input, card, table and chart bar.
+- **Layout.** A dense, Bootstrap-style dashboard: a dark navbar, a 1140px
+  container, and cards with a grey header bar laid out in a two-column grid
+  (one column on narrow screens). One level of cards only. Controls are 36px
+  high, tables are compact and striped, and numbers are right-aligned.
+- **Type.** The system UI font (Segoe UI on Windows) at 14px, and JetBrains
+  Mono for log text and numbers, with tabular figures. Sentence case
+  throughout.
+- **Components.** No shadows, gradients, blur or glow. Buttons follow
+  Bootstrap roles: a dark filled primary, a light grey secondary with a
+  border, and a borderless text button. Lucide icons at stroke 1.75, and every
+  icon-only button has an `aria-label`. Every view has a skeleton, a
+  one-sentence empty state with one action, and an error state with retry.
   Everything works from the keyboard, with visible focus rings.
-- **Charts.** Accent for the main series, `inkSecondary` for averages, dashed
-  lines for forecasts, hairline gridlines.
+- **Charts.** The darkest grey for the main series, mid grey for averages,
+  dashed lines for forecasts, hairline gridlines, square bars.
 
 ## Run locally
 

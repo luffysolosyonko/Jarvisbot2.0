@@ -109,7 +109,7 @@ export function SettingsPage() {
       </div>
       <QueryView query={me}>
         {(m) => (
-          <>
+          <div className="grid-2">
             <Section title="Name">
               <DisplayName key={m.display_name ?? ''} me={m} />
             </Section>
@@ -149,7 +149,7 @@ export function SettingsPage() {
                 </div>
               </div>
             </Section>
-          </>
+          </div>
         )}
       </QueryView>
     </main>

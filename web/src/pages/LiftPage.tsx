@@ -30,8 +30,8 @@ export function LiftPage() {
       </div>
       <QueryView query={q} skeleton={<SkeletonChart />}>
         {(d) => (
-          <>
-            <Section title="Estimated 1-rep max">
+          <div className="dash-grid">
+            <Section title="Estimated 1-rep max" className="span-2">
               <div className="stack-4">
                 <div className="stats">
                   <Stat label="Latest session" value={weight(d.summary.latest_e1rm, unit, 0)} />
@@ -68,10 +68,10 @@ export function LiftPage() {
             <Section title="Rep targets">
               <RepTargets d={d} unit={unit} />
             </Section>
-            <Section title="When will I hit a target?">
+            <Section title="When will I hit a target?" className="span-2">
               <TargetForm name={d.summary.exercise} unit={unit} />
             </Section>
-          </>
+          </div>
         )}
       </QueryView>
     </main>

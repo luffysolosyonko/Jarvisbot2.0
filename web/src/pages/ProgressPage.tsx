@@ -23,7 +23,7 @@ export function ProgressPage() {
           const p = d.weight.projection;
           const setsDelta = d.week.sets - d.previous_week.sets;
           return (
-            <>
+            <div className="dash-grid">
               <Section title="Body weight">
                 {d.weight.points.length < 2 ? (
                   <EmptyState message="Log weigh-ins like 182.4 in Weight mode to see the trend." actionLabel="Open notebook" onAction={() => navigate('/')} />
@@ -63,7 +63,7 @@ export function ProgressPage() {
                 </div>
               </Section>
 
-              <Section title="Top lifts">
+              <Section title="Top lifts" className="span-2">
                 {!d.top_lifts.length ? (
                   <EmptyState message="Log sets like 8x 160lb bench to see your top lifts." actionLabel="Open notebook" onAction={() => navigate('/')} />
                 ) : (
@@ -99,7 +99,7 @@ export function ProgressPage() {
                   </div>
                 )}
               </Section>
-            </>
+            </div>
           );
         }}
       </QueryView>

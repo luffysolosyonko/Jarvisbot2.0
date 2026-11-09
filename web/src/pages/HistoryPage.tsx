@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router';
 
 import { Button } from '@/components/Button';
+import { Section } from '@/components/Section';
 import { SetRows } from '@/components/SetRows';
 import { EmptyState, ErrorState, QueryView, SkeletonCalendar, SkeletonEntries } from '@/components/States';
 import { useToast } from '@/components/Toast';
@@ -21,10 +22,7 @@ function DayDetail({ day, today, summary }: { day: string; today: string; summar
   const sets = list.flatMap((l) => l.sets);
   const weighIn = summary?.weight_lb ?? list.findLast((l) => l.weigh_in)?.weigh_in?.weight_lb ?? null;
   return (
-    <section className="section" aria-label={longDate(day)}>
-      <h2 className="t-heading section-head">
-        {longDate(day)}
-      </h2>
+    <Section title={longDate(day)}>
       {logs.error && !logs.data ? (
         <ErrorState error={logs.error} onRetry={() => void logs.refetch()} />
       ) : !logs.data ? (
@@ -41,11 +39,7 @@ function DayDetail({ day, today, summary }: { day: string; today: string; summar
         />
       ) : (
         <div className="stack-3">
-          {sets.length ? (
-            <div className="sets-card">
-              <SetRows sets={sets} unit={unit} caption={`Sets on ${longDate(day)}`} />
-            </div>
-          ) : null}
+          {sets.length ? <SetRows sets={sets} unit={unit} caption={`Sets on ${longDate(day)}`} /> : null}
           {weighIn !== null ? (
             <p className="t-label">
               Weigh-in <span className="mono semibold">{weight(weighIn, unit)}</span>
@@ -53,7 +47,7 @@ function DayDetail({ day, today, summary }: { day: string; today: string; summar
           ) : null}
         </div>
       )}
-    </section>
+    </Section>
   );
 }
 
@@ -82,7 +76,8 @@ export function HistoryPage() {
           Present
         </Button>
       </div>
-      <section className="section">
+      <div className="grid-2">
+      <Section title="Calendar">
         <QueryView query={cal} skeleton={<SkeletonCalendar />}>
           {(c) => (
             <div className="stack-3">
@@ -101,8 +96,9 @@ export function HistoryPage() {
             </div>
           )}
         </QueryView>
-      </section>
+      </Section>
       {selected ? <DayDetail day={selected} today={today} summary={current?.days.find((d) => d.date === selected)} /> : null}
+      </div>
     </main>
   );
 }

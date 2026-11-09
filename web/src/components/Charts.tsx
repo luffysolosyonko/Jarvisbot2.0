@@ -86,7 +86,7 @@ export function TrendChart({ main, avg = [], projection, unit, mainLabel, avgLab
               isAnimationActive={false}
               labelFormatter={(x) => shortDate(dateAt(origin, Number(x)))}
               formatter={(v, name) => [`${num(Number(v))} ${unit}`, name === 'main' ? mainLabel : name === 'avg' ? avgLabel : 'Forecast']}
-              contentStyle={{ background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 8, fontFamily: fonts.ui, fontSize: 14 }}
+              contentStyle={{ background: colors.bg, border: `1px solid ${colors.border}`, borderRadius: 0, fontFamily: fonts.ui, fontSize: 13 }}
               labelStyle={{ color: colors.inkSecondary }}
               itemStyle={{ color: colors.ink }}
             />
@@ -131,7 +131,7 @@ export function WeeklyBars({ weeks }: { weeks: Window[] }) {
             <CartesianGrid vertical={false} stroke={colors.border} />
             <XAxis dataKey="label" tick={tick} stroke={colors.border} tickLine={false} interval={1} />
             <YAxis tick={tick} width={44} axisLine={false} tickLine={false} allowDecimals={false} tickCount={3} />
-            <Bar dataKey="sets" radius={[4, 4, 0, 0]} maxBarSize={24} isAnimationActive={false}>
+            <Bar dataKey="sets" radius={0} maxBarSize={24} isAnimationActive={false}>
               {data.map((_, i) => (
                 <Cell key={i} fill={i === data.length - 1 ? colors.accent : colors.border} />
               ))}
@@ -160,7 +160,7 @@ export function VolumeBars({ exercises, unit }: { exercises: ExerciseVolume[]; u
             <CartesianGrid horizontal={false} stroke={colors.border} />
             <XAxis type="number" tick={tick} stroke={colors.border} tickLine={false} tickFormatter={(v: number) => (v >= 1000 ? `${num(v / 1000, 1)}k` : num(v, 0))} />
             <YAxis type="category" dataKey="name" width={120} tick={{ ...tick, fontFamily: fonts.ui }} axisLine={false} tickLine={false} />
-            <Bar dataKey="volume" fill={colors.accent} radius={[0, 4, 4, 0]} maxBarSize={20} isAnimationActive={false} />
+            <Bar dataKey="volume" fill={colors.accent} radius={0} maxBarSize={20} isAnimationActive={false} />
           </BarChart>
         </ResponsiveContainer>
       </div>
