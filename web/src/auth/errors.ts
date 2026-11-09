@@ -2,9 +2,9 @@
 const MESSAGES: Record<string, string> = {
   'auth/invalid-email': 'That email address doesn’t look right.',
   'auth/missing-password': 'Enter your password.',
-  'auth/invalid-credential': 'Wrong email or password.',
+  'auth/invalid-credential': 'Wrong email or password, or there’s no account with this email yet. New here? Create an account.',
   'auth/wrong-password': 'Wrong email or password.',
-  'auth/user-not-found': 'Wrong email or password.',
+  'auth/user-not-found': 'No account with this email yet. Create an account first.',
   'auth/email-already-in-use': 'An account with that email already exists. Sign in instead.',
   'auth/weak-password': 'Use a password with at least 6 characters.',
   'auth/too-many-requests': 'Too many attempts. Wait a minute and try again.',
