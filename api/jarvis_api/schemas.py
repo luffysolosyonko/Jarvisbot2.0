@@ -158,6 +158,8 @@ class ExerciseOut(BaseModel):
     exercise: str
     sets: int
     sessions: int
+    good_reps: int
+    failed_reps: int
     first_date: date
     last_date: date
     best_e1rm: float | None

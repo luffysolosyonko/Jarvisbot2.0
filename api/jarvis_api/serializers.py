@@ -93,6 +93,8 @@ def exercise_out(e: analysis.ExerciseSummary) -> schemas.ExerciseOut:
         exercise=e.exercise,
         sets=e.sets,
         sessions=e.sessions,
+        good_reps=e.good_reps,
+        failed_reps=e.failed_reps,
         first_date=e.first_day,
         last_date=e.last_day,
         best_e1rm=e.best_e1rm,
