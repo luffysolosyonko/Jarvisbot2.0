@@ -1,8 +1,6 @@
-import { ChevronRight } from 'lucide-react';
-import { useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router';
 
 import { TrendChart, WeeklyBars } from '@/components/Charts';
-import { ICON } from '@/components/icons';
 import { Section } from '@/components/Section';
 import { Stat } from '@/components/Stat';
 import { EmptyState, QueryView, SkeletonChart } from '@/components/States';
@@ -70,21 +68,33 @@ export function ProgressPage() {
                   <EmptyState message="Log sets like 8x 160lb bench to see your top lifts." actionLabel="Open notebook" onAction={() => navigate('/')} />
                 ) : (
                   <div className="stack-2">
-                    <ul className="list">
-                      {d.top_lifts.map((l) => (
-                        <li key={l.exercise}>
-                          <button type="button" className="list-row" onClick={() => navigate(`/progress/${encodeURIComponent(l.exercise)}`)}>
-                            <span className="list-title">{exerciseName(l.exercise)}</span>
-                            <span className="mono t-label">{weight(l.latest_e1rm, unit, 0)}</span>
-                            <span
-                              className={`mono t-label lift-change ${l.e1rm_change && l.e1rm_change > 0 ? 'success' : l.e1rm_change && l.e1rm_change < 0 ? 'danger' : 'secondary'}`}>
+                    <table className="table">
+                      <caption className="visually-hidden">Top lifts by estimated 1-rep max</caption>
+                      <thead>
+                        <tr>
+                          <th scope="col">Exercise</th>
+                          <th scope="col" className="num">
+                            e1RM
+                          </th>
+                          <th scope="col" className="num">
+                            Change
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {d.top_lifts.map((l) => (
+                          <tr key={l.exercise}>
+                            <td>
+                              <Link to={`/progress/${encodeURIComponent(l.exercise)}`}>{exerciseName(l.exercise)}</Link>
+                            </td>
+                            <td className="num">{weight(l.latest_e1rm, unit, 0)}</td>
+                            <td className={`num ${l.e1rm_change && l.e1rm_change > 0 ? 'success' : l.e1rm_change && l.e1rm_change < 0 ? 'danger' : ''}`}>
                               {l.e1rm_change === null ? '–' : signedWeight(l.e1rm_change, unit, 0)}
-                            </span>
-                            <ChevronRight {...ICON} className="secondary" aria-hidden="true" />
-                          </button>
-                        </li>
-                      ))}
-                    </ul>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                     <p className="hint">Estimated 1-rep max (Epley), latest session. Change is since your first sessions.</p>
                   </div>
                 )}

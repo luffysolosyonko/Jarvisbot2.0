@@ -62,9 +62,8 @@ export function Entry({ log, unit, highlight = false }: { log: Log; unit: Unit; 
             Saving…
           </span>
         ) : (
-          <span className="status success">
+          <span className="status success" role="img" aria-label="Logged" title="Logged">
             <Check {...ICON} aria-hidden="true" />
-            Logged
           </span>
         )}
         {log.pending ? null : (

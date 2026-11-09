@@ -195,7 +195,7 @@ describe('Entry', () => {
       return {};
     });
     wrap(<Entry log={LOG} unit="lb" />);
-    expect(screen.getByText('Logged')).toBeInTheDocument();
+    expect(screen.getByRole('img', { name: 'Logged' })).toBeInTheDocument();
     expect(screen.getByText('Not logged')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Fix' }));
     await userEvent.click(screen.getByRole('button', { name: 'Add unit: lb' }));

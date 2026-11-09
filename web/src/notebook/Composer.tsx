@@ -1,7 +1,5 @@
-import { Send } from 'lucide-react';
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from 'react';
 
-import { ICON } from '@/components/icons';
 import { Segmented } from '@/components/Segmented';
 import { clockTime, longDate, todayIn } from '@/lib/format';
 import type { LogMode, Mode, Unit } from '@/lib/types';
@@ -71,7 +69,7 @@ export function Composer({ mode, onModeChange, text, onTextChange, onSend, sendi
           options={[
             { value: 'workout', label: 'Workout' },
             { value: 'weight', label: 'Weight' },
-            { value: 'ask', label: 'Ask', accent: true },
+            { value: 'ask', label: 'Ask' },
           ]}
         />
         {tools}
@@ -118,8 +116,8 @@ export function Composer({ mode, onModeChange, text, onTextChange, onSend, sendi
           spellCheck={isAsk}
           autoComplete="off"
         />
-        <button type="button" className="send-btn" aria-label="Send" title="Send (Enter)" disabled={!canSend} onClick={onSend}>
-          <Send {...ICON} aria-hidden="true" />
+        <button type="button" className="btn btn-primary send-btn" title="Send (Enter)" disabled={!canSend} onClick={onSend}>
+          Send
         </button>
       </div>
     </div>

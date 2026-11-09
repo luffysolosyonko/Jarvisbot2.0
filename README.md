@@ -120,8 +120,8 @@ variables in [`web/src/index.css`](web/src/index.css) (a test keeps them in
 sync); components use the variables, never raw values.
 
 - **Color.** One color scheme, a sticky note: yellow paper (`#FFF1A8`),
-  graphite ink, and a blue-ballpoint accent (`#1F4FB8`) used only for the send
-  button, the current page, Ask mode and the main chart series. The Notebook
+  graphite ink, and a blue-ballpoint accent (`#1F4FB8`) used only for links,
+  Ask mode and the main chart series. The Notebook
   has a red margin line and a ruled input, like a notepad. There's no light or
   dark mode. Every text and background pair meets WCAG AA, checked by a unit
   test.
@@ -132,7 +132,11 @@ sync); components use the variables, never raw values.
   with tabular figures. Six sizes (32/40 to 12/16) and two weights. Sentence
   case throughout.
 - **Components.** Flat sections divided by whitespace and one hairline rule; no
-  cards in cards, gradients, blur or glow. Lucide icons at stroke 1.75, and
+  cards in cards, shadows, gradients, blur or glow. Buttons have no borders:
+  the primary action (Send, Sign in) stands out by its graphite fill, weight
+  and position, not a bright color. The nav is text only, with an underline
+  for the current page (icons only at phone width, where labels don't fit).
+  Data sits in right-aligned tables. Lucide icons at stroke 1.75, and
   every icon-only button has an `aria-label`. Every view has a skeleton,
   a one-sentence empty state with one action, and an error state with retry.
   Everything works from the keyboard, with visible focus rings.

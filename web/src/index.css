@@ -160,7 +160,7 @@ a:hover {
 
 .navlinks {
   display: flex;
-  gap: var(--s2);
+  gap: var(--s1);
 }
 
 .navlink {
@@ -181,7 +181,15 @@ a:hover {
 }
 
 .navlink.active {
-  color: var(--accent);
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 6px;
+}
+
+/* Text labels on wide screens; icons only on phones, where labels are hidden. */
+.navlink svg {
+  display: none;
 }
 
 .main {
@@ -197,6 +205,13 @@ a:hover {
   .main {
     padding-left: var(--s3);
     padding-right: var(--s3);
+  }
+  .navlink svg {
+    display: block;
+  }
+  .navlink.active {
+    color: var(--accent);
+    text-decoration: none;
   }
   .navlink .navlabel {
     position: absolute;
@@ -240,6 +255,9 @@ a:hover {
 }
 
 /* ---------- controls ---------- */
+/* No borders on buttons: roles differ by fill and type weight.
+   Primary: graphite fill, paper text, semibold. Secondary: paper fill.
+   Text (ghost): no fill until hovered. */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -248,7 +266,7 @@ a:hover {
   min-height: var(--touch);
   padding: 0 var(--s4);
   border-radius: var(--radius-control);
-  border: 1px solid var(--border);
+  border: none;
   background: var(--surface);
   color: var(--ink);
   font-weight: 600;
@@ -258,31 +276,36 @@ a:hover {
 }
 
 .btn:hover:not(:disabled) {
-  border-color: var(--ink-secondary);
+  background: var(--border);
 }
 
 .btn:disabled {
   cursor: not-allowed;
-  opacity: 0.55;
+  color: var(--ink-secondary);
 }
 
 .btn-primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--on-accent);
+  background: var(--ink);
+  color: var(--bg);
 }
 
 .btn-primary:hover:not(:disabled) {
-  border-color: var(--accent);
+  background: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.btn-primary:disabled {
+  background: var(--border);
+  color: var(--ink-secondary);
 }
 
 .btn-ghost {
   background: transparent;
-  border-color: transparent;
 }
 
 .btn-ghost:hover:not(:disabled) {
-  border-color: var(--border);
+  background: var(--surface);
 }
 
 .btn-danger {
@@ -306,7 +329,7 @@ a:hover {
   width: var(--touch);
   height: var(--touch);
   border-radius: var(--radius-control);
-  border: 1px solid transparent;
+  border: none;
   background: transparent;
   color: var(--ink-secondary);
   cursor: pointer;
@@ -315,11 +338,10 @@ a:hover {
 
 .icon-btn:hover:not(:disabled) {
   color: var(--ink);
-  border-color: var(--border);
+  background: var(--surface);
 }
 
 .icon-btn:disabled {
-  opacity: 0.55;
   cursor: not-allowed;
 }
 
@@ -393,7 +415,6 @@ a:hover {
   display: inline-flex;
   padding: var(--s1);
   gap: var(--s1);
-  border: 1px solid var(--border);
   border-radius: 999px;
   background: var(--surface);
 }
@@ -416,10 +437,6 @@ a:hover {
   color: var(--bg);
 }
 
-.segmented.accent-active button[aria-checked='true'].is-accent {
-  background: var(--accent);
-  color: var(--on-accent);
-}
 
 /* ---------- tables ---------- */
 .table {
@@ -468,8 +485,8 @@ a:hover {
 .stat-value {
   font-family: var(--font-mono);
   font-variant-numeric: tabular-nums;
-  font-size: 24px;
-  line-height: 32px;
+  font-size: 18px;
+  line-height: 24px;
   font-weight: 600;
 }
 
@@ -669,7 +686,7 @@ a:hover {
 }
 
 .feed-day {
-  margin: var(--s5) 0 var(--s3);
+  margin: var(--s4) 0 0;
   font-size: 14px;
   line-height: 20px;
   font-weight: 600;
@@ -755,7 +772,6 @@ a:hover {
   position: sticky;
   bottom: 0;
   background: var(--bg);
-  border-top: 1px solid var(--border);
   padding: var(--s3) 0 var(--s3);
   z-index: 10;
 }
@@ -1022,25 +1038,10 @@ figure .legend { margin-top: var(--s2); }
   line-height: 20px;
 }
 
-/* The one send button, the same in every mode. */
+/* The one send button, the same in every mode: the primary style, beside the input. */
 .send-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
   flex: none;
-  width: var(--touch);
-  height: var(--touch);
-  border: none;
-  border-radius: var(--radius-control);
-  background: var(--accent);
-  color: var(--on-accent);
-  cursor: pointer;
-  transition: opacity 150ms ease;
-}
-
-.send-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
+  min-width: 96px;
 }
 
 /* ---------- the notepad ---------- */

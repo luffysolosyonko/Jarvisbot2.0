@@ -1,6 +1,6 @@
 import { useRef, type KeyboardEvent } from 'react';
 
-type Option<T extends string> = { value: T; label: string; accent?: boolean };
+type Option<T extends string> = { value: T; label: string };
 
 /** A radio group drawn as a segmented control. Arrow keys move the selection. */
 export function Segmented<T extends string>({
@@ -24,7 +24,7 @@ export function Segmented<T extends string>({
     refs.current[next]?.focus();
   };
   return (
-    <div role="radiogroup" aria-label={label} className="segmented accent-active">
+    <div role="radiogroup" aria-label={label} className="segmented">
       {options.map((o, i) => (
         <button
           key={o.value}
@@ -35,7 +35,6 @@ export function Segmented<T extends string>({
           role="radio"
           aria-checked={o.value === value}
           tabIndex={o.value === value ? 0 : -1}
-          className={o.accent ? 'is-accent' : undefined}
           onClick={() => onChange(o.value)}
           onKeyDown={(e) => onKey(e, i)}>
           {o.label}
