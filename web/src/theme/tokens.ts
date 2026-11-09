@@ -1,6 +1,6 @@
 /**
- * Color tokens: a strict monochrome palette. The darkest grey marks the main chart
- * series, the current page and primary actions. Every text/background pair meets
+ * Color tokens: greys plus one indigo accent, used for primary actions, the active
+ * toggle, workout days and the main chart series. Every text/background pair meets
  * WCAG AA (see contrast.test.ts). index.css defines the same values as CSS variables.
  */
 export type ColorTokens = {
@@ -15,20 +15,20 @@ export type ColorTokens = {
   danger: string;
 };
 
-/** Strict monochrome: white background, #333333 text, greys between. */
+/** White, #333333 text, light greys, and one indigo accent for primary actions. */
 export const mono: ColorTokens = {
   bg: '#FFFFFF',
-  surface: '#F5F5F5',
+  surface: '#F9FAFB',
   ink: '#333333',
-  inkSecondary: '#666666',
-  border: '#DDDDDD',
-  accent: '#111111',
+  inkSecondary: '#6B7280',
+  border: '#E5E7EB',
+  accent: '#4F46E5',
   onAccent: '#FFFFFF',
   success: '#333333',
-  danger: '#111111',
+  danger: '#B91C1C',
 };
 
-/** One color scheme only: monochrome. */
+/** One color scheme only. */
 export const colors = mono;
 export const palettes = { mono } as const;
 

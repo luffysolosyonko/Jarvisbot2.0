@@ -454,7 +454,7 @@ export function AliasesTool() {
       </div>
       <div className="stack-2">
         <h3 className="t-label semibold">Matched automatically</h3>
-        <p className="hint">Names you’ve typed that count as another exercise: initials, word prefixes, plurals and your shortcuts.</p>
+        <p className="help">Names you’ve typed that count as another exercise: initials, word prefixes, plurals and your shortcuts.</p>
         <QueryView query={matches}>
           {(list) =>
             !list.length ? (

@@ -23,6 +23,23 @@ export function ProgressPage() {
           const p = d.weight.projection;
           const setsDelta = d.week.sets - d.previous_week.sets;
           return (
+            <>
+            <div className="kpis" aria-label="This week at a glance">
+              <Stat
+                card
+                label="Sets this week"
+                value={`${d.week.sets} sets`}
+                note={`${setsDelta > 0 ? '+' : setsDelta < 0 ? '−' : '±'}${Math.abs(setsDelta)} vs last week`}
+              />
+              <Stat card label="Volume this week" value={volume(d.week.volume_lb, unit)} note={`${d.week.sessions} sessions`} />
+              <Stat card label="Body weight" value={p ? weight(p.now, unit) : '–'} note={p ? 'Latest, smoothed' : 'No weigh-ins yet'} />
+              <Stat
+                card
+                label="Weight trend"
+                value={p ? `${signedWeight(p.slope_per_week, unit)}/wk` : '–'}
+                note={p ? `About ${weight(p.pred, unit)} by ${longDate(p.target_date)}` : undefined}
+              />
+            </div>
             <div className="dash-grid">
               <Section title="Body weight">
                 {d.weight.points.length < 2 ? (
@@ -49,16 +66,9 @@ export function ProgressPage() {
                 )}
               </Section>
 
-              <Section title="This week">
-                <div className="stack-4">
-                  <div className="stats">
-                    <Stat
-                      label="Sets"
-                      value={`${d.week.sets} sets`}
-                      note={`${setsDelta > 0 ? '+' : setsDelta < 0 ? '−' : '±'}${Math.abs(setsDelta)} sets vs last week`}
-                    />
-                    <Stat label="Volume" value={volume(d.week.volume_lb, unit)} note={`${d.week.sessions} sessions`} />
-                  </div>
+              <Section title="Sets per week">
+                <div className="stack-2">
+                  <p className="help">This week is highlighted.</p>
                   <WeeklyBars weeks={d.weekly} />
                 </div>
               </Section>
@@ -68,7 +78,7 @@ export function ProgressPage() {
                   <EmptyState message="Log sets like 8x 160lb bench to see your top lifts." actionLabel="Open notebook" onAction={() => navigate('/')} />
                 ) : (
                   <div className="stack-2">
-                    <table className="table">
+                    <table className="table roomy">
                       <caption className="visually-hidden">Top lifts by estimated 1-rep max</caption>
                       <thead>
                         <tr>
@@ -100,6 +110,7 @@ export function ProgressPage() {
                 )}
               </Section>
             </div>
+            </>
           );
         }}
       </QueryView>

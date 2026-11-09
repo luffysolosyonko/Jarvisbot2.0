@@ -1,20 +1,22 @@
-/* Jarvis design system: a dense, Bootstrap-style dashboard.
-   Strict monochrome: #FFFFFF background, #333333 text, greys between. Square corners
-   on everything. No gradients, glass, glows or shadows; one level of cards only. */
+/* Jarvis design system: a dense dashboard. White background, #333333 text, light
+   grey borders, one indigo accent for primary actions and active states, 6px corners
+   on inputs, buttons and cards. No gradients, glass, glows or shadows. */
 
 :root {
   --bg: #ffffff;
-  --surface: #f5f5f5;
+  --surface: #f9fafb;
   --ink: #333333;
-  --ink-secondary: #666666;
-  --border: #dddddd;
-  --accent: #111111;
+  --ink-secondary: #6b7280; /* helper text: softer, still AA on white */
+  --border: #e5e7eb; /* cards, dividers, table rules */
+  --accent: #4f46e5; /* indigo: primary actions and active states only */
+  --accent-hover: #4338ca;
   --on-accent: #ffffff;
   --success: #333333;
-  --danger: #111111;
-  --field-border: #8c8c8c; /* inputs: 3:1 against white */
-  --hover: #ebebeb;
-  --stripe: #fafafa;
+  --danger: #b91c1c;
+  --field-border: #d1d5db; /* inputs: light, but still visible on white */
+  --secondary-bg: #f3f4f6;
+  --hover: #e5e7eb;
+  --stripe: #f9fafb;
 
   --s1: 4px;
   --s2: 8px;
@@ -23,8 +25,8 @@
   --s5: 32px;
   --s6: 48px;
 
-  --radius: 0;
-  --control: 36px; /* dense controls, Bootstrap-sized */
+  --radius: 6px; /* one radius for inputs, buttons, toggles and cards */
+  --control: 36px; /* every input and button is exactly this tall */
   --column: 1140px;
   --nav-h: 48px;
 
@@ -38,7 +40,6 @@
 *::before,
 *::after {
   box-sizing: border-box;
-  border-radius: 0;
 }
 
 html,
@@ -91,7 +92,7 @@ a {
 }
 
 :focus-visible {
-  outline: 2px solid var(--ink);
+  outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
 
@@ -177,7 +178,7 @@ a {
 
 .navlink.active {
   color: var(--on-accent);
-  border-bottom-color: var(--on-accent);
+  border-bottom-color: #a5b4fc; /* the accent, light enough for the dark bar */
 }
 
 .navlink svg {
@@ -246,7 +247,9 @@ a {
 /* ---------- cards (sections) ---------- */
 .section {
   border: 1px solid var(--border);
+  border-radius: var(--radius);
   background: var(--bg);
+  overflow: hidden;
 }
 
 .section + .section {
@@ -267,6 +270,10 @@ a {
   padding: var(--s2) var(--s3);
   background: var(--surface);
   border-bottom: 1px solid var(--border);
+}
+
+.section-head h2 {
+  color: #111827;
 }
 
 .section-body {
@@ -299,10 +306,11 @@ a {
   align-items: center;
   justify-content: center;
   gap: var(--s2);
-  min-height: var(--control);
+  height: var(--control);
   padding: 0 var(--s3);
-  border: 1px solid var(--field-border);
-  background: var(--surface);
+  border: none;
+  border-radius: var(--radius);
+  background: var(--secondary-bg);
   color: var(--ink);
   font-weight: 600;
   font-size: 14px;
@@ -317,27 +325,24 @@ a {
 .btn:disabled {
   cursor: not-allowed;
   color: var(--ink-secondary);
-  background: var(--surface);
-  border-color: var(--border);
+  background: var(--secondary-bg);
 }
 
 .btn-primary {
-  background: var(--ink);
-  border-color: var(--ink);
+  background: var(--accent);
   color: var(--on-accent);
 }
 
 .btn-primary:hover:not(:disabled) {
-  background: var(--accent);
+  background: var(--accent-hover);
 }
 
 .btn-ghost {
   background: transparent;
-  border-color: transparent;
 }
 
 .btn-ghost:hover:not(:disabled) {
-  background: var(--surface);
+  background: var(--secondary-bg);
 }
 
 .btn-danger {
@@ -345,7 +350,7 @@ a {
 }
 
 .btn-small {
-  min-height: 32px;
+  height: 32px;
   padding: 0 var(--s2);
   font-size: 13px;
 }
@@ -360,7 +365,8 @@ a {
   justify-content: center;
   width: var(--control);
   height: var(--control);
-  border: 1px solid transparent;
+  border: none;
+  border-radius: var(--radius);
   background: transparent;
   color: var(--ink-secondary);
   cursor: pointer;
@@ -399,21 +405,28 @@ a {
   font-size: 13px;
   line-height: 18px;
   font-weight: 600;
+  color: #111827;
 }
 
 .input,
-.select,
-.textarea {
+.select {
   width: 100%;
-  min-height: var(--control);
-  padding: 0 var(--s2);
+  height: var(--control);
+  padding: 0 12px;
   border: 1px solid var(--field-border);
+  border-radius: var(--radius);
   background: var(--bg);
   color: var(--ink);
 }
 
 .textarea {
-  padding: var(--s2);
+  width: 100%;
+  min-height: var(--control);
+  padding: 8px 12px;
+  border: 1px solid var(--field-border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  color: var(--ink);
   resize: vertical;
 }
 
@@ -424,14 +437,16 @@ a {
 .input:focus-visible,
 .select:focus-visible,
 .textarea:focus-visible {
-  outline: 2px solid var(--ink);
+  outline: 2px solid var(--accent);
   outline-offset: 0;
-  border-color: var(--ink);
+  border-color: var(--accent);
 }
 
 .input-short { width: 128px; }
 .select-inline { width: auto; }
 
+/* Labelled fields and a button in a row. Every control is exactly 36px tall and the
+   row aligns their bottoms, so inputs and buttons sit on the same line. */
 .form-row {
   display: flex;
   align-items: flex-end;
@@ -449,6 +464,13 @@ a {
   color: var(--ink-secondary);
 }
 
+/* Descriptive text under a heading or field: smaller and softer than content. */
+.help {
+  font-size: 13px;
+  line-height: 18px;
+  color: var(--ink-secondary);
+}
+
 .error-text {
   font-size: 13px;
   line-height: 18px;
@@ -457,26 +479,26 @@ a {
 }
 
 
-/* Segmented control: a Bootstrap button group. */
+/* Segmented control: the active option takes the accent. */
 .segmented {
   display: inline-flex;
-  border: 1px solid var(--field-border);
+  padding: 2px;
+  gap: 2px;
+  border-radius: var(--radius);
+  background: var(--secondary-bg);
 }
 
 .segmented button {
-  min-height: 32px;
+  height: 32px;
   min-width: 72px;
   padding: 0 var(--s3);
   border: none;
-  background: var(--bg);
+  border-radius: 4px;
+  background: transparent;
   color: var(--ink);
   font-weight: 600;
   font-size: 13px;
   cursor: pointer;
-}
-
-.segmented button + button {
-  border-left: 1px solid var(--field-border);
 }
 
 .segmented button:hover {
@@ -484,7 +506,7 @@ a {
 }
 
 .segmented button[aria-checked='true'] {
-  background: var(--ink);
+  background: var(--accent);
   color: var(--on-accent);
 }
 
@@ -510,7 +532,13 @@ a {
   font-weight: 600;
   padding: 6px var(--s2);
   background: var(--surface);
-  border-bottom: 1px solid var(--field-border);
+  border-bottom: 1px solid var(--border);
+}
+
+/* Roomier rows for scanning (Top lifts). */
+.table.roomy th,
+.table.roomy td {
+  padding: 12px var(--s3);
 }
 
 .table td {
@@ -536,6 +564,21 @@ a {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(128px, 1fr));
   gap: var(--s3);
+}
+
+/* Key metrics as simple cards. */
+.kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--s3);
+  margin-bottom: var(--s3);
+}
+
+.stat-card {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg);
+  padding: var(--s3);
 }
 
 .stat-value {
@@ -625,6 +668,7 @@ a {
 }
 
 .toast {
+  border-radius: var(--radius);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -648,7 +692,7 @@ a {
   bottom: 0;
   width: min(440px, 100vw);
   background: var(--bg);
-  border-left: 1px solid var(--field-border);
+  border-left: 1px solid var(--border);
   z-index: 30;
   display: flex;
   flex-direction: column;
@@ -671,6 +715,8 @@ a {
 }
 
 .result-card {
+  border-radius: var(--radius);
+  overflow: hidden;
   margin-top: var(--s3);
   border: 1px solid var(--border);
   scroll-margin-top: calc(var(--nav-h) + var(--s3));
@@ -685,6 +731,7 @@ a {
 }
 
 .menu {
+  border-radius: var(--radius);
   position: absolute;
   bottom: calc(100% + var(--s1));
   left: 0;
@@ -755,6 +802,7 @@ a {
 
 /* Messages: like Discord without avatars. */
 .msg {
+  border-radius: var(--radius);
   position: relative;
   padding: var(--s1) var(--s2);
   margin: 0 calc(var(--s2) * -1);
@@ -793,6 +841,7 @@ a {
 }
 
 .msg-head .entry-actions {
+  border-radius: var(--radius);
   position: absolute;
   top: 0;
   right: 0;
@@ -851,6 +900,7 @@ a {
 }
 
 .reaction {
+  border-radius: var(--radius);
   display: inline-flex;
   align-items: center;
   gap: var(--s1);
@@ -917,7 +967,7 @@ a {
   position: sticky;
   bottom: 0;
   background: var(--bg);
-  border-top: 1px solid var(--field-border);
+  border-top: 1px solid var(--border);
   padding: var(--s2) 0 var(--s3);
   z-index: 10;
 }
@@ -986,6 +1036,7 @@ a {
 }
 
 .cal-day {
+  border-radius: 4px;
   height: 40px;
   display: flex;
   align-items: center;
@@ -1004,13 +1055,13 @@ a {
 }
 
 .cal-day.workout {
-  background: var(--ink);
+  background: var(--accent);
   color: var(--on-accent);
   font-weight: 600;
 }
 
 .cal-day.weight {
-  border-color: var(--ink);
+  border-color: var(--accent);
   background: var(--bg);
 }
 
@@ -1022,7 +1073,7 @@ a {
 }
 
 .cal-day.selected {
-  outline: 2px solid var(--accent);
+  outline: 2px solid var(--ink);
   outline-offset: 1px;
 }
 
@@ -1055,8 +1106,8 @@ figure .legend {
   height: 14px;
 }
 
-.swatch.filled { background: var(--ink); }
-.swatch.outlined { border: 2px solid var(--ink); }
+.swatch.filled { background: var(--accent); }
+.swatch.outlined { border: 2px solid var(--accent); }
 .swatch.line { height: 2px; }
 .swatch.dashed { height: 0; border-top: 2px dashed var(--ink-secondary); }
 
@@ -1084,6 +1135,7 @@ figure .legend {
 
 /* ---------- sign-in ---------- */
 .auth {
+  border-radius: var(--radius);
   max-width: 400px;
   margin: var(--s6) auto;
   padding: var(--s4);
@@ -1100,6 +1152,7 @@ figure .legend {
 }
 
 .kbd {
+  border-radius: 4px;
   font-family: var(--font-mono);
   font-size: 12px;
   line-height: 16px;

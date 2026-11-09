@@ -121,27 +121,28 @@ Colors live in [`web/src/theme/tokens.ts`](web/src/theme/tokens.ts) and as CSS
 variables in [`web/src/index.css`](web/src/index.css) (a test keeps them in
 sync); components use the variables, never raw values.
 
-- **Color.** Strict monochrome: a `#FFFFFF` background, `#333333` text and
-  greys in between, with no accent hue. The darkest grey marks the primary
-  action, the current page, workout days and the main chart series. There's no
-  light or dark mode. Every text and background pair meets WCAG AA, checked by
-  a unit test.
-- **Shape.** Square corners on every button, input, card, table and chart bar.
-- **Layout.** A dense, Bootstrap-style dashboard: a dark navbar, a 1140px
-  container, and cards with a grey header bar laid out in a two-column grid
-  (one column on narrow screens). One level of cards only. Controls are 36px
-  high, tables are compact and striped, and numbers are right-aligned.
+- **Color.** A white background, `#333333` text, light grey borders
+  (`#E5E7EB`, inputs `#D1D5DB`) and softer grey helper text (`#6B7280`), plus one
+  indigo accent (`#4F46E5`) for primary actions, the active toggle, workout days
+  and the main chart series. There's no light or dark mode. Every text and
+  background pair meets WCAG AA, checked by a unit test.
+- **Shape.** One 6px radius for inputs, buttons, toggles and cards.
+- **Layout.** A dense dashboard: a dark navbar, a 1140px container, and cards
+  with a light header bar in a two-column grid (one column on narrow screens).
+  Key metrics on Progress sit in their own cards above the charts. Every input
+  and button is exactly 36px tall, so they line up in a row. Tables are compact
+  and striped (Top lifts gets roomier rows), with numbers right-aligned.
 - **Type.** The system UI font (Segoe UI on Windows) at 14px, and JetBrains
   Mono for log text and numbers, with tabular figures. Sentence case
   throughout.
-- **Components.** No shadows, gradients, blur or glow. Buttons follow
-  Bootstrap roles: a dark filled primary, a light grey secondary with a
-  border, and a borderless text button. Lucide icons at stroke 1.75, and every
+- **Components.** No shadows, gradients, blur or glow. Buttons have three
+  roles: an indigo primary, a light grey secondary with no border and a subtle
+  hover, and a text button. Lucide icons at stroke 1.75, and every
   icon-only button has an `aria-label`. Every view has a skeleton, a
   one-sentence empty state with one action, and an error state with retry.
   Everything works from the keyboard, with visible focus rings.
-- **Charts.** The darkest grey for the main series, mid grey for averages,
-  dashed lines for forecasts, hairline gridlines, square bars.
+- **Charts.** Indigo for the main series, grey for averages, dashed lines for
+  forecasts, hairline gridlines.
 
 ## Run locally
 

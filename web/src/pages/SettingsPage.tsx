@@ -42,7 +42,7 @@ function DisplayName({ me }: { me: Me }) {
           Save name
         </Button>
       </div>
-      <p className="hint">Shown on your messages in the notebook. Leave it blank to use your email.</p>
+      <p className="help">Shown on your messages in the notebook. Leave it blank to use your email.</p>
       {update.error ? (
         <p className="error-text" role="alert">
           {errorMessage(update.error)}
@@ -73,7 +73,7 @@ function BarWeight({ me }: { me: Me }) {
           Save bar weight
         </Button>
       </div>
-      <p className="hint">What “bar” means in a set, like 8x bar bench.</p>
+      <p className="help">What “bar” means in a set, like 8x bar bench.</p>
       {update.error ? <p className="error-text" role="alert">{errorMessage(update.error)}</p> : null}
     </form>
   );
@@ -84,7 +84,7 @@ function TimeZone({ me }: { me: Me }) {
   const browser = deviceTimeZone();
   return (
     <div className="stack-3">
-      <p>
+      <p className="help">
         Days start at midnight in <span className="semibold">{me.settings.tz_name}</span>.
       </p>
       {browser !== me.settings.tz_name ? (
@@ -115,7 +115,7 @@ export function SettingsPage() {
             </Section>
             <Section title="Units">
               <div className="stack-3">
-                <p className="t-label secondary">Weights without a unit are read in this unit, and shown in it.</p>
+                <p className="help">Weights without a unit are read in this unit, and shown in it.</p>
                 <Segmented<Unit>
                   label="Units"
                   value={m.settings.set_unit}
