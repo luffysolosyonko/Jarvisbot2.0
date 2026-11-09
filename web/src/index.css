@@ -28,7 +28,8 @@
   --radius: 6px; /* one radius for inputs, buttons, toggles and cards */
   --control: 36px; /* every input and button is exactly this tall */
   --column: 1140px;
-  --nav-h: 48px;
+  --nav-h: 0px; /* no top bar */
+  --tab-h: 60px; /* the bottom tab bar */
 
   --font-ui: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
@@ -126,63 +127,53 @@ a {
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
+  padding-bottom: var(--tab-h); /* room for the tab bar */
 }
 
-.topnav {
-  position: sticky;
-  top: 0;
+/* ---------- bottom tab bar ---------- */
+.tabbar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
   z-index: 20;
-  background: var(--ink);
-  color: var(--on-accent);
+  height: var(--tab-h);
+  background: var(--bg);
+  border-top: 1px solid var(--border);
 }
 
-.topnav-inner {
-  max-width: var(--column);
+.tabbar ul {
+  display: flex;
+  max-width: 640px;
+  height: 100%;
   margin: 0 auto;
-  height: var(--nav-h);
-  padding: 0 var(--s3);
+}
+
+.tabbar li {
+  flex: 1;
+}
+
+.tab {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: var(--s3);
-}
-
-.brand {
-  font-weight: 700;
-  font-size: 16px;
-  margin-right: auto;
-  color: var(--on-accent);
-}
-
-.navlinks {
-  display: flex;
-  gap: 0;
-}
-
-.navlink {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s1);
-  height: var(--nav-h);
-  padding: 0 var(--s3);
-  color: #d6d6d6;
-  font-size: 14px;
+  justify-content: center;
+  gap: 2px;
+  height: 100%;
+  color: var(--ink-secondary);
+  font-size: 12px;
+  line-height: 16px;
   font-weight: 600;
   text-decoration: none;
-  border-bottom: 3px solid transparent;
 }
 
-.navlink:hover {
-  color: var(--on-accent);
-  background: #444444;
+.tab:hover {
+  color: var(--ink);
+  background: var(--surface);
 }
 
-.navlink.active {
-  color: var(--on-accent);
-  border-bottom-color: #a5b4fc; /* the accent, light enough for the dark bar */
-}
-
-.navlink svg {
-  display: none;
+.tab.active {
+  color: var(--accent);
 }
 
 .main {
@@ -191,22 +182,6 @@ a {
   max-width: var(--column);
   margin: 0 auto;
   padding: var(--s3) var(--s3) var(--s5);
-}
-
-@media (max-width: 560px) {
-  .navlink {
-    padding: 0 var(--s2);
-  }
-  .navlink svg {
-    display: block;
-  }
-  .navlink .navlabel {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-  }
 }
 
 .page-header {
@@ -659,7 +634,7 @@ a {
 .toasts {
   position: fixed;
   left: var(--s3);
-  bottom: var(--s3);
+  bottom: calc(var(--tab-h) + var(--s3));
   z-index: 50;
   display: flex;
   flex-direction: column;
@@ -687,9 +662,9 @@ a {
 /* ---------- tool panel and menus ---------- */
 .panel {
   position: fixed;
-  top: var(--nav-h);
+  top: 0;
   right: 0;
-  bottom: 0;
+  bottom: var(--tab-h);
   width: min(440px, 100vw);
   background: var(--bg);
   border-left: 1px solid var(--border);
@@ -773,7 +748,7 @@ a {
 .notebook {
   display: flex;
   flex-direction: column;
-  min-height: calc(100dvh - var(--nav-h));
+  min-height: calc(100dvh - var(--tab-h));
 }
 
 .notebook .main {
@@ -965,7 +940,7 @@ a {
 
 .composer {
   position: sticky;
-  bottom: 0;
+  bottom: var(--tab-h); /* just above the tab bar */
   background: var(--bg);
   border-top: 1px solid var(--border);
   padding: var(--s2) 0 var(--s3);
@@ -1164,7 +1139,7 @@ figure .legend {
 /* ---------- motion ---------- */
 .btn,
 .icon-btn,
-.navlink,
+.tab,
 .segmented button,
 .cal-day,
 .list-row,

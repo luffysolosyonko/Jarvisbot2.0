@@ -127,7 +127,8 @@ sync); components use the variables, never raw values.
   and the main chart series. There's no light or dark mode. Every text and
   background pair meets WCAG AA, checked by a unit test.
 - **Shape.** One 6px radius for inputs, buttons, toggles and cards.
-- **Layout.** A dense dashboard: a dark navbar, a 1140px container, and cards
+- **Layout.** A dense dashboard: a tab bar along the bottom (icon over label,
+  current tab in indigo), a 1140px container, and cards
   with a light header bar in a two-column grid (one column on narrow screens).
   Key metrics on Progress sit in their own cards above the charts. Every input
   and button is exactly 36px tall, so they line up in a row. Tables are compact

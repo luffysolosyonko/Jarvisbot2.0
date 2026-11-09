@@ -14,7 +14,7 @@ const LINKS: { to: string; label: string; Icon: LucideIcon; end?: boolean }[] = 
   { to: '/settings', label: 'Settings', Icon: Settings },
 ];
 
-/** Top navigation and a centred 640px column. */
+/** The page, with the tab bar along the bottom. */
 /** New accounts start in UTC; adopt the browser's time zone once (not for the demo). */
 function useAdoptBrowserTimeZone() {
   const { data: me } = useMe();
@@ -47,24 +47,20 @@ export function Layout() {
       <a href="#main" className="visually-hidden">
         Skip to content
       </a>
-      <header className="topnav">
-        <div className="topnav-inner">
-          <span className="brand">Jarvis</span>
-          <nav aria-label="Main">
-            <ul className="navlinks">
-              {LINKS.map(({ to, label, Icon, end }) => (
-                <li key={to}>
-                  <NavLink to={to} end={end} className={({ isActive }) => `navlink${isActive ? ' active' : ''}`}>
-                    <Icon {...NAV_ICON} aria-hidden="true" />
-                    <span className="navlabel">{label}</span>
-                  </NavLink>
-                </li>
-              ))}
-            </ul>
-          </nav>
-        </div>
-      </header>
       <Outlet />
+      {/* The tab bar sits along the bottom: icon over label, current tab in the accent. */}
+      <nav className="tabbar" aria-label="Main">
+        <ul>
+          {LINKS.map(({ to, label, Icon, end }) => (
+            <li key={to}>
+              <NavLink to={to} end={end} className={({ isActive }) => `tab${isActive ? ' active' : ''}`}>
+                <Icon {...NAV_ICON} aria-hidden="true" />
+                <span>{label}</span>
+              </NavLink>
+            </li>
+          ))}
+        </ul>
+      </nav>
     </div>
   );
 }
