@@ -68,7 +68,7 @@ design-token contrast test.
 | App says it can't reach the server | Open `http://10.0.2.2:8000/healthz` in the emulator's Chrome. If that fails, check `docker compose ps`; the `api` container must be up and on port 8000. |
 | Ask Jarvis shows "not configured" or a timeout | Expected without `ANTHROPIC_API_KEY` in `api/.env`, or if the request takes more than 15 seconds. Move on; the rest of the app doesn't depend on it. |
 | Charts are empty | Re-run the seed command (step 3) and pull to refresh. |
-| Port 5432 or 8000 already in use | Stop the other Postgres or server, or run `docker compose down` and try again. |
+| Port 15432 or 8000 already in use | Stop whatever holds it, or set `JARVIS_DB_PORT` to another port (and match `DATABASE_URL` in `api/.env`). Then `docker compose down` and up again. |
 | Red screen or stale bundle | In the Metro terminal press `r` to reload. If it persists, stop Metro and run `npx expo start --clear`. |
 | "Continue with Google" fails | Use **Try the demo** or email sign-in. To fix it later, see SETUP.md section 4. |
 

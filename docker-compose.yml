@@ -9,7 +9,8 @@ services:
       POSTGRES_PASSWORD: jarvis # local-only throwaway credentials
       POSTGRES_DB: jarvis
     ports:
-      - "5432:5432"
+      # Host port 15432 so it never collides with a Postgres installed on the laptop (5432, 5433).
+      - "${JARVIS_DB_PORT:-15432}:5432"
     volumes:
       - jarvis-pg:/var/lib/postgresql/data
     healthcheck:
