@@ -17,9 +17,9 @@ is now a button.
 
 ## What it does
 
-- **A notebook, not a form.** One feed, oldest to newest, laid out like a chat
-  (Discord without the avatars): your name, the time, what you typed, and a
-  check "reaction" once it's logged; click it for the parsed sets. A plain text
+- **A notebook, not a form.** One feed, oldest to newest, like a chat: entries
+  close together share one timestamp, and each shows what you typed with a
+  green check chip once it's logged; click it for the parsed sets. A plain text
   box sits at the bottom. Pick a mode, **Workout**, **Weight** or **Ask**,
   type, press Enter. Shift+Enter starts a new line, so a whole session can go
   in at once. A small line above the box shows the date and time the entry will
@@ -33,7 +33,7 @@ is now a button.
   one-click fixes ("Add unit: lb", "Mark as estimate", "Set exercise
   name…", "Log as a weigh-in"). Saved entries can be edited, fixed or deleted
   (with undo); edits re-parse, like the bot re-parsed edited messages.
-- **Every bot command is a button.** Tools: Today, Stats (7/30/90 days), Lift,
+- **Every bot command is a button.** The ⋯ menu: Today, Stats (7/30/90 days), Lift,
   Estimate (maxes for 3–12 reps), Predict weight, Predict lift (the date
   you'll hit a target), Volume, Charts, Search, Aliases and Export (CSV), plus
   the Syntax help cheat sheet.
@@ -44,8 +44,8 @@ is now a button.
   top lifts with e1RM charts and forecasts.
 - **Ask, on purpose.** Only Ask mode calls Claude, and it sends only the data
   relevant to the question. Questions and Jarvis's answers appear as messages,
-  are saved, and are still in the notebook after a reload; "Clear questions
-  from view" hides them (the database keeps them).
+  are saved, and are still in the notebook after a reload; "Hide answers" in
+  the ⋯ menu hides them (the database keeps them).
 
 ## Architecture
 
@@ -88,7 +88,7 @@ flowchart LR
 ```
 web/                React web app (Vite, TypeScript strict)
   src/notebook/     the Notebook: feed, entry, composer, parse line, fixes
-  src/tools/        the Tools menu (the bot's slash commands)
+  src/tools/        the ⋯ menu (the bot's slash commands)
   src/pages/        History (calendar), Progress, lift detail, Settings, sign-in
   src/components/   UI built on the design tokens
   src/theme/        color tokens (also CSS variables in src/index.css)
@@ -117,33 +117,31 @@ docs/               SETUP.md (one-time setup), DEMO.md (demo checklist)
 
 ## Design system
 
-Colors live in [`web/src/theme/tokens.ts`](web/src/theme/tokens.ts) and as CSS
-variables in [`web/src/index.css`](web/src/index.css) (a test keeps them in
-sync); components use the variables, never raw values.
+All tokens (colors, type sizes, spacing, radius) live in one file,
+[`web/src/theme/tokens.css`](web/src/theme/tokens.css), mirrored for charts in
+[`tokens.ts`](web/src/theme/tokens.ts); a test keeps the two in sync.
 
-- **Color.** A white background, `#333333` text, light grey borders
-  (`#E5E7EB`, inputs `#D1D5DB`) and softer grey helper text (`#6B7280`), plus one
-  indigo accent (`#4F46E5`) for primary actions, the active toggle, workout days
-  and the main chart series. There's no light or dark mode. Every text and
-  background pair meets WCAG AA, checked by a unit test.
-- **Shape.** One 6px radius for inputs, buttons, toggles and cards.
-- **Layout.** A dense dashboard: a tab bar along the bottom (icon over label,
-  current tab in indigo), a 1140px container, and cards
-  with a light header bar in a two-column grid (one column on narrow screens).
-  Key metrics on Progress sit in their own cards above the charts. Every input
-  and button is exactly 36px tall, so they line up in a row. Tables are compact
-  and striped (Top lifts gets roomier rows), with numbers right-aligned.
-- **Type.** The system UI font (Segoe UI on Windows) at 14px, and JetBrains
-  Mono for log text and numbers, with tabular figures. Sentence case
-  throughout.
-- **Components.** No shadows, gradients, blur or glow. Buttons have three
-  roles: an indigo primary, a light grey secondary with no border and a subtle
-  hover, and a text button. Lucide icons at stroke 1.75, and every
-  icon-only button has an `aria-label`. Every view has a skeleton, a
-  one-sentence empty state with one action, and an error state with retry.
-  Everything works from the keyboard, with visible focus rings.
-- **Charts.** Indigo for the main series, grey for averages, dashed lines for
-  forecasts, hairline gridlines.
+- **Color.** A cool grey page (`#EEF0F2`), white surfaces, near-black ink, and
+  one interactive color, blue (`#1F4FA3`): buttons, links, the active tab,
+  workout days and chart data. Red, yellow and green appear only when they mean
+  something: red for failed reps and warnings, yellow for goals and PRs, green
+  for a confirmed parse. Every text color meets WCAG AA, checked by a unit test.
+- **Type.** One family, Archivo: regular width for text, condensed for big
+  numbers. Tabular figures everywhere, no monospace. Five sizes only: 13, 15,
+  18, 24 and 40px (body 15px). Sentence case.
+- **Layout.** A page-colored nav with one line under it. Most things sit
+  directly on the page, grouped by whitespace and a bold 15px label; white
+  surfaces only behind tables. Spacing from 4, 8, 12, 16, 24, 32 and 48px. One
+  6px radius, for controls only (buttons, inputs, chips).
+- **The goal bar.** The one decorative element: a barbell loaded in
+  competition plate colors (red 25 kg, blue 20 kg, yellow 15 kg, green 10 kg)
+  showing your best bench e1RM against a 225 lb goal, with outlined plates for
+  what's left. Full size on Progress, slim above the Notebook input.
+- **Charts.** Blue for data, grey for averages, a dashed grey forecast, light
+  gridlines.
+- **Quality floor.** Works down to 375px with no sideways scroll, visible blue
+  focus rings, every icon-only button labelled, no entrance animations, and
+  motion off when the system asks for reduced motion.
 
 ## Run locally
 

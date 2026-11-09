@@ -30,7 +30,7 @@ export function LiftPage() {
       </div>
       <QueryView query={q} skeleton={<SkeletonChart />}>
         {(d) => (
-          <div className="dash-grid">
+          <div className="grid-2">
             <Section title="Estimated 1-rep max" className="span-2">
               <div className="stack-4">
                 <div className="stats">

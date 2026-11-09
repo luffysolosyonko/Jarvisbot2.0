@@ -1,0 +1,45 @@
+/* Design tokens: the only place colors, type sizes, spacing and radius are defined.
+   Color rule: red, yellow and green appear only when they carry that meaning
+   (failed reps and warnings; goals and PRs; a confirmed parse). Blue is the only
+   interactive color. theme/tokens.ts mirrors the colors for charts and tests. */
+
+:root {
+  --bg: #eef0f2;
+  --surface: #ffffff;
+  --ink: #1c2127;
+  --muted: #656e78; /* #67707A darkened a hair to pass AA (4.5:1) on --bg */
+  --line: #d5d9de;
+  --red: #c8102e; /* failed reps, warnings only */
+  --blue: #1f4fa3; /* the ONLY interactive color: buttons, links, active tab, workout days */
+  --yellow: #e8b100; /* goals and PRs only */
+  --green: #2c7b4d; /* confirmed parse only; #2E7D4F darkened a hair for AA on --bg */
+
+  --on-blue: #ffffff;
+  --blue-hover: #1a4389;
+  --answer-bg: #e6eaf1; /* the slightly muted background behind Jarvis's answers */
+
+  /* Type: one family, two widths. Scale 13 / 15 / 18 / 24 / 40, nothing else. */
+  --font: 'Archivo Variable', 'Archivo', system-ui, sans-serif;
+  --condensed: 75%;
+  --t-13: 13px;
+  --t-15: 15px;
+  --t-18: 18px;
+  --t-24: 24px;
+  --t-40: 40px;
+
+  /* Spacing: 4 / 8 / 12 / 16 / 24 / 32 / 48 only. */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 24px;
+  --s6: 32px;
+  --s7: 48px;
+
+  --radius: 6px; /* controls only: buttons, inputs, chips. Sections have none. */
+  --control: 36px;
+  --column: 1080px;
+  --nav-h: 52px;
+
+  color-scheme: light;
+}

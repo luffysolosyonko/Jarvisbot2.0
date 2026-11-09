@@ -10,6 +10,7 @@ import { Composer } from '@/notebook/Composer';
 import { Entry } from '@/notebook/Entry';
 import { FixList } from '@/notebook/FixList';
 import { Calendar } from '@/pages/Calendar';
+import { MoreMenu } from '@/tools/MoreMenu';
 
 const apiMock = vi.fn();
 vi.mock('@/lib/api', async (importOriginal) => {
@@ -126,25 +127,25 @@ describe('Composer', () => {
     }
   });
 
-  it('offers to clear questions from view in Ask mode', async () => {
-    const onClear = vi.fn();
-    wrap(
-      <Composer
-        mode="ask"
-        onModeChange={vi.fn()}
-        text=""
-        onTextChange={vi.fn()}
-        onSend={vi.fn()}
-        sending={false}
-        error={null}
-        unit="lb"
-        tz="UTC"
-        tools={null}
-        onClearAsks={onClear}
-      />,
-    );
-    await userEvent.click(screen.getByRole('button', { name: 'Clear questions from view' }));
-    expect(onClear).toHaveBeenCalled();
+});
+
+describe('MoreMenu', () => {
+  it('lists the tools and, when there are answers, Hide answers', async () => {
+    const onPick = vi.fn();
+    const onHide = vi.fn();
+    render(<MoreMenu onPick={onPick} onHideAnswers={onHide} />);
+    await userEvent.click(screen.getByRole('button', { name: /^More/ }));
+    await userEvent.click(screen.getByRole('menuitem', { name: /^Predict lift/ }));
+    expect(onPick).toHaveBeenCalledWith('predict-lift');
+    await userEvent.click(screen.getByRole('button', { name: /^More/ }));
+    await userEvent.click(screen.getByRole('menuitem', { name: 'Hide answers' }));
+    expect(onHide).toHaveBeenCalled();
+  });
+
+  it('has no Hide answers item when there is nothing to hide', async () => {
+    render(<MoreMenu onPick={vi.fn()} />);
+    await userEvent.click(screen.getByRole('button', { name: /^More/ }));
+    expect(screen.queryByRole('menuitem', { name: 'Hide answers' })).not.toBeInTheDocument();
   });
 });
 
@@ -197,8 +198,7 @@ describe('Entry', () => {
     });
     wrap(<Entry log={LOG} unit="lb" />);
     expect(screen.getByRole('button', { name: /^Logged: 1 set · Bench/ })).toBeInTheDocument();
-    expect(document.querySelector('time')).toHaveAttribute('dateTime', '2026-11-09T17:00:00Z');
-    expect(screen.getByText('You')).toBeInTheDocument();
+    expect(screen.queryByText('You')).not.toBeInTheDocument(); // no names on entries
     expect(screen.getByText('Not logged')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Fix' }));
     await userEvent.click(screen.getByRole('button', { name: 'Add unit: lb' }));

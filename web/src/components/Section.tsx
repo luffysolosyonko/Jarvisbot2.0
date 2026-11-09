@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 
-/** A card: a header bar with the title (and an optional action), then the content. */
+/** A section: a bold 15px label (and an optional action), then the content. No card. */
 export function Section({
   title,
   action,
@@ -15,10 +15,10 @@ export function Section({
   return (
     <section className={['section', className].filter(Boolean).join(' ')}>
       <div className="section-head">
-        <h2 className="t-heading">{title}</h2>
+        <h2>{title}</h2>
         {action}
       </div>
-      <div className="section-body">{children}</div>
+      {children}
     </section>
   );
 }

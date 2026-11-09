@@ -1,5 +1,5 @@
 import { exerciseName, longDate, parseDate, weight } from './format';
-import type { Forecast, Log, Me, ParseResult, SetRef, Unit } from './types';
+import type { Forecast, Log, ParseResult, SetRef, Unit } from './types';
 
 /** "5 + 1f × 155 lb" */
 export function setRefText(s: SetRef | null, unit: Unit): string {
@@ -37,7 +37,3 @@ export function logSummary(log: Log, unit: Unit): string {
   return `${log.sets.length} set${log.sets.length === 1 ? '' : 's'} · ${names.join(', ')}`;
 }
 
-/** The name shown on your messages in the notebook. */
-export function authorName(me: Me | undefined): string {
-  return me?.display_name || me?.email?.split('@')[0] || 'You';
-}

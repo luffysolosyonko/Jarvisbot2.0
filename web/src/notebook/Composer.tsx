@@ -34,14 +34,14 @@ type Props = {
   tz: string | undefined;
   tools: ReactNode;
   inputRef?: RefObject<HTMLTextAreaElement | null>;
-  onClearAsks?: () => void; // shown in Ask mode when there are questions in view
+  header?: ReactNode; // shown above the mode switch (the slim goal bar)
 };
 
 /**
  * Like a chat box: pick a mode, type, press Enter. Above the box, the time the entry
  * will be logged at and a one-line read of what the text parses to.
  */
-export function Composer({ mode, onModeChange, text, onTextChange, onSend, sending, error, unit, tz, tools, inputRef, onClearAsks }: Props) {
+export function Composer({ mode, onModeChange, text, onTextChange, onSend, sending, error, unit, tz, tools, inputRef, header }: Props) {
   const localRef = useRef<HTMLTextAreaElement>(null);
   const ref = inputRef ?? localRef;
   const inputId = useId();
@@ -61,6 +61,7 @@ export function Composer({ mode, onModeChange, text, onTextChange, onSend, sendi
 
   return (
     <div className="composer stack-2">
+      {header}
       <div className="composer-bar">
         <Segmented<Mode>
           label="Mode"
@@ -76,17 +77,9 @@ export function Composer({ mode, onModeChange, text, onTextChange, onSend, sendi
       </div>
 
       <div className="composer-meta">
-        {isAsk ? (
+        {isAsk ? null : (
           <>
-            {onClearAsks ? (
-              <button type="button" className="link-btn" onClick={onClearAsks}>
-                Clear questions from view
-              </button>
-            ) : null}
-          </>
-        ) : (
-          <>
-            <time className="secondary mono">{stamp}</time>
+            <time className="secondary tnum">{stamp}</time>
             <ParseLine text={text} mode={mode as LogMode} unit={unit} onTextChange={onTextChange} onModeChange={onModeChange} />
           </>
         )}

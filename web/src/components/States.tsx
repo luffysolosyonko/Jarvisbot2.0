@@ -22,7 +22,7 @@ export function SkeletonEntries({ count = 3 }: { count?: number }) {
       {Array.from({ length: count }, (_, i) => (
         <div key={i} className="sk-entry">
           <div className="skeleton sk-caption" />
-          <div className="skeleton sk-mono" />
+          <div className="skeleton sk-tnum" />
           <div className="skeleton sk-row" />
           <div className="skeleton sk-row" />
         </div>

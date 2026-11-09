@@ -39,10 +39,14 @@ function DayDetail({ day, today, summary }: { day: string; today: string; summar
         />
       ) : (
         <div className="stack-3">
-          {sets.length ? <SetRows sets={sets} unit={unit} caption={`Sets on ${longDate(day)}`} /> : null}
+          {sets.length ? (
+            <div className="surface">
+              <SetRows sets={sets} unit={unit} caption={`Sets on ${longDate(day)}`} />
+            </div>
+          ) : null}
           {weighIn !== null ? (
             <p className="t-label">
-              Weigh-in <span className="mono semibold">{weight(weighIn, unit)}</span>
+              Weigh-in <span className="tnum semibold">{weight(weighIn, unit)}</span>
             </p>
           ) : null}
         </div>
@@ -73,7 +77,7 @@ export function HistoryPage() {
             setMonth(today.slice(0, 7));
             setSelected(today);
           }}>
-          Present
+          Jump to today
         </Button>
       </div>
       <div className="grid-2">

@@ -30,7 +30,7 @@ export function ParseLine({
   return (
     <>
       {summary ? (
-        <span className="mono" aria-live="polite">
+        <span className="tnum" aria-live="polite">
           {summary}
         </span>
       ) : null}

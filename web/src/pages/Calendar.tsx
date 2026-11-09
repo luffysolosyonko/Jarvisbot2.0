@@ -121,7 +121,7 @@ export function Calendar({
           <i className="swatch outlined" aria-hidden="true" /> Weigh-in only
         </span>
         <span>
-          <span className="today-sample">Today</span>
+          <i className="swatch today" aria-hidden="true" /> Today
         </span>
       </div>
     </div>

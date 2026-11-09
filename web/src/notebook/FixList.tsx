@@ -30,7 +30,7 @@ function TemplateFix({ fix, onApply }: { fix: Fix; onApply: (value: string) => v
       </label>
       <input
         id={id}
-        className="input mono input-short"
+        className="input tnum input-short"
         autoFocus
         placeholder={fix.placeholder ?? ''}
         value={value}

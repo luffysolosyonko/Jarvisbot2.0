@@ -2,18 +2,18 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router';
 
 import { Button } from '@/components/Button';
+import { GoalBar } from '@/components/GoalBar';
 import { EmptyState, ErrorState, SkeletonEntries } from '@/components/States';
 import { useToast } from '@/components/Toast';
 import { useAsk, useAskHistory, useClearAskHistory, useLogs, useMe, useSaveLog, useTz, useUnit } from '@/hooks/queries';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useTitle } from '@/hooks/useTitle';
 import { errorMessage } from '@/lib/api';
-import { authorName } from '@/lib/describe';
 import { dayIn, dividerDate, isoDate, messageTime, parseDate, todayIn } from '@/lib/format';
 import { load, save } from '@/lib/storage';
 import type { Log, Mode } from '@/lib/types';
 import { ToolPanel } from '@/tools/ToolPanel';
-import { ToolsMenu } from '@/tools/ToolsMenu';
+import { MoreMenu } from '@/tools/MoreMenu';
 import type { ToolId } from '@/tools/registry';
 
 import { Composer } from './Composer';
@@ -38,26 +38,18 @@ function addDays(iso: string, n: number): string {
   return isoDate(d);
 }
 
-/** A question and Jarvis's answer, as two chat messages. */
-function AskReply({ item, onRetry, author, tz, today }: { item: AskView; onRetry: () => void; author: string; tz: string | undefined; today: string }) {
-  const when = messageTime(item.at, tz, today);
+/** A question, then Jarvis's answer: indented, with a blue rule. */
+function AskReply({ item, onRetry, tz, today }: { item: AskView; onRetry: () => void; tz: string | undefined; today: string }) {
   return (
-    <div aria-label="Question to Jarvis" role="group">
-      <article className="msg">
-        <div className="msg-head">
-          <span className="msg-author">{author}</span>
-          <time className="msg-time" dateTime={item.at}>
-            {when}
-          </time>
-        </div>
-        <div className="msg-body">{item.question}</div>
-      </article>
-      <article className="msg">
-        <div className="msg-head">
-          <span className="msg-author jarvis">Jarvis</span>
-        </div>
+    <div className="ask" role="group" aria-label="Question to Jarvis">
+      <p className="group-time">
+        <time dateTime={item.at}>{messageTime(item.at, tz, today)}</time>
+      </p>
+      <p className="ask-question">{item.question}</p>
+      <div className="answer">
+        <p className="answer-label">Jarvis</p>
         {item.answer !== undefined ? (
-          <div className="msg-body">{item.answer}</div>
+          <p className="prewrap">{item.answer}</p>
         ) : item.error ? (
           <div className="stack-2" role="alert">
             <p className="danger">{item.error}</p>
@@ -66,14 +58,17 @@ function AskReply({ item, onRetry, author, tz, today }: { item: AskView; onRetry
             </Button>
           </div>
         ) : (
-          <p className="msg-body secondary" aria-live="polite">
+          <p className="secondary" aria-live="polite">
             Thinking…
           </p>
         )}
-      </article>
+      </div>
     </div>
   );
 }
+
+/** Entries within this long of the previous one share its timestamp. */
+const GROUP_MS = 15 * 60_000;
 
 const MODES: Mode[] = ['workout', 'weight', 'ask'];
 
@@ -268,16 +263,26 @@ export function NotebookPage() {
           ) : !feed.length ? (
             <EmptyState message="Type a set like 8x 160lb bench in the box below to start your notebook." />
           ) : (
-            feed.map((f) => {
+            feed.map((f, i) => {
+              const prev = feed[i - 1];
               const header = f.day !== lastDay ? <h2 className="day-divider">{dividerDate(f.day)}</h2> : null;
               lastDay = f.day;
+              // A run of entries close together shares one timestamp.
+              const startsGroup =
+                f.kind === 'log' &&
+                (!prev || prev.kind !== 'log' || prev.day !== f.day || Date.parse(f.at) - Date.parse(prev.at) > GROUP_MS);
               return (
                 <div key={f.kind === 'log' ? `l${f.log.id}` : f.item.key}>
                   {header}
+                  {startsGroup ? (
+                    <p className="group-time">
+                      <time dateTime={f.at}>{messageTime(f.at, tz, today)}</time>
+                    </p>
+                  ) : null}
                   {f.kind === 'log' ? (
                     <Entry log={f.log} unit={unit} highlight={highlight === f.log.id} />
                   ) : (
-                    <AskReply item={f.item} author={authorName(me.data)} tz={tz} today={today} onRetry={() => runAsk(f.item.question, f.item.retryId)} />
+                    <AskReply item={f.item} tz={tz} today={today} onRetry={() => runAsk(f.item.question, f.item.retryId)} />
                   )}
                 </div>
               );
@@ -298,15 +303,20 @@ export function NotebookPage() {
           error={sendError}
           unit={unit}
           tz={tz}
-          tools={<ToolsMenu onPick={setTool} />}
-          onClearAsks={
-            (askHistory.data?.length ?? 0) + pendingAsks.length > 0
-              ? () => {
-                  setPendingAsks([]);
-                  clearAsks.mutate();
-                }
-              : undefined
+          tools={
+            <MoreMenu
+              onPick={setTool}
+              onHideAnswers={
+                (askHistory.data?.length ?? 0) + pendingAsks.length > 0
+                  ? () => {
+                      setPendingAsks([]);
+                      clearAsks.mutate();
+                    }
+                  : undefined
+              }
+            />
           }
+          header={<GoalBar variant="slim" />}
           inputRef={inputRef}
         />
       </main>

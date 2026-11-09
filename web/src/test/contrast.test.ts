@@ -37,9 +37,9 @@ it('contrastRatio matches known values', () => {
   expect(() => contrastRatio('red', '#FFFFFF')).toThrow();
 });
 
-describe('index.css', () => {
+describe('tokens.css', () => {
   it('defines the same color values as tokens.ts', () => {
-    const css = readFileSync(`${process.cwd()}/src/index.css`, 'utf8').toLowerCase();
+    const css = readFileSync(`${process.cwd()}/src/theme/tokens.css`, 'utf8').toLowerCase();
     for (const palette of Object.values(palettes)) {
       for (const hex of Object.values(palette)) expect(css).toContain(hex.toLowerCase());
     }

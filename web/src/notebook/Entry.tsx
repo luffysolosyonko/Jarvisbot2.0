@@ -5,18 +5,18 @@ import { Button, IconButton } from '@/components/Button';
 import { ICON } from '@/components/icons';
 import { SetRows } from '@/components/SetRows';
 import { useToast } from '@/components/Toast';
-import { useEditLog, useMe, useTz } from '@/hooks/queries';
+import { useEditLog, useTz } from '@/hooks/queries';
 import { errorMessage } from '@/lib/api';
-import { authorName, logSummary } from '@/lib/describe';
+import { logSummary } from '@/lib/describe';
 import { messageTime, todayIn, weight } from '@/lib/format';
 import type { Log, LogMode, Unit } from '@/lib/types';
 
 import { FixList } from './FixList';
 
 /**
- * One saved log as a chat message: your name and the time, what you typed, and a
- * check "reaction" once it's logged (click it for the parsed sets). Edit, Fix and
- * Delete show on hover, always on touch.
+ * One saved log: what you typed, and a green check chip once it's logged (click it
+ * for the parsed sets). Edit, Fix and Delete show on hover, always on touch. The
+ * feed shows the time once per group of entries.
  */
 export function Entry({ log, unit, highlight = false }: { log: Log; unit: Unit; highlight?: boolean }) {
   const [editing, setEditing] = useState(false);
@@ -25,7 +25,6 @@ export function Entry({ log, unit, highlight = false }: { log: Log; unit: Unit; 
   const [draft, setDraft] = useState(log.raw_text);
   const edit = useEditLog();
   const { deleteWithUndo } = useToast();
-  const { data: me } = useMe();
   const tz = useTz();
   const editId = useId();
   const detailsId = useId();
@@ -59,12 +58,7 @@ export function Entry({ log, unit, highlight = false }: { log: Log; unit: Unit; 
 
   return (
     <article id={`log-${log.id}`} className={`msg${highlight ? ' highlight' : ''}`} aria-label={`${log.kind === 'weight' ? 'Weigh-in' : 'Workout'}, ${when}`}>
-      <div className="msg-head">
-        <span className="msg-author">{authorName(me)}</span>
-        <time className="msg-time" dateTime={log.logged_at}>
-          {when}
-        </time>
-        {log.pending ? null : (
+      {log.pending ? null : (
           <div className="entry-actions">
             <IconButton
               label="Edit entry"
@@ -89,8 +83,7 @@ export function Entry({ log, unit, highlight = false }: { log: Log; unit: Unit; 
               <Trash2 {...ICON} />
             </IconButton>
           </div>
-        )}
-      </div>
+      )}
 
       {editing ? (
         <div className="stack-2 entry-edit">
@@ -171,7 +164,7 @@ export function Entry({ log, unit, highlight = false }: { log: Log; unit: Unit; 
       {details && !editing ? (
         <div id={detailsId} className="msg-details">
           {log.weigh_in ? (
-            <p className="t-label mono">
+            <p className="t-label tnum">
               → {weight(log.weigh_in.weight_lb, unit)}
               {log.weigh_in.note ? <span className="secondary"> · {log.weigh_in.note}</span> : null}
             </p>

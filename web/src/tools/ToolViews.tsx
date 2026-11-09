@@ -58,7 +58,7 @@ export function TodayTool({ unit }: { unit: Unit }) {
               {t.logs.map((lg) => (
                 <li key={lg.id} className="stack-2">
                   <div className="raw">{lg.raw_text}</div>
-                  {lg.weigh_in ? <p className="t-label mono">→ {weight(lg.weigh_in.weight_lb, unit)}</p> : <SetRows sets={lg.sets} unit={unit} />}
+                  {lg.weigh_in ? <p className="t-label tnum">→ {weight(lg.weigh_in.weight_lb, unit)}</p> : <SetRows sets={lg.sets} unit={unit} />}
                 </li>
               ))}
             </ul>
@@ -115,7 +115,7 @@ function LiftBody({ d, unit }: { d: ExerciseDetail; unit: Unit }) {
       />
       <div className="stack-2">
         <h3 className="t-label semibold">Last session · {longDate(d.summary.last_date)}</h3>
-        <ul className="t-label mono stack-1">
+        <ul className="t-label tnum stack-1">
           {d.last_session.map((s, i) => (
             <li key={i}>{setRefText(s, unit)}</li>
           ))}
@@ -152,7 +152,7 @@ export function RepTargets({ d, unit }: { d: ExerciseDetail; unit: Unit }) {
           .filter((r) => [3, 5, 8, 10, 12].includes(r.reps))
           .map((r) => (
             <tr key={r.reps}>
-              <td className="mono">{r.reps}</td>
+              <td className="tnum">{r.reps}</td>
               <td className="num">{weight(r.weight_lb, unit, 0)}</td>
             </tr>
           ))}
@@ -223,7 +223,7 @@ export function TargetForm({ name, unit, initialTarget = '' }: { name: string; u
       <form className="form-row" onSubmit={submit}>
         <div className="field field-grow">
           <label htmlFor={id}>Target 1RM ({unit})</label>
-          <input id={id} className="input mono" inputMode="decimal" value={input} onChange={(e) => setInput(e.target.value)} placeholder={unit === 'kg' ? '100' : '225'} />
+          <input id={id} className="input tnum" inputMode="decimal" value={input} onChange={(e) => setInput(e.target.value)} placeholder={unit === 'kg' ? '100' : '225'} />
         </div>
         <Button type="submit" variant="primary" disabled={!name || !(Number(input) > 0)}>
           Get date
@@ -417,7 +417,7 @@ export function AliasesTool() {
         <div className="form-row">
           <div className="field field-grow">
             <label htmlFor={shortId}>Shortcut</label>
-            <input id={shortId} className="input mono" value={short} onChange={(e) => setShort(e.target.value)} placeholder="sldl" />
+            <input id={shortId} className="input tnum" value={short} onChange={(e) => setShort(e.target.value)} placeholder="sldl" />
           </div>
           <div className="field field-grow-2">
             <label htmlFor={fullId}>Full name</label>
@@ -440,7 +440,7 @@ export function AliasesTool() {
                 {list.map((a) => (
                   <li key={a.id} className="list-item">
                     <span className="t-label">
-                      <span className="mono">{a.short}</span> = {a.full}
+                      <span className="tnum">{a.short}</span> = {a.full}
                     </span>
                     <IconButton label={`Remove ${a.short}`} onClick={() => remove.mutate(a.id)}>
                       <Trash2 {...ICON} />
@@ -464,9 +464,9 @@ export function AliasesTool() {
                 {list.map((m) => (
                   <li key={m.written} className="list-item">
                     <span className="t-label">
-                      <span className="mono">{m.written}</span> → {exerciseName(m.matched)}
+                      <span className="tnum">{m.written}</span> → {exerciseName(m.matched)}
                     </span>
-                    <span className="hint mono">{m.sets} sets</span>
+                    <span className="hint tnum">{m.sets} sets</span>
                   </li>
                 ))}
               </ul>

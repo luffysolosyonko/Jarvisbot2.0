@@ -45,7 +45,7 @@ function Table({ caption, rows }: { caption: string; rows: [string, string][] })
       <tbody>
         {rows.map(([type, rec]) => (
           <tr key={type}>
-            <td className="mono nowrap">{type}</td>
+            <td className="tnum nowrap">{type}</td>
             <td>{rec}</td>
           </tr>
         ))}

@@ -1,5 +1,5 @@
-import '@fontsource/jetbrains-mono/400.css';
-import '@fontsource/jetbrains-mono/600.css';
+import '@fontsource-variable/archivo/wdth.css';
+import './theme/tokens.css';
 import './index.css';
 
 import { StrictMode } from 'react';
