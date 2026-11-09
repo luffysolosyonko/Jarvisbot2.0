@@ -7,8 +7,8 @@ import { contrastRatio } from '@/theme/contrast';
 const BODY = 4.5; // WCAG AA body text
 const LARGE = 3; // large text, icons and chart lines
 
-const TEXT: (keyof ColorTokens)[] = ['ink', 'inkSecondary', 'accent', 'success', 'danger'];
-const BACKGROUNDS: (keyof ColorTokens)[] = ['bg', 'surface'];
+const TEXT: (keyof ColorTokens)[] = ['ink', 'inkSecondary', 'inkTertiary', 'accent', 'success', 'danger'];
+const BACKGROUNDS: (keyof ColorTokens)[] = ['bg', 'surface', 'paperSunk'];
 
 describe.each(Object.entries(palettes))('%s theme', (_name, c) => {
   it.each(TEXT.flatMap((t) => BACKGROUNDS.map((b) => [t, b] as const)))(
@@ -17,6 +17,10 @@ describe.each(Object.entries(palettes))('%s theme', (_name, c) => {
       expect(contrastRatio(c[text], c[bg])).toBeGreaterThanOrEqual(BODY);
     },
   );
+
+  it('the outlier warning text meets AA on its box', () => {
+    expect(contrastRatio(c.warnText, c.warnBg)).toBeGreaterThanOrEqual(BODY);
+  });
 
   it('onAccent on accent meets AA for body text (primary button)', () => {
     expect(contrastRatio(c.onAccent, c.accent)).toBeGreaterThanOrEqual(BODY);

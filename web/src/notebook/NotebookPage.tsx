@@ -2,14 +2,13 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router';
 
 import { Button } from '@/components/Button';
-import { GoalBar } from '@/components/GoalBar';
 import { EmptyState, ErrorState, SkeletonEntries } from '@/components/States';
 import { useToast } from '@/components/Toast';
 import { useAsk, useAskHistory, useClearAskHistory, useLogs, useMe, useSaveLog, useTz, useUnit } from '@/hooks/queries';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useTitle } from '@/hooks/useTitle';
 import { errorMessage } from '@/lib/api';
-import { dayIn, dividerDate, isoDate, messageTime, parseDate, todayIn } from '@/lib/format';
+import { capsDate, clockTime, dayHeading, dayIn, isoDate, parseDate, todayIn } from '@/lib/format';
 import { load, save } from '@/lib/storage';
 import type { Log, Mode } from '@/lib/types';
 import { ToolPanel } from '@/tools/ToolPanel';
@@ -38,37 +37,51 @@ function addDays(iso: string, n: number): string {
   return isoDate(d);
 }
 
-/** A question, then Jarvis's answer: indented, with a blue rule. */
-function AskReply({ item, onRetry, tz, today }: { item: AskView; onRetry: () => void; tz: string | undefined; today: string }) {
+/** A question in the margin-timed column, then Jarvis's answer under it. */
+function AskReply({ item, onRetry, tz }: { item: AskView; onRetry: () => void; tz: string | undefined }) {
   return (
-    <div className="ask" role="group" aria-label="Question to Jarvis">
-      <p className="group-time">
-        <time dateTime={item.at}>{messageTime(item.at, tz, today)}</time>
-      </p>
-      <p className="ask-question">{item.question}</p>
-      <div className="answer">
-        <p className="answer-label">Jarvis</p>
-        {item.answer !== undefined ? (
-          <p className="prewrap">{item.answer}</p>
-        ) : item.error ? (
-          <div className="stack-2" role="alert">
-            <p className="danger">{item.error}</p>
-            <Button size="small" onClick={onRetry}>
-              Try again
-            </Button>
-          </div>
-        ) : (
-          <p className="secondary" aria-live="polite">
-            Thinking…
-          </p>
-        )}
+    <div className="entry" role="group" aria-label="Question to Jarvis">
+      <time className="entry-time" dateTime={item.at}>
+        {clockTime(item.at, tz)}
+      </time>
+      <div className="entry-main">
+        <p className="entry-text prose">{item.question}</p>
+        <div className="answer">
+          <p className="answer-label">Jarvis</p>
+          {item.answer !== undefined ? (
+            <p className="answer-text">{item.answer}</p>
+          ) : item.error ? (
+            <div className="stack-2" role="alert">
+              <p className="danger">{item.error}</p>
+              <Button size="small" onClick={onRetry}>
+                Try again
+              </Button>
+            </div>
+          ) : (
+            <p className="note pending" aria-live="polite">
+              ↳ thinking…
+            </p>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
-/** Entries within this long of the previous one share its timestamp. */
-const GROUP_MS = 15 * 60_000;
+/** "2 sets · 1 weigh-in" for a day of the feed. */
+function daySummary(items: FeedItem[]): string {
+  let sets = 0;
+  let weighIns = 0;
+  for (const f of items) {
+    if (f.kind !== 'log') continue;
+    sets += f.log.sets.length;
+    if (f.log.weigh_in) weighIns += 1;
+  }
+  const parts: string[] = [];
+  if (sets) parts.push(`${sets} set${sets === 1 ? '' : 's'}`);
+  if (weighIns) parts.push(`${weighIns} weigh-in${weighIns === 1 ? '' : 's'}`);
+  return parts.join(' · ');
+}
 
 const MODES: Mode[] = ['workout', 'weight', 'ask'];
 
@@ -116,7 +129,6 @@ export function NotebookPage() {
     save(MODE_KEY, m);
     setSendError(null);
   };
-
 
   // Ctrl/Cmd+K from another page lands here with the input focused.
   useEffect(() => {
@@ -168,6 +180,11 @@ export function NotebookPage() {
     return items.sort((a, b) => a.at.localeCompare(b.at));
   }, [visible, askHistory.data, pendingAsks, from, tz]);
 
+  const summaries = useMemo(() => {
+    const byDay = new Map<string, FeedItem[]>();
+    for (const f of feed) byDay.set(f.day, [...(byDay.get(f.day) ?? []), f]);
+    return new Map([...byDay].map(([d, items]) => [d, daySummary(items)]));
+  }, [feed]);
 
   // Start at the newest entry, like a chat; follow new entries as they arrive.
   const count = feed.length;
@@ -179,9 +196,12 @@ export function NotebookPage() {
   useEffect(() => {
     jumpRef.current = jumpId;
   }, [jumpId]);
+  // Also when the newest entry comes back from the server (it may grow a warning box).
+  const last = feed[feed.length - 1];
+  const tail = last?.kind === 'log' ? `${last.log.id}:${!!last.log.pending}:${!!last.log.weigh_in?.flagged}` : '';
   useEffect(() => {
     if (!jumpRef.current) window.scrollTo({ top: document.documentElement.scrollHeight });
-  }, [count, settled]);
+  }, [count, settled, tail]);
 
   // Jump to a search result once it's loaded, then clear the URL.
   useEffect(() => {
@@ -244,7 +264,12 @@ export function NotebookPage() {
   return (
     <div className={`notebook${tool && wide ? ' with-panel' : ''}`}>
       <main className="main" id="main">
-        <h1 className="visually-hidden">Notebook</h1>
+        <header className="nb-head">
+          <h1 className="wordmark">Jarvis</h1>
+          <time className="caps" dateTime={today}>
+            {capsDate(today)}
+          </time>
+        </header>
         <div className="feed" aria-live="polite">
           <div className="row-between feed-bar">
             {feed.length ? (
@@ -263,26 +288,22 @@ export function NotebookPage() {
           ) : !feed.length ? (
             <EmptyState message="Type a set like 8x 160lb bench in the box below to start your notebook." />
           ) : (
-            feed.map((f, i) => {
-              const prev = feed[i - 1];
-              const header = f.day !== lastDay ? <h2 className="day-divider">{dividerDate(f.day)}</h2> : null;
+            feed.map((f) => {
+              const header =
+                f.day !== lastDay ? (
+                  <h2 className="day-divider">
+                    <span className="day">{dayHeading(f.day, today)}</span>
+                    <span className="sum">{summaries.get(f.day)}</span>
+                  </h2>
+                ) : null;
               lastDay = f.day;
-              // A run of entries close together shares one timestamp.
-              const startsGroup =
-                f.kind === 'log' &&
-                (!prev || prev.kind !== 'log' || prev.day !== f.day || Date.parse(f.at) - Date.parse(prev.at) > GROUP_MS);
               return (
                 <div key={f.kind === 'log' ? `l${f.log.id}` : f.item.key}>
                   {header}
-                  {startsGroup ? (
-                    <p className="group-time">
-                      <time dateTime={f.at}>{messageTime(f.at, tz, today)}</time>
-                    </p>
-                  ) : null}
                   {f.kind === 'log' ? (
                     <Entry log={f.log} unit={unit} highlight={highlight === f.log.id} />
                   ) : (
-                    <AskReply item={f.item} tz={tz} today={today} onRetry={() => runAsk(f.item.question, f.item.retryId)} />
+                    <AskReply item={f.item} tz={tz} onRetry={() => runAsk(f.item.question, f.item.retryId)} />
                   )}
                 </div>
               );
@@ -302,7 +323,6 @@ export function NotebookPage() {
           sending={mode === 'ask' && ask.isPending}
           error={sendError}
           unit={unit}
-          tz={tz}
           tools={
             <MoreMenu
               onPick={setTool}
@@ -316,7 +336,6 @@ export function NotebookPage() {
               }
             />
           }
-          header={<GoalBar variant="slim" />}
           inputRef={inputRef}
         />
       </main>

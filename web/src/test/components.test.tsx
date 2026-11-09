@@ -73,24 +73,24 @@ function ComposerHarness({ onSend, initialMode = 'workout' }: { onSend: (text: s
       sending={false}
       error={null}
       unit="lb"
-      tz="America/Chicago"
       tools={null}
     />
   );
 }
 
 describe('Composer', () => {
-  it('is just the mode switch, a time line and the text box', () => {
+  it('has the Workout/Weight switch, an Ask toggle, a labelled box and a save button', () => {
     wrap(<ComposerHarness onSend={vi.fn()} />);
-    expect(screen.queryByRole('toolbar')).not.toBeInTheDocument();
-    expect(screen.getByLabelText('Sets, one per line')).toBeInTheDocument();
-    expect(document.querySelector('time')?.textContent).toMatch(/^(Sun|Mon|Tue|Wed|Thu|Fri|Sat), \w{3} \d{1,2} · \d{1,2}:\d{2} (AM|PM)$/);
+    expect(screen.getByRole('radio', { name: 'Workout' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('button', { name: 'Ask' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByLabelText('Log a set')).toHaveAttribute('placeholder', '8x 135lb bench');
+    expect(screen.getByRole('button', { name: 'Save entry' })).toBeDisabled();
   });
 
   it('sends on Enter and adds a line on Shift+Enter', async () => {
     const onSend = vi.fn();
     wrap(<ComposerHarness onSend={onSend} />);
-    const input = screen.getByLabelText('Sets, one per line');
+    const input = screen.getByLabelText('Log a set');
     await userEvent.type(input, '5x 155lb bench{Shift>}{Enter}{/Shift}8x 135lb');
     expect(onSend).not.toHaveBeenCalled();
     expect(input).toHaveValue('5x 155lb bench\n8x 135lb');
@@ -98,35 +98,34 @@ describe('Composer', () => {
     expect(onSend).toHaveBeenCalledWith('5x 155lb bench\n8x 135lb');
   });
 
-  it('reads the text in one line, using the mode', async () => {
+  it('previews the note the entry will get, using the mode', async () => {
     wrap(<ComposerHarness onSend={vi.fn()} />);
-    await userEvent.type(screen.getByLabelText('Sets, one per line'), '5x 155lb 1x bench');
-    expect(await screen.findByText('2 sets · Bench')).toBeInTheDocument();
+    await userEvent.type(screen.getByLabelText('Log a set'), '5x 155lb 1x bench');
+    expect(await screen.findByText(/↳ Bench · 5, 5 reps · 155 lb/)).toBeInTheDocument();
     expect(apiMock).toHaveBeenCalledWith('/parse', expect.objectContaining({ body: { text: '5x 155lb 1x bench', mode: 'workout' } }));
   });
 
-  it('Ask mode has the question box and no logging line', async () => {
+  it('Weight mode has its own label and placeholder', async () => {
     wrap(<ComposerHarness onSend={vi.fn()} />);
-    await userEvent.click(screen.getByRole('radio', { name: 'Ask' }));
-    expect(screen.getByLabelText('Question for Jarvis')).toHaveAttribute('placeholder', 'Is my bench still improving?');
-    expect(document.querySelector('time')).toBeNull();
-    expect(screen.queryByText(/tokens/)).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('radio', { name: 'Weight' }));
+    expect(screen.getByLabelText('Log weight')).toHaveAttribute('placeholder', '70.3kg');
   });
 
-  it('has one simple send button in every mode', async () => {
+  it('Ask is a toggle: the question box, no preview, nothing selected in the switch', async () => {
     const onSend = vi.fn();
     wrap(<ComposerHarness onSend={onSend} />);
-    const send = screen.getByRole('button', { name: 'Send' });
-    expect(send).toBeDisabled();
-    await userEvent.type(screen.getByLabelText('Sets, one per line'), '5x 155lb bench');
-    await userEvent.click(send);
-    expect(onSend).toHaveBeenCalledTimes(1);
-    for (const mode of ['Weight', 'Ask']) {
-      await userEvent.click(screen.getByRole('radio', { name: mode }));
-      expect(screen.getAllByRole('button', { name: 'Send' })).toHaveLength(1);
-    }
+    await userEvent.click(screen.getByRole('button', { name: 'Ask' }));
+    expect(screen.getByRole('button', { name: 'Ask' })).toHaveAttribute('aria-pressed', 'true');
+    expect(screen.getByRole('radio', { name: 'Workout' })).toHaveAttribute('aria-checked', 'false');
+    const box = screen.getByLabelText('Ask Jarvis');
+    expect(box).toHaveAttribute('placeholder', 'Is my bench still improving?');
+    await userEvent.type(box, 'How is my squat?');
+    expect(screen.queryByText(/↳/)).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Send question' }));
+    expect(onSend).toHaveBeenCalledWith('How is my squat?');
+    await userEvent.click(screen.getByRole('button', { name: 'Ask' }));
+    expect(screen.getByLabelText('Log a set')).toBeInTheDocument();
   });
-
 });
 
 describe('MoreMenu', () => {
@@ -134,17 +133,17 @@ describe('MoreMenu', () => {
     const onPick = vi.fn();
     const onHide = vi.fn();
     render(<MoreMenu onPick={onPick} onHideAnswers={onHide} />);
-    await userEvent.click(screen.getByRole('button', { name: /^More/ }));
+    await userEvent.click(screen.getByRole('button', { name: 'Tools' }));
     await userEvent.click(screen.getByRole('menuitem', { name: /^Predict lift/ }));
     expect(onPick).toHaveBeenCalledWith('predict-lift');
-    await userEvent.click(screen.getByRole('button', { name: /^More/ }));
+    await userEvent.click(screen.getByRole('button', { name: 'Tools' }));
     await userEvent.click(screen.getByRole('menuitem', { name: 'Hide answers' }));
     expect(onHide).toHaveBeenCalled();
   });
 
   it('has no Hide answers item when there is nothing to hide', async () => {
     render(<MoreMenu onPick={vi.fn()} />);
-    await userEvent.click(screen.getByRole('button', { name: /^More/ }));
+    await userEvent.click(screen.getByRole('button', { name: 'Tools' }));
     expect(screen.queryByRole('menuitem', { name: 'Hide answers' })).not.toBeInTheDocument();
   });
 });
@@ -199,7 +198,8 @@ describe('Entry', () => {
     wrap(<Entry log={LOG} unit="lb" />);
     expect(screen.getByRole('button', { name: /^Logged: 1 set · Bench/ })).toBeInTheDocument();
     expect(screen.queryByText('You')).not.toBeInTheDocument(); // no names on entries
-    expect(screen.getByText('Not logged')).toBeInTheDocument();
+    expect(screen.getByText(/Not logged/)).toBeInTheDocument();
+    expect(screen.getByText('↳ Bench · 5 reps · 155 lb')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Fix' }));
     await userEvent.click(screen.getByRole('button', { name: 'Add unit: lb' }));
     await waitFor(() =>
@@ -246,16 +246,19 @@ describe('Calendar', () => {
     { date: '2026-11-04', has_workout: false, has_weight: true, sets: 0, volume_lb: 0, weight_lb: 180.5 },
   ];
 
-  it('fills workout days, outlines weigh-in-only days and marks today', async () => {
+  it('shades days by sets, dots weigh-ins and marks today', async () => {
     const onSelect = vi.fn();
     render(<Calendar month="2026-11" days={days} today="2026-11-09" selected={null} onSelect={onSelect} onMonth={vi.fn()} />);
     const workout = screen.getByRole('gridcell', { name: /November 2, workout, 20 sets and weigh-in/ });
-    expect(workout).toHaveClass('workout');
-    expect(screen.getByRole('gridcell', { name: /November 4, weigh-in/ })).toHaveClass('weight');
+    expect(workout).toHaveClass('l3');
+    expect(workout.querySelector('.dot')).not.toBeNull();
+    const weighIn = screen.getByRole('gridcell', { name: /November 4, weigh-in/ });
+    expect(weighIn).not.toHaveClass('l1');
+    expect(weighIn.querySelector('.dot')).not.toBeNull();
     expect(screen.getByRole('gridcell', { name: /November 9, nothing logged/ })).toHaveAttribute('aria-current', 'date');
     await userEvent.click(workout);
     expect(onSelect).toHaveBeenCalledWith('2026-11-02');
-    expect(screen.getByText('Weigh-in only')).toBeInTheDocument();
+    expect(screen.getByText(/More sets/)).toBeInTheDocument();
   });
 
   it('moves between months with the buttons and arrow keys', async () => {
@@ -267,5 +270,47 @@ describe('Calendar', () => {
     fireEvent.keyDown(screen.getByRole('gridcell', { name: /November 30/ }), { key: 'ArrowRight' });
     expect(onMonth).toHaveBeenLastCalledWith('2026-12');
     expect(onSelect).toHaveBeenLastCalledWith('2026-12-01');
+  });
+});
+
+const FLAGGED: Log = {
+  id: 9,
+  kind: 'weight',
+  raw_text: '80',
+  logged_at: '2026-11-10T14:00:00Z',
+  local_date: '2026-11-10',
+  sets: [],
+  weigh_in: { weight_lb: 176.4, note: null, typed: 80, typed_unit: 'kg', unit_assumed: true, flagged: true, avg_7d: 157.2, confirmed: false },
+  warnings: [],
+};
+
+describe('Outlier weigh-in', () => {
+  it('asks before counting it, with the amounts worked out', () => {
+    wrap(<Entry log={FLAGGED} unit="lb" />);
+    expect(screen.getByText('↳ 80 kg = 176.4 lb?')).toBeInTheDocument();
+    expect(screen.getByText("That's 19 lb above your 7-day average. No unit was given, so kg was assumed.")).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'It was 80 lb' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Keep 176.4' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Edit' })).toBeInTheDocument();
+  });
+
+  it('"It was 80 lb" rewrites the entry in lb and confirms it', async () => {
+    apiMock.mockResolvedValue({ ...FLAGGED, raw_text: '80lb' });
+    wrap(<Entry log={FLAGGED} unit="lb" />);
+    await userEvent.click(screen.getByRole('button', { name: 'It was 80 lb' }));
+    await waitFor(() => expect(apiMock).toHaveBeenCalledWith('/logs/9', { method: 'PATCH', body: { text: '80lb', confirm_weight: true } }));
+  });
+
+  it('"Keep" confirms it as is', async () => {
+    apiMock.mockResolvedValue(FLAGGED);
+    wrap(<Entry log={FLAGGED} unit="lb" />);
+    await userEvent.click(screen.getByRole('button', { name: 'Keep 176.4' }));
+    await waitFor(() => expect(apiMock).toHaveBeenCalledWith('/logs/9/confirm', { method: 'POST' }));
+  });
+
+  it('"Edit" opens the entry for editing', async () => {
+    wrap(<Entry log={FLAGGED} unit="lb" />);
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }));
+    expect(screen.getByLabelText('Edit entry text')).toHaveValue('80');
   });
 });

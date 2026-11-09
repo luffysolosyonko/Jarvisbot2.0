@@ -29,7 +29,16 @@ export type ParsedSet = {
   inferred: boolean;
 };
 
-export type WeighIn = { weight_lb: number; note: string | null };
+export type WeighIn = {
+  weight_lb: number;
+  note: string | null;
+  typed: number | null; // the number as written
+  typed_unit: Unit; // the unit it was read in
+  unit_assumed: boolean; // no unit was written
+  flagged: boolean; // far from the 7-day average, not confirmed: left out of stats
+  avg_7d: number | null; // the average it was compared with
+  confirmed: boolean;
+};
 
 /** A one-click repair: replace `line` with `text`, or with `template` once its `{}` is filled. */
 export type Fix = {
@@ -102,7 +111,7 @@ export type Dashboard = {
   week: Window;
   previous_week: Window;
   weekly: Window[];
-  weight: { points: Point[]; average_7d: Point[]; projection: Projection | null };
+  weight: { points: Point[]; average_7d: Point[]; projection: Projection | null; flagged: Point[] };
   top_lifts: TopLift[];
 };
 

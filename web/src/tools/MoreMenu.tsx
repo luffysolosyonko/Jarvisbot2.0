@@ -1,13 +1,12 @@
-import { Ellipsis } from 'lucide-react';
+import { Wrench } from 'lucide-react';
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 
 import { IconButton } from '@/components/Button';
-import { ICON } from '@/components/icons';
 
 import { TOOLS, type ToolId } from './registry';
 
 /**
- * The ⋯ menu: the bot's commands, and "Hide answers" when there are answers to hide.
+ * The Tools menu: the bot's commands, and "Hide answers" when there are answers to hide.
  * Arrow keys move between items; Escape closes it.
  */
 export function MoreMenu({ onPick, onHideAnswers }: { onPick: (id: ToolId) => void; onHideAnswers?: () => void }) {
@@ -45,11 +44,11 @@ export function MoreMenu({ onPick, onHideAnswers }: { onPick: (id: ToolId) => vo
 
   return (
     <div className="menu-anchor" ref={wrap} onKeyDown={onKey}>
-      <IconButton label="More: tools and options" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
-        <Ellipsis {...ICON} />
+      <IconButton label="Tools" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
+        <Wrench size={20} strokeWidth={1.8} />
       </IconButton>
       {open ? (
-        <div className="menu" role="menu" aria-label="More">
+        <div className="menu" role="menu" aria-label="Tools">
           {TOOLS.map((t, i) => (
             <button
               key={t.id}

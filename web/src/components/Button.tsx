@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes, ReactNode } from 'react';
 
 type Props = ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: 'primary' | 'secondary' | 'ghost' | 'danger';
+  variant?: 'primary' | 'ink' | 'secondary' | 'ghost' | 'danger';
   size?: 'normal' | 'small';
   block?: boolean;
   loading?: boolean;
@@ -23,6 +23,7 @@ export function Button({
   const cls = [
     'btn',
     variant === 'primary' && 'btn-primary',
+    variant === 'ink' && 'btn-ink',
     variant === 'ghost' && 'btn-ghost',
     variant === 'danger' && 'btn-danger',
     size === 'small' && 'btn-small',

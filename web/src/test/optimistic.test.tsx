@@ -19,7 +19,7 @@ const OLD: Log = {
   logged_at: '2026-11-09T13:00:00Z',
   local_date: '2026-11-09',
   sets: [],
-  weigh_in: { weight_lb: 182.4, note: null },
+  weigh_in: { weight_lb: 182.4, note: null, typed: 182.4, typed_unit: 'lb', unit_assumed: true, flagged: false, avg_7d: null, confirmed: false },
   warnings: [],
 };
 

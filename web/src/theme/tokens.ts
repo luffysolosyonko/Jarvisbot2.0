@@ -1,32 +1,41 @@
 /**
  * Colors mirrored from theme/tokens.css, for charts (which need real values) and the
- * contrast test. Red, yellow and green only carry meaning (failed reps; goals and
- * PRs; a confirmed parse). Blue is the only interactive color.
+ * contrast test. A paper notebook: warm paper, dark ink, forest-green accent.
  */
 export type ColorTokens = {
-  bg: string;
-  surface: string;
+  bg: string; // --paper
+  surface: string; // --paper-raised
   ink: string;
-  inkSecondary: string; // --muted
-  border: string; // --line
-  accent: string; // --blue
-  onAccent: string; // --on-blue
-  success: string; // --green
-  danger: string; // --red
-  yellow: string; // goals and PRs; never text
+  inkSecondary: string; // --ink-2
+  inkTertiary: string; // --ink-3
+  border: string; // --rule
+  grid: string; // --segment-bg (chart gridlines)
+  accent: string; // forest green
+  onAccent: string; // paper on green
+  success: string; // the parse note: also the accent
+  danger: string; // --fail
+  flag: string; // a flagged weigh-in on the chart (a shape, never text)
+  paperSunk: string; // the composer
+  warnBg: string;
+  warnText: string;
 };
 
 export const palette: ColorTokens = {
-  bg: '#EEF0F2',
-  surface: '#FFFFFF',
-  ink: '#1C2127',
-  inkSecondary: '#656E78',
-  border: '#D5D9DE',
-  accent: '#1F4FA3',
-  onAccent: '#FFFFFF',
-  success: '#2C7B4D',
-  danger: '#C8102E',
-  yellow: '#E8B100',
+  bg: '#F6F2EA',
+  surface: '#FBF8F2',
+  ink: '#1C1A17',
+  inkSecondary: '#4A443B',
+  inkTertiary: '#6B6358',
+  border: '#D9CFBE',
+  grid: '#E2D8C6',
+  accent: '#2E5B45',
+  onAccent: '#F6F2EA',
+  success: '#2E5B45',
+  danger: '#9A3B1E',
+  flag: '#C46A1A',
+  paperSunk: '#EEE6D8',
+  warnBg: '#FBEAD2',
+  warnText: '#7A3F0C',
 };
 
 /** One color scheme only. */
@@ -34,8 +43,9 @@ export const colors = palette;
 export const palettes = { palette } as const;
 
 export const fonts = {
-  ui: "'Archivo Variable', 'Archivo', system-ui, sans-serif",
+  ui: "'IBM Plex Sans', system-ui, sans-serif",
+  mono: "'JetBrains Mono', ui-monospace, Consolas, monospace",
 } as const;
 
-/** The type scale's small step, for chart ticks. */
-export const fontSize = { small: 13 } as const;
+/** Chart axis labels. */
+export const fontSize = { small: 10 } as const;

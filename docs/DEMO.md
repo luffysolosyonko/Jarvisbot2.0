@@ -47,14 +47,14 @@ Run every command from the repo root unless it says otherwise. Use PowerShell.
 | Time | Where | Do | Point out |
 |---|---|---|---|
 | 0:00 | Sign in | Show the form, then click **Try the demo** | Email, Google popup and the demo all go through Firebase. The demo is a custom token for one fixed account, minted by the API; there's no demo password. |
-| 0:30 | Notebook | Scroll the feed | A chat-style log like the Discord bot's channels: what was typed on top, parsed rows below, a "Logged" check. |
-| 1:00 | Notebook, Workout | Type `5x 155lb 2x1x1xf bench`, then press Enter | The line above the box reads it back as "5 sets · Bench" and shows the time it'll be logged at, like a chat. Enter saves and it appears at once as "Logged" (the table shows the last set as a failed rep). No AI is involved in logging. |
-| 1:30 | Notebook, Workout | Type `8x 135lb bench`, Shift+Enter, then `8 135 squat` | The bad line is flagged "Not understood" with fixes; click **Add unit: lb** and it's rewritten and re-parsed. **⋯ > Syntax help** has every format and the keyboard shortcuts. |
-| 2:00 | Notebook, Weight | Switch to **Weight**, type `83.9kg`, Enter | Converted to 185 lb. Weight mode ignores set lines, just like the bot's #weight channel. |
-| 2:30 | ⋯ menu | **⋯ > Predict lift**, pick **Bench**, target `225`, **Get date** | Every slash command is in the ⋯ menu, with dropdowns instead of typed syntax. The forecast is a regression over recent sessions, with the date you'd hit the target at this pace. |
-| 3:15 | History | Click a filled day in the calendar | Filled = workout, outlined = weigh-in only. The day shows as one table of every set (exercise, reps, good, failed, weight) and the weigh-in. |
-| 3:45 | Progress | Point at the barbell, then scroll; click **Bench** | The goal bar: best bench e1RM against 225 lb, solid plates for now and outlined plates for what's left. Then body weight with a 7-day average and a dashed projection, weekly volume, top lifts. Bench shows the deload dip and the forecast line. |
-| 4:15 | Notebook, Ask | Switch to **Ask**, ask "Is my bench still improving?" | Only Ask mode calls Claude. The answer uses only this account's data and appears as a message from Jarvis. It's saved: reload and it's still there; **⋯ > Hide answers** hides it. |
+| 0:30 | Notebook | Scroll the page | A ruled logbook: the time in the margin, what was typed in mono, and a green "↳" note of what it logged. Click a note for the parsed sets. |
+| 1:00 | Notebook, Workout | Type `5x 155lb 2x1x1xf bench`, then press Enter | The "↳" line under the box reads it back as the note it will get, with "✗ last rep" for the failed rep. Enter saves and it appears at once. No AI is involved in logging. |
+| 1:30 | Notebook, Workout | Type `8x 135lb bench`, Shift+Enter, then `8 135 squat` | The bad line is flagged "Not understood" with fixes; click **Add unit: lb** and it's rewritten and re-parsed. **Tools > Syntax help** has every format and the keyboard shortcuts. |
+| 2:00 | Notebook, Weight | Switch to **Weight**, type `83.9kg`, Enter; then type `90`, Enter | Converted to 185 lb. A bare `90` reads as 90 kg = 198.4 lb, about 19 lb over the 7-day average, so it gets a warning box: **It was 90 lb**, **Keep 198.4** or **Edit**. Until you answer, it's left out of every average and forecast. |
+| 2:30 | Tools | **Tools > Predict lift**, pick **Bench**, target `225`, **Get date** | Every slash command is in the Tools menu (wrench), with dropdowns instead of typed syntax. The forecast is a regression over recent sessions, with the date you'd hit the target at this pace. |
+| 3:15 | History | Click a dark day in the heatmap | Darker = more sets, a dot = a weigh-in. The day shows as one table of every set (exercise, "3 ✓ · 1 ✗", weight) and the weigh-in. |
+| 3:45 | Progress | Scroll; click **Bench** | The latest confirmed weigh-in up top, then body weight with a 7-day average and a dashed forecast (the flagged `90` from earlier is a hollow orange circle, pinned at the top), this week's sets, volume and sessions, the month heatmap and top lifts. Bench shows the deload dip and the forecast line. |
+| 4:15 | Notebook, Ask | Press **Ask**, ask "Is my bench still improving?" | Only Ask mode calls Claude. The answer uses only this account's data and appears as a message from Jarvis. It's saved: reload and it's still there; **Tools > Hide answers** hides it. |
 
 If there's time for questions, the strongest code to show: the `jarvis_core`
 parser tests, the test that logging makes zero LLM calls

@@ -1,18 +1,17 @@
 import { useEffect } from 'react';
+import { CalendarDays, ChartLine, NotebookPen, Settings, type LucideIcon } from 'lucide-react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 
 import { useMe, useUpdateSettings } from '@/hooks/queries';
 import { deviceTimeZone } from '@/lib/format';
 
-
-const LINKS: { to: string; label: string; end?: boolean }[] = [
-  { to: '/', label: 'Notebook', end: true },
-  { to: '/history', label: 'History' },
-  { to: '/progress', label: 'Progress' },
-  { to: '/settings', label: 'Settings' },
+const LINKS: { to: string; label: string; Icon: LucideIcon; end?: boolean }[] = [
+  { to: '/', label: 'Notebook', Icon: NotebookPen, end: true },
+  { to: '/history', label: 'History', Icon: CalendarDays },
+  { to: '/progress', label: 'Progress', Icon: ChartLine },
+  { to: '/settings', label: 'Settings', Icon: Settings },
 ];
 
-/** The top nav (same color as the page, one line under it) and the page. */
 /** New accounts start in UTC; adopt the browser's time zone once (not for the demo). */
 function useAdoptBrowserTimeZone() {
   const { data: me } = useMe();
@@ -24,6 +23,7 @@ function useAdoptBrowserTimeZone() {
   }, [needed, browser, update]);
 }
 
+/** The app column (480px, centered on wide screens) with the nav along the bottom. */
 export function Layout() {
   useAdoptBrowserTimeZone();
   const navigate = useNavigate();
@@ -45,23 +45,19 @@ export function Layout() {
       <a href="#main" className="visually-hidden">
         Skip to content
       </a>
-      <header className="topnav">
-        <div className="topnav-inner">
-          <span className="brand">Jarvis</span>
-          <nav aria-label="Main">
-            <ul className="navlinks">
-              {LINKS.map(({ to, label, end }) => (
-                <li key={to}>
-                  <NavLink to={to} end={end} className={({ isActive }) => `navlink${isActive ? ' active' : ''}`}>
-                    {label}
-                  </NavLink>
-                </li>
-              ))}
-            </ul>
-          </nav>
-        </div>
-      </header>
       <Outlet />
+      <nav className="bottomnav" aria-label="Main">
+        <ul>
+          {LINKS.map(({ to, label, Icon, end }) => (
+            <li key={to}>
+              <NavLink to={to} end={end} className={({ isActive }) => `tab${isActive ? ' active' : ''}`}>
+                <Icon size={22} strokeWidth={1.8} aria-hidden="true" />
+                {label}
+              </NavLink>
+            </li>
+          ))}
+        </ul>
+      </nav>
     </div>
   );
 }

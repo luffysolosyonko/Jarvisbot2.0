@@ -117,3 +117,20 @@ export function dividerDate(iso: string): string {
   const d = parseDate(iso);
   return `${MONTHS_LONG[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
 }
+
+const WEEKDAYS_LONG = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+
+/** Notebook day heading: "Today", "Yesterday" or "Monday, November 9". */
+export function dayHeading(iso: string, todayIso: string): string {
+  if (iso === todayIso) return 'Today';
+  const diff = Math.round((parseDate(todayIso).getTime() - parseDate(iso).getTime()) / 86_400_000);
+  if (diff === 1) return 'Yesterday';
+  const d = parseDate(iso);
+  return `${WEEKDAYS_LONG[d.getDay()]}, ${MONTHS_LONG[d.getMonth()]} ${d.getDate()}`;
+}
+
+/** Header date in caps: "TUE · NOV 10". */
+export function capsDate(iso: string): string {
+  const d = parseDate(iso);
+  return `${DAYS[d.getDay()]} · ${MONTHS[d.getMonth()]} ${d.getDate()}`.toUpperCase();
+}

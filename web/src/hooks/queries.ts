@@ -126,8 +126,20 @@ export function useSaveLog(today: string) {
 export function useEditLog() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, text, mode }: { id: number; text: string; mode?: LogMode }) =>
-      api<Log>(`/logs/${id}`, { method: 'PATCH', body: mode ? { text, mode } : { text } }),
+    mutationFn: ({ id, text, mode, confirmWeight }: { id: number; text: string; mode?: LogMode; confirmWeight?: boolean }) =>
+      api<Log>(`/logs/${id}`, {
+        method: 'PATCH',
+        body: { text, ...(mode ? { mode } : {}), ...(confirmWeight ? { confirm_weight: true } : {}) },
+      }),
+    onSuccess: () => invalidateLogData(qc),
+  });
+}
+
+/** "Keep 176.4": the outlying weigh-in is right, so it counts in the stats again. */
+export function useConfirmWeight() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (id: number) => api<Log>(`/logs/${id}/confirm`, { method: 'POST' }),
     onSuccess: () => invalidateLogData(qc),
   });
 }

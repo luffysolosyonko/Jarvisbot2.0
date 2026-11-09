@@ -1,33 +1,53 @@
-/* Design tokens: the only place colors, type sizes, spacing and radius are defined.
-   Color rule: red, yellow and green appear only when they carry that meaning
-   (failed reps and warnings; goals and PRs; a confirmed parse). Blue is the only
-   interactive color. theme/tokens.ts mirrors the colors for charts and tests. */
+/* Design tokens: a lifter's paper notebook. The only place colors, fonts, sizes,
+   spacing and radii are defined; everything else uses these variables.
+   theme/tokens.ts mirrors the colors for charts and the contrast test. */
 
 :root {
-  --bg: #eef0f2;
-  --surface: #ffffff;
-  --ink: #1c2127;
-  --muted: #656e78; /* #67707A darkened a hair to pass AA (4.5:1) on --bg */
-  --line: #d5d9de;
-  --red: #c8102e; /* failed reps, warnings only */
-  --blue: #1f4fa3; /* the ONLY interactive color: buttons, links, active tab, workout days */
-  --yellow: #e8b100; /* goals and PRs only */
-  --green: #2c7b4d; /* confirmed parse only; #2E7D4F darkened a hair for AA on --bg */
+  /* paper */
+  --paper: #f6f2ea; /* app background */
+  --paper-raised: #fbf8f2; /* input fields */
+  --paper-sunk: #eee6d8; /* composer area */
+  --segment-bg: #e2d8c6; /* segmented control track */
+  --rule: #d9cfbe; /* dividers, borders */
+  --rule-faint: #e6ddcd; /* ruled notebook lines */
+  --margin-line: #e2b9ac; /* vertical notebook margin line */
 
-  --on-blue: #ffffff;
-  --blue-hover: #1a4389;
-  --answer-bg: #e6eaf1; /* the slightly muted background behind Jarvis's answers */
+  /* ink */
+  --ink: #1c1a17; /* primary text, selected segment */
+  --ink-2: #4a443b; /* secondary text */
+  --ink-3: #6b6358; /* timestamps, captions: 5.3:1 on --paper (never on --segment-bg) */
+  --nav-inactive: #5e574c;
 
-  /* Type: one family, two widths. Scale 13 / 15 / 18 / 24 / 40, nothing else. */
-  --font: 'Archivo Variable', 'Archivo', system-ui, sans-serif;
-  --condensed: 75%;
-  --t-13: 13px;
-  --t-15: 15px;
-  --t-18: 18px;
-  --t-24: 24px;
-  --t-40: 40px;
+  /* meaning */
+  --accent: #2e5b45; /* forest green: parse notes, active nav, save button, avg line */
+  --accent-hover: #1f4231;
+  --warn-bg: #fbead2;
+  --warn-border: #edcb9c;
+  --warn-text: #7a3f0c;
+  --fail: #9a3b1e; /* failed reps: always with a cross, never color alone */
+  --flag: #c46a1a; /* a flagged weigh-in on the chart: a hollow circle, not text */
 
-  /* Spacing: 4 / 8 / 12 / 16 / 24 / 32 / 48 only. */
+  /* heatmap: sets per day, less to more */
+  --heat-0: #e9e1d2;
+  --heat-1: #b9cdbf;
+  --heat-2: #6e9a80;
+  --heat-3: #2e5b45;
+
+  /* type */
+  --font-head: 'Fraunces', Georgia, serif;
+  --font-mono: 'JetBrains Mono', ui-monospace, Consolas, monospace;
+  --font-ui: 'IBM Plex Sans', system-ui, sans-serif;
+  --t-hero: 56px;
+  --t-title: 30px; /* wordmark and page titles */
+  --t-divider: 16px; /* day dividers, italic */
+  --t-log: 15px; /* log text */
+  --t-body: 15px;
+  --t-label: 13px;
+  --t-note: 12px; /* parse notes */
+  --t-time: 11px; /* timestamps, nav labels, caps labels */
+  --t-axis: 10px; /* chart axis labels */
+
+  /* space and shape */
   --s1: 4px;
   --s2: 8px;
   --s3: 12px;
@@ -35,11 +55,13 @@
   --s5: 24px;
   --s6: 32px;
   --s7: 48px;
-
-  --radius: 6px; /* controls only: buttons, inputs, chips. Sections have none. */
-  --control: 36px;
-  --column: 1080px;
-  --nav-h: 52px;
+  --radius: 10px; /* inputs, buttons, warning boxes */
+  --radius-cell: 6px; /* calendar cells */
+  --touch: 44px;
+  --margin-w: 68px; /* the notebook's margin column */
+  --ruled: 32px; /* ruled line spacing */
+  --column: 480px; /* the app column */
+  --nav-h: 64px; /* bottom nav */
 
   color-scheme: light;
 }

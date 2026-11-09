@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router';
+import { useNavigate, useSearchParams } from 'react-router';
 
 import { Button } from '@/components/Button';
 import { Section } from '@/components/Section';
@@ -40,14 +40,10 @@ function DayDetail({ day, today, summary }: { day: string; today: string; summar
       ) : (
         <div className="stack-3">
           {sets.length ? (
-            <div className="surface">
-              <SetRows sets={sets} unit={unit} caption={`Sets on ${longDate(day)}`} />
-            </div>
+            <SetRows sets={sets} unit={unit} caption={`Sets on ${longDate(day)}`} />
           ) : null}
           {weighIn !== null ? (
-            <p className="t-label">
-              Weigh-in <span className="tnum semibold">{weight(weighIn, unit)}</span>
-            </p>
+            <p className="note">↳ weigh-in · {weight(weighIn, unit)}</p>
           ) : null}
         </div>
       )}
@@ -60,8 +56,11 @@ export function HistoryPage() {
   const unit = useUnit();
   const today = todayIn(useTz());
   // Until you pick, follow "today" (it settles once the account's time zone loads).
-  const [pickedMonth, setMonth] = useState<string | null>(null);
-  const [picked, setSelected] = useState<string | null>(null);
+  // ?date= (from Progress) opens that day.
+  const [params] = useSearchParams();
+  const linked = /^\d{4}-\d{2}-\d{2}$/.test(params.get('date') ?? '') ? params.get('date') : null;
+  const [pickedMonth, setMonth] = useState<string | null>(linked ? linked.slice(0, 7) : null);
+  const [picked, setSelected] = useState<string | null>(linked);
   const month = pickedMonth ?? today.slice(0, 7);
   const selected = picked ?? today;
   const cal = useCalendar(month);
@@ -93,7 +92,7 @@ export function HistoryPage() {
                 onSelect={setSelected}
                 onMonth={setMonth}
               />
-              <p className="t-label" aria-live="polite">
+              <p className="t-label mono" aria-live="polite">
                 {c.workouts} workout{c.workouts === 1 ? '' : 's'} this month · {c.sets} sets
                 {c.weight_change_lb !== null ? ` · weight ${signedWeight(c.weight_change_lb, unit)}` : ''}
               </p>

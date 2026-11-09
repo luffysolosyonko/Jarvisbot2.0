@@ -1,22 +1,82 @@
-import { Check, Pencil, Trash2, Wrench } from 'lucide-react';
+import { Pencil, Trash2, Wrench } from 'lucide-react';
 import { useId, useState, type KeyboardEvent } from 'react';
 
 import { Button, IconButton } from '@/components/Button';
 import { ICON } from '@/components/icons';
 import { SetRows } from '@/components/SetRows';
 import { useToast } from '@/components/Toast';
-import { useEditLog, useTz } from '@/hooks/queries';
+import { useConfirmWeight, useEditLog, useTz } from '@/hooks/queries';
 import { errorMessage } from '@/lib/api';
 import { logSummary } from '@/lib/describe';
-import { messageTime, todayIn, weight } from '@/lib/format';
+import { clockTime, fromLb, messageTime, num, todayIn } from '@/lib/format';
+import { otherUnit, outlierReason, outlierTitle, setNotes, weighInNote, withExplicitUnit, type NoteLine } from '@/lib/notes';
 import type { Log, LogMode, Unit } from '@/lib/types';
 
 import { FixList } from './FixList';
 
+/** "↳ Bench · 3 reps · 155 lb · ✗ last rep": the fail part in bold rust. */
+export function Notes({ lines }: { lines: NoteLine[] }) {
+  return (
+    <>
+      {lines.map((l, i) => (
+        <span key={i} className="note-line block">
+          ↳ {l.text}
+          {l.fail ? (
+            <>
+              {' · '}
+              <span className="fail">{l.fail}</span>
+            </>
+          ) : null}
+        </span>
+      ))}
+    </>
+  );
+}
+
 /**
- * One saved log: what you typed, and a green check chip once it's logged (click it
- * for the parsed sets). Edit, Fix and Delete show on hover, always on touch. The
- * feed shows the time once per group of entries.
+ * A weigh-in far from the 7-day average (or typed without a unit): ask before it
+ * counts. "It was 80 lb" rewrites the entry with that unit; "Keep" confirms it.
+ */
+function OutlierBox({ log, unit, onEdit }: { log: Log; unit: Unit; onEdit: () => void }) {
+  const w = log.weigh_in!;
+  const edit = useEditLog();
+  const confirm = useConfirmWeight();
+  const error = edit.error ?? confirm.error;
+  const busy = edit.isPending || confirm.isPending;
+  const alt = otherUnit(w);
+  return (
+    <div className="warn" role="group" aria-label="Check this weigh-in">
+      <p className="warn-title tnum">↳ {outlierTitle(w)}</p>
+      <p className="warn-body">{outlierReason(w)}</p>
+      <div className="warn-actions">
+        {w.unit_assumed && w.typed !== null ? (
+          <Button
+            variant="ink"
+            disabled={busy}
+            onClick={() => edit.mutate({ id: log.id, text: withExplicitUnit(log.raw_text, w.typed!, alt), confirmWeight: true })}>
+            It was {num(w.typed)} {alt}
+          </Button>
+        ) : null}
+        <Button disabled={busy} onClick={() => confirm.mutate(log.id)}>
+          Keep {fromLb(w.weight_lb, unit).toFixed(1)}
+        </Button>
+        <Button variant="ghost" disabled={busy} onClick={onEdit}>
+          Edit
+        </Button>
+      </div>
+      {error ? (
+        <p className="error-text" role="alert">
+          {errorMessage(error)}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * One saved log on the ruled page: the time in the margin, what you typed in mono,
+ * and the "↳" note of what it logged (click it for the parsed sets). Edit, Fix and
+ * Delete show on hover, always on touch.
  */
 export function Entry({ log, unit, highlight = false }: { log: Log; unit: Unit; highlight?: boolean }) {
   const [editing, setEditing] = useState(false);
@@ -32,6 +92,8 @@ export function Entry({ log, unit, highlight = false }: { log: Log; unit: Unit; 
   const badLines = new Set(log.warnings.map((w) => w.line));
   const lines = log.raw_text.split('\n');
   const when = messageTime(log.logged_at, tz, todayIn(tz));
+  const flagged = !!log.weigh_in?.flagged;
+  const notes = log.weigh_in ? [weighInNote(log.weigh_in, unit)] : setNotes(log.sets, unit);
 
   function save(text: string, mode?: LogMode | null) {
     edit.mutate(
@@ -46,6 +108,12 @@ export function Entry({ log, unit, highlight = false }: { log: Log; unit: Unit; 
     );
   }
 
+  function startEdit() {
+    setDraft(log.raw_text);
+    setEditing(true);
+    setFixing(false);
+  }
+
   function onKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -57,15 +125,17 @@ export function Entry({ log, unit, highlight = false }: { log: Log; unit: Unit; 
   }
 
   return (
-    <article id={`log-${log.id}`} className={`msg${highlight ? ' highlight' : ''}`} aria-label={`${log.kind === 'weight' ? 'Weigh-in' : 'Workout'}, ${when}`}>
-      {log.pending ? null : (
+    <article
+      id={`log-${log.id}`}
+      className={`entry${highlight ? ' highlight' : ''}`}
+      aria-label={`${log.kind === 'weight' ? 'Weigh-in' : 'Workout'}, ${when}`}>
+      <time className="entry-time" dateTime={log.logged_at}>
+        {clockTime(log.logged_at, tz)}
+      </time>
+      <div className="entry-main">
+        {log.pending ? null : (
           <div className="entry-actions">
-            <IconButton
-              label="Edit entry"
-              onClick={() => {
-                setEditing(true);
-                setFixing(false);
-              }}>
+            <IconButton label="Edit entry" onClick={startEdit}>
               <Pencil {...ICON} />
             </IconButton>
             {log.warnings.length ? (
@@ -83,107 +153,97 @@ export function Entry({ log, unit, highlight = false }: { log: Log; unit: Unit; 
               <Trash2 {...ICON} />
             </IconButton>
           </div>
-      )}
+        )}
 
-      {editing ? (
-        <div className="stack-2 entry-edit">
-          <label htmlFor={editId} className="visually-hidden">
-            Edit entry text
-          </label>
-          <textarea
-            id={editId}
-            className="textarea"
-            rows={Math.min(8, Math.max(2, draft.split('\n').length))}
-            value={draft}
-            autoFocus
-            onChange={(e) => setDraft(e.target.value)}
-            onKeyDown={onKeyDown}
-          />
-          {edit.error ? (
-            <p className="error-text" role="alert">
-              {errorMessage(edit.error)}
-            </p>
-          ) : null}
-          <div className="row">
-            <Button size="small" variant="primary" loading={edit.isPending} disabled={!draft.trim()} onClick={() => save(draft)}>
-              Save
-            </Button>
-            <Button
-              size="small"
-              variant="ghost"
-              onClick={() => {
-                setEditing(false);
-                setDraft(log.raw_text);
-              }}>
-              Cancel
-            </Button>
-            <span className="hint">Escape to cancel · Enter to save</span>
-          </div>
-        </div>
-      ) : (
-        <div className="msg-body">
-          {lines.map((line, i) => (
-            <div key={i} className="raw-line">
-              <span>{line || ' '}</span>
-              {badLines.has(i + 1) ? (
-                <span className="status danger no-shrink">
-                  Not logged
-                  {!fixing ? (
-                    <button type="button" className="link-btn" onClick={() => setFixing(true)}>
-                      Fix
-                    </button>
-                  ) : null}
-                </span>
-              ) : null}
+        {editing ? (
+          <div className="stack-2 entry-edit">
+            <label htmlFor={editId} className="visually-hidden">
+              Edit entry text
+            </label>
+            <textarea
+              id={editId}
+              className="textarea mono"
+              rows={Math.min(8, Math.max(2, draft.split('\n').length))}
+              value={draft}
+              autoFocus
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={onKeyDown}
+            />
+            {edit.error ? (
+              <p className="error-text" role="alert">
+                {errorMessage(edit.error)}
+              </p>
+            ) : null}
+            <div className="row">
+              <Button size="small" variant="primary" loading={edit.isPending} disabled={!draft.trim()} onClick={() => save(draft)}>
+                Save
+              </Button>
+              <Button
+                size="small"
+                variant="ghost"
+                onClick={() => {
+                  setEditing(false);
+                  setDraft(log.raw_text);
+                }}>
+                Cancel
+              </Button>
             </div>
-          ))}
-        </div>
-      )}
+          </div>
+        ) : (
+          <div className="entry-text">
+            {lines.map((line, i) => (
+              <div key={i} className="raw-line">
+                <span>{line || ' '}</span>
+                {badLines.has(i + 1) ? (
+                  <span className="status danger no-shrink">
+                    ✗ Not logged
+                    {!fixing ? (
+                      <button type="button" className="link-btn" onClick={() => setFixing(true)}>
+                        Fix
+                      </button>
+                    ) : null}
+                  </span>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        )}
 
-      {!editing ? (
-        <div className="msg-reactions">
-          {log.pending ? (
-            <span className="hint" role="status">
-              Saving…
-            </span>
-          ) : (
-            <button
-              type="button"
-              className="reaction"
-              aria-expanded={details}
-              aria-controls={detailsId}
-              aria-label={`Logged: ${logSummary(log, unit)}. ${details ? 'Hide' : 'Show'} details`}
-              onClick={() => setDetails((d) => !d)}>
-              <Check {...ICON} className="success" aria-hidden="true" />
-              <span>{logSummary(log, unit)}</span>
-            </button>
-          )}
-        </div>
-      ) : null}
+        {editing ? null : log.pending ? (
+          <span className="note pending" role="status">
+            ↳ saving…
+          </span>
+        ) : flagged ? (
+          <OutlierBox log={log} unit={unit} onEdit={startEdit} />
+        ) : notes.length ? (
+          <button
+            type="button"
+            className="note"
+            aria-expanded={details}
+            aria-controls={detailsId}
+            aria-label={`Logged: ${logSummary(log, unit)}. ${details ? 'Hide' : 'Show'} details`}
+            onClick={() => setDetails((d) => !d)}>
+            <Notes lines={notes} />
+          </button>
+        ) : null}
 
-      {details && !editing ? (
-        <div id={detailsId} className="msg-details">
-          {log.weigh_in ? (
-            <p className="t-label tnum">
-              → {weight(log.weigh_in.weight_lb, unit)}
-              {log.weigh_in.note ? <span className="secondary"> · {log.weigh_in.note}</span> : null}
-            </p>
-          ) : (
+        {details && !editing && !log.weigh_in ? (
+          <div id={detailsId} className="entry-details">
             <SetRows sets={log.sets} unit={unit} caption="Parsed sets" />
-          )}
-        </div>
-      ) : null}
+          </div>
+        ) : null}
 
-      {fixing && !editing && log.warnings.length ? (
-        <div className="stack-2 entry-fix">
-          <FixList warnings={log.warnings} text={log.raw_text} onApply={(text, mode) => save(text, mode)} />
-          {edit.error ? (
-            <p className="error-text" role="alert">
-              {errorMessage(edit.error)}
-            </p>
-          ) : null}
-        </div>
-      ) : null}
+        {fixing && !editing && log.warnings.length ? (
+          <div className="stack-2 entry-fix">
+            <FixList warnings={log.warnings} text={log.raw_text} onApply={(text, mode) => save(text, mode)} />
+            {edit.error ? (
+              <p className="error-text" role="alert">
+                {errorMessage(edit.error)}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
     </article>
   );
 }

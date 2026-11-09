@@ -1,26 +1,22 @@
-import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode, type RefObject } from 'react';
+import { ArrowUp, MessageCircle } from 'lucide-react';
+import { useId, useRef, type KeyboardEvent, type ReactNode, type RefObject } from 'react';
 
 import { Segmented } from '@/components/Segmented';
-import { clockTime, longDate, todayIn } from '@/lib/format';
 import type { LogMode, Mode, Unit } from '@/lib/types';
 
 import { ParseLine } from './ParseLine';
 
 const PLACEHOLDER: Record<Mode, string> = {
-  workout: '5x 155lb 2x1x1xf bench',
-  weight: '83.9kg',
+  workout: '8x 135lb bench',
+  weight: '70.3kg',
   ask: 'Is my bench still improving?',
 };
 
-/** The current time, refreshed every 15 seconds. */
-function useNow(): Date {
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const t = window.setInterval(() => setNow(new Date()), 15_000);
-    return () => window.clearInterval(t);
-  }, []);
-  return now;
-}
+const LABEL: Record<Mode, string> = {
+  workout: 'Log a set',
+  weight: 'Log weight',
+  ask: 'Ask Jarvis',
+};
 
 type Props = {
   mode: Mode;
@@ -31,70 +27,59 @@ type Props = {
   sending: boolean;
   error: string | null;
   unit: Unit;
-  tz: string | undefined;
   tools: ReactNode;
   inputRef?: RefObject<HTMLTextAreaElement | null>;
-  header?: ReactNode; // shown above the mode switch (the slim goal bar)
 };
 
 /**
- * Like a chat box: pick a mode, type, press Enter. Above the box, the time the entry
- * will be logged at and a one-line read of what the text parses to.
+ * The bottom of the page: Workout or Weight (or Ask), a labelled mono input, a
+ * square save button, and a live "↳" read of what the text will log. Enter saves.
  */
-export function Composer({ mode, onModeChange, text, onTextChange, onSend, sending, error, unit, tz, tools, inputRef, header }: Props) {
+export function Composer({ mode, onModeChange, text, onTextChange, onSend, sending, error, unit, tools, inputRef }: Props) {
   const localRef = useRef<HTMLTextAreaElement>(null);
   const ref = inputRef ?? localRef;
   const inputId = useId();
-  const now = useNow();
   const isAsk = mode === 'ask';
 
   function onKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
-      if (text.trim() && !sending) onSend();
+      if (canSend) onSend();
     }
   }
 
+  // Grows with the text (Shift+Enter for a new line), up to 8 lines.
   const rows = Math.min(8, Math.max(1, text.split('\n').length));
-  const stamp = `${longDate(todayIn(tz))} · ${clockTime(now.toISOString(), tz)}`;
   const canSend = !!text.trim() && !(isAsk && text.trim().length < 3) && !sending;
 
   return (
-    <div className="composer stack-2">
-      {header}
+    <div className="composer">
       <div className="composer-bar">
-        <Segmented<Mode>
-          label="Mode"
-          value={mode}
+        <Segmented<LogMode>
+          label="Entry type"
+          value={isAsk ? null : mode}
           onChange={onModeChange}
           options={[
             { value: 'workout', label: 'Workout' },
             { value: 'weight', label: 'Weight' },
-            { value: 'ask', label: 'Ask' },
           ]}
         />
+        <span className="spacer" />
+        <button
+          type="button"
+          className="btn btn-accent-outline"
+          aria-pressed={isAsk}
+          onClick={() => onModeChange(isAsk ? 'workout' : 'ask')}>
+          <MessageCircle size={18} strokeWidth={1.8} aria-hidden="true" />
+          Ask
+        </button>
         {tools}
       </div>
 
-      <div className="composer-meta">
-        {isAsk ? null : (
-          <>
-            <time className="secondary tnum">{stamp}</time>
-            <ParseLine text={text} mode={mode as LogMode} unit={unit} onTextChange={onTextChange} onModeChange={onModeChange} />
-          </>
-        )}
-      </div>
-
-      {error ? (
-        <p className="error-text" role="alert">
-          {error}
-        </p>
-      ) : null}
-
+      <label htmlFor={inputId} className="composer-label caps">
+        {LABEL[mode]}
+      </label>
       <div className={`input-row${isAsk ? ' ask' : ''}`}>
-        <label htmlFor={inputId} className="visually-hidden">
-          {isAsk ? 'Question for Jarvis' : mode === 'weight' ? 'Weigh-in' : 'Sets, one per line'}
-        </label>
         <textarea
           id={inputId}
           ref={ref}
@@ -107,11 +92,26 @@ export function Composer({ mode, onModeChange, text, onTextChange, onSend, sendi
           onKeyDown={onKeyDown}
           spellCheck={isAsk}
           autoComplete="off"
+          enterKeyHint={isAsk ? 'send' : 'done'}
         />
-        <button type="button" className="btn btn-primary send-btn" title="Send (Enter)" disabled={!canSend} onClick={onSend}>
-          Send
+        <button
+          type="button"
+          className="save-btn"
+          aria-label={isAsk ? 'Send question' : 'Save entry'}
+          title={isAsk ? 'Ask (Enter)' : 'Save (Enter)'}
+          disabled={!canSend}
+          aria-busy={sending || undefined}
+          onClick={onSend}>
+          <ArrowUp size={22} strokeWidth={2} aria-hidden="true" />
         </button>
       </div>
+
+      {error ? (
+        <p className="error-text" role="alert">
+          {error}
+        </p>
+      ) : null}
+      {isAsk ? null : <ParseLine text={text} mode={mode} unit={unit} onTextChange={onTextChange} onModeChange={onModeChange} />}
     </div>
   );
 }

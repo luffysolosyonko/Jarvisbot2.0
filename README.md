@@ -17,35 +17,43 @@ is now a button.
 
 ## What it does
 
-- **A notebook, not a form.** One feed, oldest to newest, like a chat: entries
-  close together share one timestamp, and each shows what you typed with a
-  green check chip once it's logged; click it for the parsed sets. A plain text
-  box sits at the bottom. Pick a mode, **Workout**, **Weight** or **Ask**,
-  type, press Enter. Shift+Enter starts a new line, so a whole session can go
-  in at once. A small line above the box shows the date and time the entry will
-  be logged at; that's its timestamp, so there's no date field to fill in.
+- **A notebook, not a form.** One ruled page, oldest to newest: the time sits
+  in the margin, what you typed is written in mono, and a green "↳" note under
+  it says what was logged ("↳ Bench · 3 reps · 155 lb · ✗ last rep"); click
+  it for the parsed sets. Days are headed "Monday, November 9" with a count of
+  sets and weigh-ins. At the bottom, pick **Workout** or **Weight** (or toggle
+  **Ask**), type, press Enter. Shift+Enter starts a new line, so a whole
+  session can go in at once. The time you save is the entry's time, so there's
+  no date field to fill in.
 - **Deterministic logging.** Workout and Weight modes use the parser, never an
   LLM, so logging is instant and free. As you type, the same line reads the
-  text back: `5x 155lb 2x1x1xf bench` shows "5 sets · Bench" (the last one a
-  failed rep). kg is converted to lb, `?` and ranges are estimates, `uw` is
+  text back as the note it will get: `5x 155lb 2x1x1xf bench` shows
+  "↳ Bench · 5, 2, 1, 1, 1 reps · 155 lb · ✗ last rep". kg is converted to lb, `?` and ranges are estimates, `uw` is
   bodyweight, and `^` or a bare number repeats the set above.
 - **Fix, don't retype.** Lines that don't parse are flagged with the reason and
   one-click fixes ("Add unit: lb", "Mark as estimate", "Set exercise
   name…", "Log as a weigh-in"). Saved entries can be edited, fixed or deleted
   (with undo); edits re-parse, like the bot re-parsed edited messages.
-- **Every bot command is a button.** The ⋯ menu: Today, Stats (7/30/90 days), Lift,
+- **Outlier weigh-ins are checked, not trusted.** A weigh-in more than about 5%
+  from your 7-day average gets a warning box ("↳ 80 kg = 176.4 lb? That's 19 lb
+  above your 7-day average. No unit was given, so kg was assumed.") with **It
+  was 80 lb**, **Keep 176.4** and **Edit**. Until you answer, it's left out of
+  averages, trends, forecasts and monthly change, and drawn on the chart as a
+  hollow orange circle.
+- **Every bot command is a button.** The Tools menu (wrench): Today, Stats (7/30/90 days), Lift,
   Estimate (maxes for 3–12 reps), Predict weight, Predict lift (the date
   you'll hit a target), Volume, Charts, Search, Aliases and Export (CSV), plus
   the Syntax help cheat sheet.
-- **History and Progress.** A month calendar marks workout days (filled) and
-  weigh-in days (outlined); click a day for one table of its sets and its
-  weigh-in. Progress shows body
-  weight with a 7-day average and a dashed projection, this week's volume, and
-  top lifts with e1RM charts and forecasts.
+- **History and Progress.** A month heatmap shades each day by sets logged and
+  dots weigh-in days; click a day for one table of its sets ("3 ✓ · 1 ✗") and
+  its weigh-in. Progress leads with your latest confirmed weigh-in, then body
+  weight with a 7-day average and a dashed forecast, this week's sets, volume
+  and sessions, the month heatmap, and top lifts with e1RM charts and
+  forecasts.
 - **Ask, on purpose.** Only Ask mode calls Claude, and it sends only the data
   relevant to the question. Questions and Jarvis's answers appear as messages,
   are saved, and are still in the notebook after a reload; "Hide answers" in
-  the ⋯ menu hides them (the database keeps them).
+  the Tools menu hides them (the database keeps them).
 
 ## Architecture
 
@@ -88,7 +96,7 @@ flowchart LR
 ```
 web/                React web app (Vite, TypeScript strict)
   src/notebook/     the Notebook: feed, entry, composer, parse line, fixes
-  src/tools/        the ⋯ menu (the bot's slash commands)
+  src/tools/        the Tools menu (the bot's slash commands)
   src/pages/        History (calendar), Progress, lift detail, Settings, sign-in
   src/components/   UI built on the design tokens
   src/theme/        color tokens (also CSS variables in src/index.css)
@@ -121,27 +129,29 @@ All tokens (colors, type sizes, spacing, radius) live in one file,
 [`web/src/theme/tokens.css`](web/src/theme/tokens.css), mirrored for charts in
 [`tokens.ts`](web/src/theme/tokens.ts); a test keeps the two in sync.
 
-- **Color.** A cool grey page (`#EEF0F2`), white surfaces, near-black ink, and
-  one interactive color, blue (`#1F4FA3`): buttons, links, the active tab,
-  workout days and chart data. Red, yellow and green appear only when they mean
-  something: red for failed reps and warnings, yellow for goals and PRs, green
-  for a confirmed parse. Every text color meets WCAG AA, checked by a unit test.
-- **Type.** One family, Archivo: regular width for text, condensed for big
-  numbers. Tabular figures everywhere, no monospace. Five sizes only: 13, 15,
-  18, 24 and 40px (body 15px). Sentence case.
-- **Layout.** A page-colored nav with one line under it. Most things sit
-  directly on the page, grouped by whitespace and a bold 15px label; white
-  surfaces only behind tables. Spacing from 4, 8, 12, 16, 24, 32 and 48px. One
-  6px radius, for controls only (buttons, inputs, chips).
-- **The goal bar.** The one decorative element: a barbell loaded in
-  competition plate colors (red 25 kg, blue 20 kg, yellow 15 kg, green 10 kg)
-  showing your best bench e1RM against a 225 lb goal, with outlined plates for
-  what's left. Full size on Progress, slim above the Notebook input.
-- **Charts.** Blue for data, grey for averages, a dashed grey forecast, light
-  gridlines.
-- **Quality floor.** Works down to 375px with no sideways scroll, visible blue
-  focus rings, every icon-only button labelled, no entrance animations, and
-  motion off when the system asks for reduced motion.
+A lifter's paper training logbook.
+
+- **Color.** Warm paper (`#F6F2EA`), dark ink (`#1C1A17`) and one accent,
+  forest green (`#2E5B45`): parse notes, the active tab, the save button and the
+  average line. Rust (`#9A3B1E`) marks failed reps, always next to a ✗; an amber
+  box marks a weigh-in to check. A faint rule every 32px and a pink margin line
+  make the Notebook a ruled page. No gradients. Every text color meets WCAG AA,
+  checked by a unit test.
+- **Type.** Fraunces for headings (italic for the wordmark and day headings),
+  JetBrains Mono with tabular figures for anything logged or counted (entries,
+  notes, times, stats), IBM Plex Sans for everything else.
+- **Layout.** One column, about 480px wide, centered on a desktop, with the
+  nav along the bottom (four icons with labels). Things sit directly on the
+  page; rules, not cards, separate them. One 10px radius for controls and
+  boxes, 6px for calendar cells; touch targets at least 44px.
+- **Charts.** Ink dots for weigh-ins, the 7-day average as a solid green line,
+  the forecast dashed, light gridlines, mono axis labels. A flagged weigh-in is
+  a hollow orange circle, pinned to the top with an arrow if it's off the
+  scale.
+- **Motion.** Only two small ones: the parse note fades in, and the Workout /
+  Weight highlight slides. Both stop when the system asks for reduced motion.
+- **Quality floor.** Works from 360 to 430px with no sideways scroll, visible
+  focus rings, every icon-only button labelled.
 
 ## Run locally
 

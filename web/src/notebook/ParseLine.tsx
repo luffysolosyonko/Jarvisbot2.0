@@ -1,12 +1,16 @@
 import { useParse } from '@/hooks/queries';
 import { useDebounced } from '@/hooks/useDebounced';
 import { errorMessage } from '@/lib/api';
-import { summarize } from '@/lib/describe';
+import { outlierReason, outlierTitle, setNotes, weighInNote } from '@/lib/notes';
 import type { LogMode, Unit } from '@/lib/types';
 
+import { Notes } from './Entry';
 import { FixList } from './FixList';
 
-/** A live, one-line read of the input; lines that won't log get their reason and fixes. */
+/**
+ * The live "↳" read of the input, as the note it will get once saved. A weigh-in
+ * that will be flagged says so now; lines that won't log get their reason and fixes.
+ */
 export function ParseLine({
   text,
   mode,
@@ -23,16 +27,21 @@ export function ParseLine({
   const debounced = useDebounced(text, 300);
   const parse = useParse(debounced, mode);
   if (!text.trim()) return null;
-  if (parse.error) return <span className="danger">{errorMessage(parse.error)}</span>;
+  if (parse.error) return <p className="preview danger">{errorMessage(parse.error)}</p>;
   const r = parse.data;
   if (!r) return null;
-  const summary = summarize(r, unit);
+  const w = r.weigh_in;
+  const notes = w ? [weighInNote(w, unit)] : setNotes(r.sets, unit);
   return (
-    <>
-      {summary ? (
-        <span className="tnum" aria-live="polite">
-          {summary}
-        </span>
+    <div className="preview" aria-live="polite">
+      {w?.flagged ? (
+        <p className="note warn-text">
+          ↳ {outlierTitle(w)} {outlierReason(w)}
+        </p>
+      ) : notes.length ? (
+        <p className="note" key={notes.map((n) => n.text).join('|')}>
+          <Notes lines={notes} />
+        </p>
       ) : null}
       {r.warnings.length ? (
         <div className="composer-fixes">
@@ -46,6 +55,6 @@ export function ParseLine({
           />
         </div>
       ) : null}
-    </>
+    </div>
   );
 }
