@@ -137,4 +137,4 @@ _TODO: Cloud Run via GitHub Actions + WIF._
 
 ## License
 
-_TODO_
+MIT. See [LICENSE](LICENSE).
