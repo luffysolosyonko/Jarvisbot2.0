@@ -32,9 +32,9 @@ export function SetRows({ sets, unit, caption }: { sets: ParsedSet[]; unit: Unit
           </tr>
         </thead>
         <tbody>
-          {groups.flatMap((g) =>
+          {groups.flatMap((g, gi) =>
             g.rows.map((s, i) => (
-              <tr key={`${s.idx}`}>
+              <tr key={`${gi}-${i}`}>
                 <td>{i === 0 ? <span className="semibold">{exerciseName(g.name)}</span> : null}</td>
                 <td className="num">{s.reps}</td>
                 <td className="num">{s.good_reps}</td>

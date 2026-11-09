@@ -38,7 +38,8 @@ is now a button.
   you'll hit a target), Volume, Charts, Search, Aliases and Export (CSV), plus
   the Syntax help cheat sheet.
 - **History and Progress.** A month calendar marks workout days (filled) and
-  weigh-in days (outlined); click a day for its entries. Progress shows body
+  weigh-in days (outlined); click a day for one table of its sets and its
+  weigh-in. Progress shows body
   weight with a 7-day average and a dashed projection, this week's volume, and
   top lifts with e1RM charts and forecasts.
 - **Ask, on purpose.** Only Ask mode calls Claude, and it sends only the data

@@ -1,16 +1,14 @@
 import { useState } from 'react';
-
-import { Button } from '@/components/Button';
-import { Stat } from '@/components/Stat';
-import { EmptyState, ErrorState, QueryView, SkeletonCalendar, SkeletonEntries } from '@/components/States';
-import { useToast } from '@/components/Toast';
 import { useNavigate } from 'react-router';
 
+import { Button } from '@/components/Button';
+import { SetRows } from '@/components/SetRows';
+import { EmptyState, ErrorState, QueryView, SkeletonCalendar, SkeletonEntries } from '@/components/States';
+import { useToast } from '@/components/Toast';
 import { useCalendar, useLogs, useTz, useUnit } from '@/hooks/queries';
 import { useTitle } from '@/hooks/useTitle';
-import { longDate, signedWeight, todayIn, volume, weight } from '@/lib/format';
+import { longDate, signedWeight, todayIn, weight } from '@/lib/format';
 import type { CalendarDay } from '@/lib/types';
-import { Entry } from '@/notebook/Entry';
 
 import { Calendar } from './Calendar';
 
@@ -19,7 +17,9 @@ function DayDetail({ day, today, summary }: { day: string; today: string; summar
   const navigate = useNavigate();
   const logs = useLogs(day, day);
   const { pendingDeletes } = useToast();
-  const list = (logs.data ?? []).filter((l) => !pendingDeletes.has(l.id)).reverse();
+  const list = (logs.data ?? []).filter((l) => !pendingDeletes.has(l.id)).reverse(); // oldest first
+  const sets = list.flatMap((l) => l.sets);
+  const weighIn = summary?.weight_lb ?? list.findLast((l) => l.weigh_in)?.weigh_in?.weight_lb ?? null;
   return (
     <section className="section" aria-label={longDate(day)}>
       <h2 className="t-heading section-head">
@@ -40,17 +40,17 @@ function DayDetail({ day, today, summary }: { day: string; today: string; summar
           onAction={() => navigate('/')}
         />
       ) : (
-        <div className="stack-4">
-          <div className="stats">
-            <Stat label="Sets" value={`${summary?.sets ?? list.flatMap((l) => l.sets).length} sets`} />
-            <Stat label="Volume" value={volume(summary?.volume_lb ?? 0, unit)} />
-            <Stat label="Weigh-in" value={summary?.weight_lb != null ? weight(summary.weight_lb, unit) : '–'} />
-          </div>
-          <div>
-            {list.map((l) => (
-              <Entry key={l.id} log={l} unit={unit} />
-            ))}
-          </div>
+        <div className="stack-3">
+          {sets.length ? (
+            <div className="sets-card">
+              <SetRows sets={sets} unit={unit} caption={`Sets on ${longDate(day)}`} />
+            </div>
+          ) : null}
+          {weighIn !== null ? (
+            <p className="t-label">
+              Weigh-in <span className="mono semibold">{weight(weighIn, unit)}</span>
+            </p>
+          ) : null}
         </div>
       )}
     </section>
@@ -95,7 +95,7 @@ export function HistoryPage() {
                 onMonth={setMonth}
               />
               <p className="t-label" aria-live="polite">
-                {c.workouts} workout{c.workouts === 1 ? '' : 's'} this month · {c.sets} sets · {volume(c.volume_lb, unit)}
+                {c.workouts} workout{c.workouts === 1 ? '' : 's'} this month · {c.sets} sets
                 {c.weight_change_lb !== null ? ` · weight ${signedWeight(c.weight_change_lb, unit)}` : ''}
               </p>
             </div>

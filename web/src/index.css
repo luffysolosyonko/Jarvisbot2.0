@@ -1129,3 +1129,14 @@ figure .legend { margin-top: var(--s2); }
   flex: 1;
   border-top: 1px solid var(--border);
 }
+
+/* A day's sets on History: the table on a light card. */
+.sets-card {
+  background: var(--surface);
+  border-radius: var(--radius-container);
+  padding: var(--s2) var(--s3);
+}
+
+.sets-card .table tr:last-child td {
+  border-bottom: none;
+}
