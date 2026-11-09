@@ -147,22 +147,17 @@ a {
   line-height: 1.15;
 }
 
-/* The flexed-arm logo, across the header from the wordmark. */
+/* The flexed-arm logo, right after the wordmark. */
 .logo {
   flex: none;
   width: 40px;
   height: 40px;
 }
 
-.nb-head-end,
 .brand-row {
   display: flex;
   align-items: center;
-  gap: var(--s3);
-}
-
-.brand-row {
-  justify-content: space-between;
+  gap: var(--s2);
 }
 
 .bottomnav {

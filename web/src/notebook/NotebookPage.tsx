@@ -299,13 +299,13 @@ export function NotebookPage() {
     <div className="notebook">
       <main className="main" id="main">
         <header className="nb-head" ref={headRef}>
-          <h1 className="wordmark">Jarvis</h1>
-          <div className="nb-head-end">
-            <time className="caps" dateTime={shownDay ?? today}>
-              {capsDate(shownDay ?? today)}
-            </time>
+          <h1 className="brand-row">
+            <span className="wordmark">Jarvis</span>
             <img className="logo" src="/logo.png" alt="" width={40} height={40} />
-          </div>
+          </h1>
+          <time className="caps" dateTime={shownDay ?? today}>
+            {capsDate(shownDay ?? today)}
+          </time>
         </header>
         <div className="feed" aria-live="polite">
           <div className="row-between feed-bar">
