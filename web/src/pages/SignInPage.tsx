@@ -48,10 +48,10 @@ export function SignInPage() {
   return (
     <main className="auth" id="main">
       <div className="stack-1 auth-head">
-        <p className="wordmark" aria-hidden="true">
+        <div className="brand-row" aria-hidden="true">
+          <p className="wordmark">Jarvis</p>
           <img className="logo" src="/logo.png" alt="" width={44} height={44} />
-          Jarvis
-        </p>
+        </div>
         <h1 className="t-heading">{title}</h1>
         <p className="t-label secondary">Log sets and weigh-ins in gym shorthand, like 8x 160lb bench.</p>
       </div>

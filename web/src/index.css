@@ -140,9 +140,6 @@ a {
 }
 
 .wordmark {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s2);
   font-family: var(--font-head);
   font-style: italic;
   font-weight: 600;
@@ -150,11 +147,22 @@ a {
   line-height: 1.15;
 }
 
-/* The flexed-arm logo: ink line art on a transparent background. */
-.wordmark .logo {
+/* The flexed-arm logo, across the header from the wordmark. */
+.logo {
   flex: none;
-  width: 1.35em;
-  height: 1.35em;
+  width: 40px;
+  height: 40px;
+}
+
+.nb-head-end,
+.brand-row {
+  display: flex;
+  align-items: center;
+  gap: var(--s3);
+}
+
+.brand-row {
+  justify-content: space-between;
 }
 
 .bottomnav {
