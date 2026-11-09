@@ -228,6 +228,20 @@ class AliasesOut(BaseModel):
     aliases: list[AliasOut]
 
 
+# --- ask -----------------------------------------------------------------
+class AskIn(Strict):
+    question: str = Field(min_length=3, max_length=500)
+
+
+class AskOut(BaseModel):
+    answer: str
+    input_tokens: int
+    output_tokens: int
+    tokens_used_today: int
+    daily_token_cap: int
+    topics: list[str]
+
+
 # --- demo ------------------------------------------------------------------
 class DemoTokenOut(BaseModel):
     token: str
