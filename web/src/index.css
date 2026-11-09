@@ -1395,18 +1395,176 @@ figure .legend {
 }
 
 /* ---------- sign-in ---------- */
+/* Plain paper, 28px sides, the form centered; Create account / Try the demo pinned
+   to the bottom. A 400px column on wide screens. */
 .auth {
-  padding: var(--s7) var(--s4);
+  --auth-pad: 28px;
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 0 var(--auth-pad);
+  background: var(--paper);
 }
 
-.auth-head { margin-bottom: var(--s5); }
-.auth-links { margin-top: var(--s4); }
+.auth-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--s7) 0 var(--s5);
+}
 
-.divider {
+.auth-head {
+  margin-bottom: 40px;
+}
+
+.auth-wordmark {
+  font-family: var(--font-head);
+  font-style: italic;
+  font-weight: 600;
+  font-size: 48px;
+  line-height: 1.05;
+}
+
+.auth-tagline {
+  margin-top: var(--s2);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.auth-tagline .accent {
+  font-weight: 500;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s5);
+}
+
+.auth-label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.auth-label-row label {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-2);
+}
+
+/* Underline-only fields. */
+.auth-input {
+  display: block;
+  width: 100%;
+  height: 48px;
+  padding: 0;
   border: none;
-  border-top: 1px solid var(--rule);
-  margin: var(--s5) 0;
+  border-bottom: 1.5px solid var(--ink);
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 16px;
 }
+
+.auth-input:focus-visible {
+  outline: none;
+  border-bottom: 2px solid var(--accent);
+}
+
+/* Chrome autofill: keep the field on the paper instead of its yellow/blue fill. */
+.auth-input:-webkit-autofill,
+.auth-input:-webkit-autofill:hover,
+.auth-input:-webkit-autofill:focus {
+  -webkit-box-shadow: 0 0 0 1000px var(--paper) inset;
+  -webkit-text-fill-color: var(--ink);
+  caret-color: var(--ink);
+}
+
+.auth-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+  margin-top: var(--s2);
+}
+
+.auth-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s3);
+  width: 100%;
+  height: 50px;
+  border-radius: var(--radius);
+  font-family: var(--font-ui);
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.auth-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.auth-btn-ink {
+  border: none;
+  background: var(--ink);
+  color: var(--paper);
+  font-weight: 600;
+}
+
+.auth-btn-google {
+  border: 1px solid #b9a88e;
+  background: transparent;
+  color: var(--ink);
+  font-weight: 500;
+}
+
+.auth-btn-google:hover:not(:disabled) {
+  background: var(--paper-sunk);
+}
+
+.auth-btn:focus-visible,
+.auth-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.auth-link {
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  color: var(--accent);
+  cursor: pointer;
+}
+
+.auth-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--s2) 0 max(var(--s4), env(safe-area-inset-bottom));
+}
+
+.auth-foot-link {
+  min-height: var(--touch);
+  font-size: 14px;
+}
+
+.auth-foot-link.accent {
+  font-weight: 500;
+}
+
+.auth-demo {
+  color: var(--ink-2);
+}
+
 
 .kbd {
   font-family: var(--font-mono);
