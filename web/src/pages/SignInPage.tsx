@@ -49,6 +49,7 @@ export function SignInPage() {
     <main className="auth" id="main">
       <div className="stack-1 auth-head">
         <p className="wordmark" aria-hidden="true">
+          <img className="logo" src="/logo.png" alt="" width={44} height={44} />
           Jarvis
         </p>
         <h1 className="t-heading">{title}</h1>

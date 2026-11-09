@@ -140,11 +140,21 @@ a {
 }
 
 .wordmark {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
   font-family: var(--font-head);
   font-style: italic;
   font-weight: 600;
   font-size: var(--t-title);
   line-height: 1.15;
+}
+
+/* The flexed-arm logo: ink line art on a transparent background. */
+.wordmark .logo {
+  flex: none;
+  width: 1.35em;
+  height: 1.35em;
 }
 
 .bottomnav {
@@ -813,7 +823,7 @@ input[type='number']::-webkit-outer-spin-button {
 
 .nb-head {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: var(--s4);
   padding: var(--s4) var(--s4) var(--s3);
