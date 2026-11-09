@@ -5,7 +5,7 @@ const WORKOUT: [string, string][] = [
   ['12x1f 25kg rear delt fly', 'f = failure: 12 good reps + 1 failed'],
   ['8x5f 25kg rear delt fly', '8 good reps + 5 failed'],
   ['2xf 200lb bench', '2 tried, the last failed: 1 good + 1 failed'],
-  ['8x ?70/80kg bench', '? = estimate: midpoint of the range'],
+  ['8x ?70/80kg bench', '? = estimate: midpoint of the range, shown as ~165.3 lb'],
   ['20x ? db traps', 'unknown weight'],
   ['25x 15kg each hand shrug', 'weight per hand'],
   ['10x uw dips', 'uw = unweighted: your latest weigh-in is the load'],

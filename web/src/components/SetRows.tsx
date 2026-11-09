@@ -1,12 +1,14 @@
 import { exerciseName, weight } from '@/lib/format';
 import type { ParsedSet, Unit } from '@/lib/types';
 
-function flags(s: ParsedSet): string {
-  const f = [s.estimated && 'est', s.bodyweight && 'uw', s.per_hand && 'each hand'].filter(Boolean);
-  return f.length ? f.join(', ') : '–';
+/** The weight as logged: "~" marks an estimate, "uw" is bodyweight, "each" is per hand. */
+function setWeight(s: ParsedSet, unit: Unit): string {
+  if (s.bodyweight && s.weight_lb === null) return 'uw';
+  const w = `${s.estimated ? '~' : ''}${weight(s.weight_lb, unit)}`;
+  return s.per_hand ? `${w} each` : w;
 }
 
-/** Parsed sets grouped by exercise: reps, good, failed, weight, flags. */
+/** Parsed sets grouped by exercise: reps, good, failed and weight. */
 export function SetRows({ sets, unit, caption }: { sets: ParsedSet[]; unit: Unit; caption?: string }) {
   if (!sets.length) return null;
   const groups: { name: string | null; rows: ParsedSet[] }[] = [];
@@ -27,7 +29,6 @@ export function SetRows({ sets, unit, caption }: { sets: ParsedSet[]; unit: Unit
             <th scope="col" className="num">Good</th>
             <th scope="col" className="num">Failed</th>
             <th scope="col" className="num">Weight</th>
-            <th scope="col" className="flags">Flags</th>
           </tr>
         </thead>
         <tbody>
@@ -38,8 +39,7 @@ export function SetRows({ sets, unit, caption }: { sets: ParsedSet[]; unit: Unit
                 <td className="num">{s.reps}</td>
                 <td className="num">{s.good_reps}</td>
                 <td className={`num ${s.failed_reps ? 'danger' : ''}`}>{s.failed_reps || '–'}</td>
-                <td className="num">{s.bodyweight && s.weight_lb === null ? 'uw' : weight(s.weight_lb, unit)}</td>
-                <td className="flags">{flags(s)}</td>
+                <td className="num">{setWeight(s, unit)}</td>
               </tr>
             )),
           )}

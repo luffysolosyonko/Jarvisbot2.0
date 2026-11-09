@@ -460,11 +460,6 @@ a:hover {
   vertical-align: top;
 }
 
-.table .flags {
-  padding-left: var(--s3);
-  color: var(--ink-secondary);
-}
-
 .table .num {
   text-align: right;
   font-family: var(--font-mono);
