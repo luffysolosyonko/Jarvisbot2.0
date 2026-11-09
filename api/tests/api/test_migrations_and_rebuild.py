@@ -12,6 +12,7 @@ from jarvis_api.firebase import Claims
 from jarvis_api.models import Log, LoggedSet
 from jarvis_api.services.logs import rebuild, save_log
 from jarvis_api.services.users import get_or_create_user
+from jarvis_core.parser import PARSER_VERSION
 
 API_DIR = Path(__file__).resolve().parents[2]
 
@@ -55,5 +56,5 @@ def test_rebuild_rederives_rows_from_raw_text(db: Session) -> None:
     db.commit()
     assert rebuild(db, user) == 3
     assert snapshot() == before
-    assert {lg.parser_version for lg in db.scalars(select(Log))} == {1}
+    assert {lg.parser_version for lg in db.scalars(select(Log))} == {PARSER_VERSION}
     assert db.scalars(select(Log).where(Log.kind == "weight")).one().weigh_in is not None

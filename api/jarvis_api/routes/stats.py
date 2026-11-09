@@ -57,6 +57,9 @@ def dashboard(user: CurrentUser, db: DB, days: Days = 90) -> schemas.DashboardOu
                 [(w.day, w.weight_lb) for w in avg if w.day > today - timedelta(days)]
             ),
             projection=projection_out(proj) if proj else None,
+            flagged=points(
+                [(w.day, w.weight_lb) for w in data.flagged if w.day > today - timedelta(days)]
+            ),
         ),
         top_lifts=[
             schemas.TopLiftOut(

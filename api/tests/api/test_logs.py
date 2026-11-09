@@ -49,7 +49,13 @@ def test_save_and_list(client: TestClient) -> None:
     assert saved["kind"] == "workout" and len(saved["sets"]) == 5 and saved["raw_text"] == HEADLINE
 
     w = client.post("/api/v1/logs", headers=h, json={"text": "171.6 gym scale"}).json()
-    assert w["kind"] == "weight" and w["weigh_in"] == {"weight_lb": 171.6, "note": "gym scale"}
+    assert w["kind"] == "weight"
+    assert {k: w["weigh_in"][k] for k in ("weight_lb", "note", "typed", "unit_assumed")} == {
+        "weight_lb": 171.6,
+        "note": "gym scale",
+        "typed": 171.6,
+        "unit_assumed": True,
+    }
 
     logs = client.get("/api/v1/logs", headers=h).json()["logs"]
     assert [lg["id"] for lg in logs] == [w["id"], saved["id"]]  # newest first

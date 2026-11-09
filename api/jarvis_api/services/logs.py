@@ -7,7 +7,7 @@ can be rebuilt from the logs at any time (see `rebuild`).
 from __future__ import annotations
 
 from collections.abc import Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 
 from sqlalchemy import delete, select
@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from jarvis_api.models import Alias, Log, LoggedSet, User, WeighIn
 from jarvis_api.services.users import local_now
+from jarvis_api.services.weighins import WeighFlag, WeighRow, flag_weighins
 from jarvis_core import analysis
 from jarvis_core.names import canonical_names
 from jarvis_core.parser import PARSER_VERSION, DayContext, LogKind, ParsedLog, parse_log
@@ -80,7 +81,18 @@ def _store_parsed(log: Log, parsed: ParsedLog) -> None:
         for s in parsed.sets
     ]
     w = parsed.weigh_in
-    log.weigh_in = WeighIn(user_id=log.user_id, weight_lb=w.weight_lb, note=w.note) if w else None
+    log.weigh_in = (
+        WeighIn(
+            user_id=log.user_id,
+            weight_lb=w.weight_lb,
+            note=w.note,
+            typed=w.typed,
+            typed_unit=w.typed_unit,
+            unit_assumed=w.unit_assumed,
+        )
+        if w
+        else None
+    )
 
 
 @dataclass(frozen=True)
@@ -131,9 +143,11 @@ def aliases_for(db: Session, user: User) -> dict[str, str]:
 @dataclass(frozen=True)
 class UserData:
     sets: list[analysis.SetRow]  # prepared: canonical names, bodyweight loads
-    weighins: list[analysis.WeightPoint]
+    weighins: list[analysis.WeightPoint]  # flagged outliers left out
     aliases: dict[str, str]
     name_counts: dict[str, int]  # raw normalized name -> sets (for matching new names)
+    weigh_flags: dict[int, WeighFlag] = field(default_factory=dict)  # by log id
+    flagged: list[analysis.WeightPoint] = field(default_factory=list)  # for the chart
 
     def canonical(self, name: str | None) -> str | None:
         if not name:
@@ -168,21 +182,33 @@ def load_user_data(db: Session, user: User) -> UserData:
         )
         for s, d in rows
     ]
+    rows_w = db.execute(
+        select(WeighIn, Log.local_date, Log.logged_at, Log.weight_confirmed)
+        .join(Log, WeighIn.log_id == Log.id)
+        .where(WeighIn.user_id == user.id, Log.user_id == user.id)
+        .order_by(Log.local_date, Log.logged_at, Log.id)
+    ).all()
+    flags = flag_weighins(
+        WeighRow(w.log_id, d, at, w.weight_lb, confirmed) for w, d, at, confirmed in rows_w
+    )
     weights = [
         analysis.WeightPoint(d, w.weight_lb, w.note)
-        for w, d in db.execute(
-            select(WeighIn, Log.local_date)
-            .join(Log, WeighIn.log_id == Log.id)
-            .where(WeighIn.user_id == user.id, Log.user_id == user.id)
-            .order_by(Log.local_date, Log.logged_at, Log.id)
-        ).all()
+        for w, d, _, _ in rows_w
+        if not flags[w.log_id].flagged
+    ]
+    flagged = [
+        analysis.WeightPoint(d, w.weight_lb, w.note)
+        for w, d, _, _ in rows_w
+        if flags[w.log_id].flagged
     ]
     aliases = aliases_for(db, user)
     counts: dict[str, int] = {}
     for s in raw:
         if s.exercise:
             counts[s.exercise] = counts.get(s.exercise, 0) + 1
-    return UserData(analysis.prepare(raw, weights, aliases), weights, aliases, counts)
+    return UserData(
+        analysis.prepare(raw, weights, aliases), weights, aliases, counts, flags, flagged
+    )
 
 
 def rebuild(db: Session, user: User, only_outdated: bool = True) -> int:
@@ -249,7 +275,12 @@ def get_log(db: Session, user: User, log_id: int) -> Log | None:
 
 
 def edit_log(
-    db: Session, user: User, log: Log, text: str, kind: LogKind | None = None
+    db: Session,
+    user: User,
+    log: Log,
+    text: str,
+    kind: LogKind | None = None,
+    confirm_weight: bool = False,
 ) -> ParsedLog | None:
     """Replace a log's text and re-parse it (the bot re-parsed edited messages).
     Returns None, changing nothing, if the new text doesn't parse."""
@@ -266,6 +297,7 @@ def edit_log(
         return None
     log.raw_text = text
     log.kind = kind
+    log.weight_confirmed = confirm_weight
     db.flush()
     reparse_day(db, user, log.local_date)
     db.commit()

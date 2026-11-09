@@ -58,6 +58,7 @@ class LogIn(Strict):
 class LogEditIn(Strict):
     text: str = Field(min_length=1, max_length=MAX_LOG_CHARS)
     mode: Mode | None = None  # omitted: keep the log's mode
+    confirm_weight: bool = False  # the edit settles an outlying weigh-in ("It was 80 lb")
 
 
 class SetOut(BaseModel):
@@ -79,6 +80,12 @@ class SetOut(BaseModel):
 class WeighInOut(BaseModel):
     weight_lb: float
     note: str | None
+    typed: float | None = None  # the number as written
+    typed_unit: Literal["kg", "lb"] = "lb"
+    unit_assumed: bool = False  # no unit was written
+    flagged: bool = False  # far from the 7-day average and not confirmed: left out of stats
+    avg_7d: float | None = None  # the average it was compared with
+    confirmed: bool = False
 
 
 class FixOut(BaseModel):
@@ -182,6 +189,7 @@ class WeightOut(BaseModel):
     points: list[Point]
     average_7d: list[Point]
     projection: ProjectionOut | None
+    flagged: list[Point] = []  # outlying weigh-ins awaiting confirmation (not in the stats)
 
 
 class DashboardOut(BaseModel):

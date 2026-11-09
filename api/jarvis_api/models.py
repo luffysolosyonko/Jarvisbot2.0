@@ -74,6 +74,8 @@ class Log(Base):
     logged_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     local_date: Mapped[date] = mapped_column(Date)
     parser_version: Mapped[int] = mapped_column(Integer)
+    # The user said an outlying weigh-in is right ("Keep"), so it counts again.
+    weight_confirmed: Mapped[bool] = mapped_column(Boolean, default=False)
 
     sets: Mapped[list[LoggedSet]] = relationship(
         back_populates="log", cascade="all, delete-orphan", order_by="LoggedSet.idx"
@@ -119,6 +121,9 @@ class WeighIn(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     weight_lb: Mapped[float] = mapped_column(Float)
     note: Mapped[str | None] = mapped_column(String(200))
+    typed: Mapped[float | None] = mapped_column(Float)
+    typed_unit: Mapped[str] = mapped_column(String(2), default="lb")
+    unit_assumed: Mapped[bool] = mapped_column(Boolean, default=False)
 
     log: Mapped[Log] = relationship(back_populates="weigh_in")
 

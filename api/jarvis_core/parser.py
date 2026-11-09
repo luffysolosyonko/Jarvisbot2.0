@@ -26,7 +26,7 @@ import re
 from dataclasses import dataclass, field, replace
 from typing import Literal
 
-PARSER_VERSION = 1
+PARSER_VERSION = 2
 """Bump when parsing rules change; a rebuild job re-parses every stored log."""
 
 KG_TO_LB = 2.20462
@@ -423,6 +423,9 @@ class WeighIn:
     weight_lb: float
     note: str | None = None
     day_offset: int = 0  # -1 when the text says "yesterday"
+    typed: float | None = None  # the number as written ("80")
+    typed_unit: Literal["kg", "lb"] = "lb"  # the unit it was read in
+    unit_assumed: bool = False  # no unit was written; the <100 = kg rule chose it
 
 
 def _note(text: str) -> str | None:
@@ -453,7 +456,14 @@ def parse_weigh_in(text: str) -> WeighIn | None:
     if not 60 <= lb <= 600:
         return None
     rest = text[: m.start()] + " " + text[m.end() :]
-    return WeighIn(round(lb, 1), _note(WEIGHT_WORDS_RE.sub(" ", rest)), day_offset)
+    return WeighIn(
+        round(lb, 1),
+        _note(WEIGHT_WORDS_RE.sub(" ", rest)),
+        day_offset,
+        typed=val,
+        typed_unit="kg" if is_kg else "lb",
+        unit_assumed=not u,
+    )
 
 
 # ---------------------------------------------------------------------------
