@@ -250,3 +250,19 @@ def test_usage_counts_ask_tokens(settings: Settings, engine: Engine) -> None:
     u = client.get(f"{API}/usage", headers=h).json()
     assert u["today"] == u["week"] == u["month"] == 1280 and u["questions_month"] == 1
     assert u["daily_token_cap"] == settings.ask_daily_token_cap
+
+
+def test_alias_matches_list_names_counted_under_another(client: TestClient) -> None:
+    post(client, "alice", "5x 135lb bench press\n5x 135lb bench press")
+    post(client, "alice", "5x 140lb bp")
+    h = auth("alice")
+    matches = client.get(f"{API}/aliases/matches", headers=h).json()["matches"]
+    assert matches == [{"written": "bp", "matched": "bench press", "sets": 1}]
+    client.post(f"{API}/aliases", headers=h, json={"short": "sldl", "full": "stiff leg deadlift"})
+    post(client, "alice", "8x 95lb sldl")
+    written = {
+        m["written"]: m["matched"]
+        for m in client.get(f"{API}/aliases/matches", headers=h).json()["matches"]
+    }
+    assert written["sldl"] == "stiff leg deadlift"
+    assert client.get(f"{API}/aliases/matches", headers=auth("bob")).json()["matches"] == []

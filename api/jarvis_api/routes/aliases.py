@@ -8,6 +8,7 @@ from jarvis_api import schemas
 from jarvis_api.deps import DB, CurrentUser
 from jarvis_api.errors import ApiError
 from jarvis_api.models import Alias
+from jarvis_api.services.logs import load_user_data
 from jarvis_core.parser import normalize_exercise
 
 router = APIRouter(tags=["aliases"])
@@ -21,6 +22,19 @@ def list_aliases(user: CurrentUser, db: DB) -> schemas.AliasesOut:
     return schemas.AliasesOut(
         aliases=[schemas.AliasOut(id=a.id, short=a.short, full=a.full) for a in rows]
     )
+
+
+@router.get("/aliases/matches")
+def alias_matches(user: CurrentUser, db: DB) -> schemas.AliasMatchesOut:
+    """Names you've typed that are counted under another exercise (initials, prefixes,
+    plurals or a shortcut), most used first."""
+    data = load_user_data(db, user)
+    out = [
+        schemas.AliasMatchOut(written=name, matched=matched, sets=count)
+        for name, count in data.name_counts.items()
+        if (matched := data.canonical(name)) and matched != name
+    ]
+    return schemas.AliasMatchesOut(matches=sorted(out, key=lambda m: (-m.sets, m.written)))
 
 
 @router.post("/aliases", status_code=201)

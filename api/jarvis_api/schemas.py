@@ -338,6 +338,16 @@ class AliasesOut(BaseModel):
     aliases: list[AliasOut]
 
 
+class AliasMatchOut(BaseModel):
+    written: str  # a name as typed (normalized)
+    matched: str  # the exercise it's counted under
+    sets: int
+
+
+class AliasMatchesOut(BaseModel):
+    matches: list[AliasMatchOut]
+
+
 # --- ask -----------------------------------------------------------------
 class AskIn(Strict):
     question: str = Field(min_length=3, max_length=500)
