@@ -793,6 +793,11 @@ input[type='number']::-webkit-outer-spin-button {
   gap: var(--s4);
   padding: var(--s4) var(--s4) var(--s3);
   border-bottom: 1px solid var(--rule);
+  /* Stays at the top while the page scrolls. */
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--paper);
 }
 
 /* The ruled page. Every line of text in the feed is one 32px band (line-height
@@ -832,7 +837,7 @@ input[type='number']::-webkit-outer-spin-button {
   position: relative;
   display: grid;
   grid-template-columns: var(--margin-w) 1fr;
-  scroll-margin-top: var(--s4);
+  scroll-margin-top: 80px; /* clear of the sticky header when jumped to */
 }
 
 .entry.highlight .entry-main {
