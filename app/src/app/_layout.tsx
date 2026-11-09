@@ -86,10 +86,11 @@ function RootNavigator({ ready }: { ready: boolean }) {
           headerTitleStyle: { fontFamily: fonts.uiSemiBold },
           headerShadowVisible: false,
         }}>
-        <Stack.Protected guard={!user}>
+        {/* Signed out: "/" and the app screens send you to sign-in, and back after. */}
+        <Stack.Protected guard={!user} redirectTo="/">
           <Stack.Screen name="(auth)" />
         </Stack.Protected>
-        <Stack.Protected guard={!!user}>
+        <Stack.Protected guard={!!user} redirectTo="/sign-in">
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="exercise/[name]" options={{ headerShown: true, title: '' }} />
           <Stack.Screen name="exercises" options={{ headerShown: true, title: '' }} />
