@@ -1,8 +1,8 @@
 /**
- * Color tokens. One accent, used only for the primary action, the selected nav item,
- * the active mode and the main chart series. Every text/background pair meets WCAG AA
+ * Color tokens. One accent (blue ballpoint), used only for the send button, the selected
+ * nav item, the active mode and the main chart series. Every text/background pair meets WCAG AA
  * (see contrast.test.ts). index.css defines the same values as CSS variables.
- * The app is dark only.
+ * The app has one color scheme: a sticky note.
  */
 export type ColorTokens = {
   bg: string;
@@ -16,21 +16,22 @@ export type ColorTokens = {
   danger: string;
 };
 
-export const dark: ColorTokens = {
-  bg: '#0F1012',
-  surface: '#17191C',
-  ink: '#ECEAE4',
-  inkSecondary: '#A9ADB5',
-  border: '#2A2D32',
-  accent: '#F97316',
-  onAccent: '#0F1012',
-  success: '#4ADE80',
-  danger: '#F87171',
+/** Sticky note: yellow paper, graphite ink, blue ballpoint for the accent. */
+export const note: ColorTokens = {
+  bg: '#FFF1A8',
+  surface: '#FFF8D1',
+  ink: '#26231A',
+  inkSecondary: '#5A5236',
+  border: '#E2CF6B',
+  accent: '#1F4FB8',
+  onAccent: '#FFFFFF',
+  success: '#1E6B34',
+  danger: '#B3261E',
 };
 
-/** One theme: the dark palette from the original app. */
-export const colors = dark;
-export const palettes = { dark } as const;
+/** One color scheme only: the sticky note. */
+export const colors = note;
+export const palettes = { note } as const;
 
 /** Strict 8px grid. 4 is only for icon-to-label gaps. */
 export const space = { xxs: 4, xs: 8, sm: 16, md: 24, lg: 32, xl: 48, xxl: 64 } as const;

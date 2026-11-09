@@ -119,10 +119,12 @@ Colors live in [`web/src/theme/tokens.ts`](web/src/theme/tokens.ts) and as CSS
 variables in [`web/src/index.css`](web/src/index.css) (a test keeps them in
 sync); components use the variables, never raw values.
 
-- **Color.** One dark theme (near-black `#0F1012` background) with a single
-  orange accent, `#F97316`, used only for the send button, the current page,
-  Ask mode and the main chart series. Every text and background pair meets
-  WCAG AA, checked by a unit test.
+- **Color.** One color scheme, a sticky note: yellow paper (`#FFF1A8`),
+  graphite ink, and a blue-ballpoint accent (`#1F4FB8`) used only for the send
+  button, the current page, Ask mode and the main chart series. The Notebook
+  has a red margin line and a ruled input, like a notepad. There's no light or
+  dark mode. Every text and background pair meets WCAG AA, checked by a unit
+  test.
 - **Spacing.** A strict 8px grid (8, 16, 24, 32, 48, 64; 4 only for
   icon-to-label gaps). 48px between sections, 24px between items, touch
   targets of 44px or more. Content sits in a centered 640px column.

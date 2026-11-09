@@ -1,16 +1,20 @@
-/* Jarvis design system: tokens, type scale, layout and components. Dark theme only.
-   Banned: gradients, glass, glows/heavy shadows, centered heroes, nested cards. */
+/* Jarvis design system: tokens, type scale, layout and components.
+   One color scheme: a sticky note (yellow paper, graphite ink, blue ballpoint).
+   Banned: decorative gradients (the ruled lines are a line pattern), glass,
+   glows/heavy shadows, centered heroes, nested cards. */
 
 :root {
-  --bg: #0f1012;
-  --surface: #17191c;
-  --ink: #eceae4;
-  --ink-secondary: #a9adb5;
-  --border: #2a2d32;
-  --accent: #f97316;
-  --on-accent: #0f1012;
-  --success: #4ade80;
-  --danger: #f87171;
+  --bg: #fff1a8;
+  --surface: #fff8d1;
+  --ink: #26231a;
+  --ink-secondary: #5a5236;
+  --border: #e2cf6b;
+  --accent: #1f4fb8;
+  --on-accent: #ffffff;
+  --success: #1e6b34;
+  --danger: #b3261e;
+  --rule: #e9d985; /* ruled lines on the input */
+  --margin: #e8a598; /* the red margin line of a notepad */
 
   --s1: 4px; /* icon-to-label gaps only */
   --s2: 8px;
@@ -29,7 +33,7 @@
   --font-ui: 'Manrope', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, monospace;
 
-  color-scheme: dark;
+  color-scheme: light;
 }
 
 
@@ -1037,4 +1041,20 @@ figure .legend { margin-top: var(--s2); }
 .send-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
+}
+
+/* ---------- the notepad ---------- */
+/* A red margin line down the left of the notebook, like a ruled pad. */
+.notebook .main {
+  border-left: 2px solid var(--margin);
+}
+
+/* The input is ruled: one line every 24px, matching the line height. */
+.input-row .textarea {
+  background-color: var(--surface);
+  background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 23px, var(--rule) 23px, var(--rule) 24px);
+  background-attachment: local;
+  background-position: 0 12px;
+  line-height: 24px;
+  font-size: 16px;
 }
