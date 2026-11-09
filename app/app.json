@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "app",
-    "slug": "app",
+    "name": "Jarvisbot2.0",
+    "slug": "jarvisbot2-0",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "app",
+    "scheme": "jarvisbot",
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon"
