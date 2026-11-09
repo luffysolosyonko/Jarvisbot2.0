@@ -406,6 +406,44 @@ input[type='number']::-webkit-outer-spin-button {
   margin: 0;
 }
 
+/* The exercise picker: a filter box and an inline list about six rows tall. */
+.picker-list {
+  max-height: min(264px, 40dvh);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule) transparent;
+  margin-top: var(--s1);
+  padding: var(--s1);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--paper-raised);
+}
+
+.picker-list [role='option'],
+.picker-empty {
+  display: flex;
+  align-items: center;
+  min-height: var(--touch);
+  padding: 0 var(--s3);
+  border-radius: 6px;
+}
+
+.picker-list [role='option'] {
+  cursor: pointer;
+}
+
+.picker-list [role='option'].active {
+  background: var(--paper-sunk);
+}
+
+.picker-list [role='option'][aria-selected='true'] {
+  font-weight: 600;
+}
+
+.picker-empty {
+  color: var(--ink-2);
+}
+
 .input-short { width: 128px; }
 .select-inline { width: auto; }
 

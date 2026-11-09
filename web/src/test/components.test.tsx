@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { useState, type ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { ExerciseSelect } from '@/components/ExerciseSelect';
 import { ToastProvider, UNDO_MS } from '@/components/Toast';
 import type { Log, Mode, ParseResult, ParseWarning } from '@/lib/types';
 import { Composer } from '@/notebook/Composer';
@@ -314,5 +315,42 @@ describe('Outlier weigh-in', () => {
     wrap(<Entry log={FLAGGED} unit="lb" />);
     await userEvent.click(screen.getByRole('button', { name: 'Edit' }));
     expect(screen.getByLabelText('Edit entry text')).toHaveValue('80');
+  });
+});
+
+describe('ExerciseSelect', () => {
+  const ex = (exercise: string, last_date: string) => ({ exercise, last_date });
+
+  function Harness({ onPick }: { onPick: (n: string) => void }) {
+    const [v, setV] = useState('');
+    return (
+      <ExerciseSelect
+        value={v}
+        onChange={(n) => {
+          setV(n);
+          onPick(n);
+        }}
+      />
+    );
+  }
+
+  it('filters as you type and picks with the keyboard or a click, newest first', async () => {
+    apiMock.mockImplementation(async (path: string) =>
+      path === '/exercises' ? { exercises: [ex('bench', '2026-11-01'), ex('squat', '2026-11-03'), ex('barbell row', '2026-10-01')] } : {},
+    );
+    const onPick = vi.fn();
+    wrap(<Harness onPick={onPick} />);
+    const box = screen.getByRole('combobox', { name: 'Exercise' });
+    await userEvent.click(box);
+    await waitFor(() => expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual(['Squat', 'Bench', 'Barbell row']));
+    await userEvent.type(box, 'ba');
+    expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual(['Barbell row']);
+    await userEvent.keyboard('{Enter}');
+    expect(onPick).toHaveBeenLastCalledWith('barbell row');
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
+    expect(box).toHaveValue('Barbell row');
+    await userEvent.click(box);
+    await userEvent.click(screen.getByRole('option', { name: 'Squat' }));
+    expect(onPick).toHaveBeenLastCalledWith('squat');
   });
 });
