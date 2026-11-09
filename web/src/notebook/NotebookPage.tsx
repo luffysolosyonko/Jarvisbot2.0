@@ -110,6 +110,8 @@ export function NotebookPage() {
   const wide = useMediaQuery('(min-width: 1100px)');
   const { pendingDeletes } = useToast();
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const headRef = useRef<HTMLElement>(null);
+  const [shownDay, setShownDay] = useState<string | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -203,6 +205,34 @@ export function NotebookPage() {
     if (!jumpRef.current) window.scrollTo({ top: document.documentElement.scrollHeight });
   }, [count, settled, tail]);
 
+  // The header shows the date of the day you're reading: the last day heading that
+  // has scrolled up to (or under) the header, or the first day on the page.
+  useEffect(() => {
+    let frame = 0;
+    function update() {
+      frame = 0;
+      const line = (headRef.current?.getBoundingClientRect().bottom ?? 0) + 1;
+      const heads = document.querySelectorAll<HTMLElement>('.feed [data-day]');
+      let day = heads[0]?.dataset.day ?? null;
+      for (const h of heads) {
+        if (h.getBoundingClientRect().top > line) break;
+        day = h.dataset.day ?? day;
+      }
+      setShownDay(day);
+    }
+    function onScroll() {
+      if (!frame) frame = requestAnimationFrame(update);
+    }
+    update();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, [feed]);
+
   // Jump to a search result once it's loaded, then clear the URL.
   useEffect(() => {
     if (!jumpId || !logs.data) return;
@@ -264,10 +294,10 @@ export function NotebookPage() {
   return (
     <div className={`notebook${tool && wide ? ' with-panel' : ''}`}>
       <main className="main" id="main">
-        <header className="nb-head">
+        <header className="nb-head" ref={headRef}>
           <h1 className="wordmark">Jarvis</h1>
-          <time className="caps" dateTime={today}>
-            {capsDate(today)}
+          <time className="caps" dateTime={shownDay ?? today}>
+            {capsDate(shownDay ?? today)}
           </time>
         </header>
         <div className="feed" aria-live="polite">
@@ -291,7 +321,7 @@ export function NotebookPage() {
             feed.map((f) => {
               const header =
                 f.day !== lastDay ? (
-                  <h2 className="day-divider">
+                  <h2 className="day-divider" data-day={f.day}>
                     <span className="day">{dayHeading(f.day, today)}</span>
                     <span className="sum">{summaries.get(f.day)}</span>
                   </h2>
