@@ -152,8 +152,13 @@ export function WeeklyBars({ weeks }: { weeks: Window[] }) {
         data={data}
         xKey="i"
         yKeys={['sets']}
+        domain={{ y: [0] }} // bars start at zero, or the smallest week draws as nothing
         domainPadding={{ left: space.md, right: space.md, top: space.sm }}
-        xAxis={{ ...axis, tickCount: weeks.length, formatXLabel: (i) => shortDate(weeks[Number(i)]?.end ?? weeks[0].end) }}
+        xAxis={{ ...axis, tickCount: weeks.length, formatXLabel: (i) => {
+            // Every other week, counting back from this week, so labels don't collide.
+            const idx = Number(i);
+            return (weeks.length - 1 - idx) % 2 === 0 ? shortDate(weeks[idx]?.end ?? weeks[0].end) : '';
+          } }}
         yAxis={[{ ...axis, tickCount: 3, formatYLabel: (y) => num(Number(y), 0) }]}
         frame={{ lineColor: 'transparent', lineWidth: 0 }}>
         {({ points, chartBounds }) =>
