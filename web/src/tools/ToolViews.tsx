@@ -1,0 +1,528 @@
+import { Download, Trash2 } from 'lucide-react';
+import { useId, useState, type FormEvent } from 'react';
+
+import { Button, IconButton } from '@/components/Button';
+import { TrendChart, VolumeBars, WeeklyBars } from '@/components/Charts';
+import { ExerciseSelect } from '@/components/ExerciseSelect';
+import { ICON } from '@/components/icons';
+import { Segmented } from '@/components/Segmented';
+import { SetRows } from '@/components/SetRows';
+import { Stat } from '@/components/Stat';
+import { EmptyState, ErrorState, QueryView, Skeleton } from '@/components/States';
+import {
+  useAddAlias,
+  useAliases,
+  useAliasMatches,
+  useDashboard,
+  useExercise,
+  useLiftForecast,
+  useRemoveAlias,
+  useSearch,
+  useStats,
+  useToday,
+  useUsage,
+  useVolume,
+  useWeightForecast,
+} from '@/hooks/queries';
+import { useDebounced } from '@/hooks/useDebounced';
+import { downloadFile, errorMessage } from '@/lib/api';
+import { exerciseName, longDate, num, shortDate, signedWeight, toLb, volume, weight } from '@/lib/format';
+import { reachText, setRefText } from '@/lib/describe';
+import type { ExerciseDetail, Log, Unit } from '@/lib/types';
+
+const DAY_OPTIONS = [
+  { value: '7', label: '7 days' },
+  { value: '30', label: '30 days' },
+  { value: '90', label: '90 days' },
+];
+
+function DaysToggle({ value, onChange }: { value: number; onChange: (d: number) => void }) {
+  return <Segmented label="Period" value={String(value)} onChange={(v) => onChange(Number(v))} options={DAY_OPTIONS} />;
+}
+
+// ---------------------------------------------------------------------------
+export function TodayTool({ unit }: { unit: Unit }) {
+  const q = useToday();
+  return (
+    <QueryView query={q}>
+      {(t) =>
+        !t.logs.length ? (
+          <EmptyState message="Nothing logged today yet." />
+        ) : (
+          <div className="stack-4">
+            <div className="stats">
+              <Stat label="Sets" value={String(t.sets)} />
+              <Stat label="Volume" value={volume(t.volume_lb, unit)} />
+              <Stat label="Weigh-in" value={t.weight_lb === null ? '–' : weight(t.weight_lb, unit)} />
+            </div>
+            <ul className="stack-3">
+              {t.logs.map((lg) => (
+                <li key={lg.id} className="stack-2">
+                  <div className="raw">{lg.raw_text}</div>
+                  {lg.weigh_in ? <p className="t-label mono">→ {weight(lg.weigh_in.weight_lb, unit)}</p> : <SetRows sets={lg.sets} unit={unit} />}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )
+      }
+    </QueryView>
+  );
+}
+
+export function StatsTool({ unit }: { unit: Unit }) {
+  const [days, setDays] = useState(7);
+  const q = useStats(days);
+  return (
+    <div className="stack-4">
+      <DaysToggle value={days} onChange={setDays} />
+      <QueryView query={q}>
+        {(s) => (
+          <div className="stats">
+            <Stat label="Gym days" value={String(s.gym_days)} note={`${num(s.gym_days_per_week)} a week`} />
+            <Stat label="Sets" value={String(s.sets)} note={`${s.good_reps} good · ${s.failed_reps} failed reps`} />
+            <Stat label="Volume" value={volume(s.volume_lb, unit)} />
+            <Stat
+              label="Weight change"
+              value={s.weight_change_lb === null ? '–' : signedWeight(s.weight_change_lb, unit)}
+              note={s.weight_end_lb === null ? 'No weigh-ins' : `Now ${weight(s.weight_end_lb, unit)}`}
+            />
+          </div>
+        )}
+      </QueryView>
+    </div>
+  );
+}
+
+function useExerciseTool(initial: string) {
+  const [name, setName] = useState(initial);
+  const q = useExercise(name || null);
+  return { name, setName, q };
+}
+
+function LiftBody({ d, unit }: { d: ExerciseDetail; unit: Unit }) {
+  return (
+    <div className="stack-4">
+      <div className="stats">
+        <Stat label="Best set" value={setRefText(d.best_set, unit)} note={d.best_set ? shortDate(d.best_set.date) : undefined} />
+        <Stat label="Heaviest" value={setRefText(d.heaviest_set, unit)} note={d.heaviest_set ? shortDate(d.heaviest_set.date) : undefined} />
+      </div>
+      <TrendChart
+        main={d.sessions}
+        projection={d.forecast?.projection ?? null}
+        unit={unit}
+        mainLabel="Estimated 1RM per session"
+        label={`Estimated 1-rep max for ${d.summary.exercise} over ${d.sessions.length} sessions.`}
+      />
+      <div className="stack-2">
+        <h3 className="t-label semibold">Last session · {shortDate(d.summary.last_date)}</h3>
+        <ul className="t-label mono stack-1">
+          {d.last_session.map((s, i) => (
+            <li key={i}>{setRefText(s, unit)}</li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  );
+}
+
+export function LiftTool({ unit, initial = '' }: { unit: Unit; initial?: string }) {
+  const { name, setName, q } = useExerciseTool(initial);
+  return (
+    <div className="stack-4">
+      <ExerciseSelect value={name} onChange={setName} />
+      {name ? <QueryView query={q}>{(d) => <LiftBody d={d} unit={unit} />}</QueryView> : null}
+    </div>
+  );
+}
+
+export function RepTargets({ d, unit }: { d: ExerciseDetail; unit: Unit }) {
+  return (
+    <table className="table">
+      <caption className="visually-hidden">Estimated maxes by reps</caption>
+      <thead>
+        <tr>
+          <th scope="col">Reps</th>
+          <th scope="col" className="num">
+            Weight
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {d.rep_targets
+          .filter((r) => [3, 5, 8, 10, 12].includes(r.reps))
+          .map((r) => (
+            <tr key={r.reps}>
+              <td className="mono">{r.reps}</td>
+              <td className="num">{weight(r.weight_lb, unit, 0)}</td>
+            </tr>
+          ))}
+      </tbody>
+    </table>
+  );
+}
+
+export function EstimateTool({ unit }: { unit: Unit }) {
+  const { name, setName, q } = useExerciseTool('');
+  return (
+    <div className="stack-4">
+      <ExerciseSelect value={name} onChange={setName} />
+      {name ? (
+        <QueryView query={q}>
+          {(d) => (
+            <div className="stack-4">
+              <div className="stats">
+                <Stat label="e1RM now" value={weight(d.summary.latest_e1rm, unit, 0)} />
+                <Stat label="Best ever" value={weight(d.summary.best_e1rm, unit, 0)} />
+              </div>
+              <RepTargets d={d} unit={unit} />
+              <p className="hint">Epley formula from your latest session. Failed reps don’t count.</p>
+            </div>
+          )}
+        </QueryView>
+      ) : null}
+    </div>
+  );
+}
+
+export function PredictWeightTool({ unit }: { unit: Unit }) {
+  const q = useWeightForecast(28);
+  return (
+    <QueryView query={q}>
+      {(f) =>
+        !f.projection ? (
+          <EmptyState message={`A forecast needs a few more weigh-ins (you have ${f.weigh_ins}).`} />
+        ) : (
+          <div className="stack-3">
+            <div className="stats">
+              <Stat label="Trend" value={`${signedWeight(f.projection.slope_per_week, unit)}/wk`} />
+              <Stat label={`By ${shortDate(f.projection.target_date)}`} value={weight(f.projection.pred, unit)} />
+            </div>
+            <p className="t-label">
+              Likely range {weight(f.projection.low, unit)} to {weight(f.projection.high, unit)}, from {f.projection.points} weigh-ins over{' '}
+              {f.projection.span_days} days.
+            </p>
+          </div>
+        )
+      }
+    </QueryView>
+  );
+}
+
+export function TargetForm({ name, unit, initialTarget = '' }: { name: string; unit: Unit; initialTarget?: string }) {
+  const [input, setInput] = useState(initialTarget);
+  const [target, setTarget] = useState<number | null>(null);
+  const id = useId();
+  const q = useLiftForecast(name || null, target);
+  function submit(e: FormEvent) {
+    e.preventDefault();
+    const v = Number(input);
+    if (v > 0) setTarget(Math.round(toLb(v, unit) * 10) / 10);
+  }
+  return (
+    <div className="stack-3">
+      <form className="row" onSubmit={submit} style={{ alignItems: 'flex-end' }}>
+        <div className="field" style={{ flex: 1, minWidth: 140 }}>
+          <label htmlFor={id}>Target 1RM ({unit})</label>
+          <input id={id} className="input mono" inputMode="decimal" value={input} onChange={(e) => setInput(e.target.value)} placeholder={unit === 'kg' ? '100' : '225'} />
+        </div>
+        <Button type="submit" variant="primary" disabled={!name || !(Number(input) > 0)}>
+          Get date
+        </Button>
+      </form>
+      {target !== null && q.isFetching && !q.data ? <Skeleton lines={1} /> : null}
+      {q.error ? <ErrorState error={q.error} /> : null}
+      {q.data ? (
+        <div className="stack-3" aria-live="polite">
+          <div className="stats">
+            <Stat label={`By ${shortDate(q.data.projection.target_date)}`} value={weight(q.data.projection.pred, unit, 0)} />
+            <Stat label="Rate" value={`${signedWeight(q.data.projection.slope_per_week, unit)}/wk`} />
+          </div>
+          <p className="t-body semibold">{reachText(q.data, unit)}</p>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+export function PredictLiftTool({ unit }: { unit: Unit }) {
+  const [name, setName] = useState('');
+  return (
+    <div className="stack-4">
+      <ExerciseSelect value={name} onChange={setName} />
+      <TargetForm key={name} name={name} unit={unit} />
+    </div>
+  );
+}
+
+export function VolumeTool({ unit }: { unit: Unit }) {
+  const [days, setDays] = useState(7);
+  const q = useVolume(days);
+  return (
+    <div className="stack-4">
+      <DaysToggle value={days} onChange={setDays} />
+      <QueryView query={q}>
+        {(v) =>
+          !v.exercises.length ? (
+            <EmptyState message={`No sets in the last ${days} days.`} />
+          ) : (
+            <table className="table">
+              <caption className="visually-hidden">Volume per exercise</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Exercise</th>
+                  <th scope="col" className="num">Sets</th>
+                  <th scope="col" className="num">Reps</th>
+                  <th scope="col" className="num">Load</th>
+                </tr>
+              </thead>
+              <tbody>
+                {v.exercises.map((e) => (
+                  <tr key={e.exercise}>
+                    <td>{exerciseName(e.exercise)}</td>
+                    <td className="num">{e.sets}</td>
+                    <td className="num">{e.good_reps}</td>
+                    <td className="num">{volume(e.volume_lb, unit)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )
+        }
+      </QueryView>
+    </div>
+  );
+}
+
+type ChartKind = 'overview' | 'weight' | 'lift' | 'volume';
+
+export function ChartsTool({ unit }: { unit: Unit }) {
+  const [kind, setKind] = useState<ChartKind>('overview');
+  const [lift, setLift] = useState('');
+  const dash = useDashboard();
+  const ex = useExercise(kind === 'lift' && lift ? lift : null);
+  const vol = useVolume(30);
+  return (
+    <div className="stack-4">
+      <Segmented<ChartKind>
+        label="Chart"
+        value={kind}
+        onChange={setKind}
+        options={[
+          { value: 'overview', label: 'Overview' },
+          { value: 'weight', label: 'Weight' },
+          { value: 'lift', label: 'Lift' },
+          { value: 'volume', label: 'Volume' },
+        ]}
+      />
+      {kind === 'overview' ? <QueryView query={dash}>{(d) => <div className="stack-2"><p className="t-label secondary">Sets per week</p><WeeklyBars weeks={d.weekly} /></div>}</QueryView> : null}
+      {kind === 'weight' ? (
+        <QueryView query={dash}>
+          {(d) => (
+            <TrendChart
+              main={d.weight.points}
+              avg={d.weight.average_7d}
+              projection={d.weight.projection}
+              unit={unit}
+              mainLabel="Weigh-ins"
+              avgLabel="7-day average"
+              mainStyle="dots"
+              label="Body weight over the last 90 days, with a 7-day average and a forecast."
+            />
+          )}
+        </QueryView>
+      ) : null}
+      {kind === 'lift' ? (
+        <>
+          <ExerciseSelect value={lift} onChange={setLift} />
+          {lift ? (
+            <QueryView query={ex}>
+              {(d) => (
+                <TrendChart
+                  main={d.sessions}
+                  projection={d.forecast?.projection}
+                  unit={unit}
+                  mainLabel="Estimated 1RM per session"
+                  label={`Estimated 1-rep max for ${lift}.`}
+                />
+              )}
+            </QueryView>
+          ) : null}
+        </>
+      ) : null}
+      {kind === 'volume' ? <QueryView query={vol}>{(v) => <div className="stack-2"><p className="t-label secondary">Last 30 days</p><VolumeBars exercises={v.exercises} unit={unit} /></div>}</QueryView> : null}
+    </div>
+  );
+}
+
+export function SearchTool({ unit, onJump }: { unit: Unit; onJump: (log: Log) => void }) {
+  const [q, setQ] = useState('');
+  const term = useDebounced(q, 300);
+  const res = useSearch(term);
+  const id = useId();
+  return (
+    <div className="stack-4">
+      <div className="field">
+        <label htmlFor={id}>Search every log</label>
+        <input id={id} className="input" type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder="bench, deadlift, scale…" autoFocus />
+      </div>
+      {term.trim() ? (
+        <QueryView query={res}>
+          {(r) =>
+            !r.logs.length ? (
+              <EmptyState message={`Nothing matches “${r.query}”.`} />
+            ) : (
+              <ul className="list">
+                {r.logs.map((lg) => (
+                  <li key={lg.id}>
+                    <button type="button" className="list-row" onClick={() => onJump(lg)}>
+                      <span className="stack-1" style={{ flex: 1, minWidth: 0 }}>
+                        <span className="t-caption secondary">{longDate(lg.local_date)}</span>
+                        <span className="raw" style={{ display: 'block' }}>
+                          {lg.raw_text}
+                        </span>
+                        {lg.weigh_in ? <span className="t-caption secondary">→ {weight(lg.weigh_in.weight_lb, unit)}</span> : null}
+                      </span>
+                      <span className="t-label accent" style={{ flex: 'none' }}>
+                        Show in notebook
+                      </span>
+                    </button>
+                  </li>
+                ))}
+                {r.truncated ? <li className="hint">Showing the 50 newest matches.</li> : null}
+              </ul>
+            )
+          }
+        </QueryView>
+      ) : null}
+    </div>
+  );
+}
+
+export function AliasesTool() {
+  const aliases = useAliases();
+  const matches = useAliasMatches();
+  const add = useAddAlias();
+  const remove = useRemoveAlias();
+  const [short, setShort] = useState('');
+  const [full, setFull] = useState('');
+  const shortId = useId();
+  const fullId = useId();
+  function submit(e: FormEvent) {
+    e.preventDefault();
+    add.mutate({ short: short.trim(), full: full.trim() }, { onSuccess: () => { setShort(''); setFull(''); } });
+  }
+  return (
+    <div className="stack-4">
+      <form className="stack-3" onSubmit={submit}>
+        <div className="row" style={{ alignItems: 'flex-end' }}>
+          <div className="field" style={{ flex: 1, minWidth: 100 }}>
+            <label htmlFor={shortId}>Shortcut</label>
+            <input id={shortId} className="input mono" value={short} onChange={(e) => setShort(e.target.value)} placeholder="sldl" />
+          </div>
+          <div className="field" style={{ flex: 2, minWidth: 160 }}>
+            <label htmlFor={fullId}>Full name</label>
+            <input id={fullId} className="input" value={full} onChange={(e) => setFull(e.target.value)} placeholder="stiff leg deadlift" />
+          </div>
+          <Button type="submit" variant="primary" loading={add.isPending} disabled={!short.trim() || !full.trim()}>
+            Add
+          </Button>
+        </div>
+        {add.error ? <p className="error-text" role="alert">{errorMessage(add.error)}</p> : null}
+      </form>
+      <div className="stack-2">
+        <h3 className="t-label semibold">Your shortcuts</h3>
+        <QueryView query={aliases} lines={2}>
+          {(list) =>
+            !list.length ? (
+              <p className="t-label secondary">None yet. Add one above.</p>
+            ) : (
+              <ul className="list">
+                {list.map((a) => (
+                  <li key={a.id} className="row-between" style={{ minHeight: 48 }}>
+                    <span className="t-label">
+                      <span className="mono">{a.short}</span> = {a.full}
+                    </span>
+                    <IconButton label={`Remove ${a.short}`} onClick={() => remove.mutate(a.id)}>
+                      <Trash2 {...ICON} />
+                    </IconButton>
+                  </li>
+                ))}
+              </ul>
+            )
+          }
+        </QueryView>
+      </div>
+      <div className="stack-2">
+        <h3 className="t-label semibold">Matched automatically</h3>
+        <p className="hint">Initials, word prefixes and plurals are matched to names you already use.</p>
+        <QueryView query={matches} lines={2}>
+          {(list) =>
+            !list.length ? (
+              <p className="t-label secondary">No automatic matches yet.</p>
+            ) : (
+              <ul className="list">
+                {list.map((m) => (
+                  <li key={m.written} className="row-between" style={{ minHeight: 48 }}>
+                    <span className="t-label">
+                      <span className="mono">{m.written}</span> → {exerciseName(m.matched)}
+                    </span>
+                    <span className="hint">{m.sets} sets</span>
+                  </li>
+                ))}
+              </ul>
+            )
+          }
+        </QueryView>
+      </div>
+    </div>
+  );
+}
+
+export function ExportTool() {
+  const [busy, setBusy] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  async function get(path: string, name: string) {
+    setBusy(path);
+    setError(null);
+    try {
+      await downloadFile(path, name);
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      setBusy(null);
+    }
+  }
+  return (
+    <div className="stack-3">
+      <p className="t-label secondary">CSV files, weights in lb.</p>
+      <div className="row">
+        <Button icon={<Download {...ICON} aria-hidden="true" />} loading={busy === '/export/sets.csv'} onClick={() => void get('/export/sets.csv', 'jarvis-sets.csv')}>
+          Sets
+        </Button>
+        <Button icon={<Download {...ICON} aria-hidden="true" />} loading={busy === '/export/weighins.csv'} onClick={() => void get('/export/weighins.csv', 'jarvis-weigh-ins.csv')}>
+          Weigh-ins
+        </Button>
+      </div>
+      {error ? <p className="error-text" role="alert">{error}</p> : null}
+    </div>
+  );
+}
+
+export function UsageTool() {
+  const q = useUsage();
+  return (
+    <QueryView query={q}>
+      {(u) => (
+        <div className="stack-3">
+          <div className="stats">
+            <Stat label="Today" value={u.today.toLocaleString('en-US')} note={`of ${u.daily_token_cap.toLocaleString('en-US')} a day`} />
+            <Stat label="Last 7 days" value={u.week.toLocaleString('en-US')} />
+            <Stat label="This month" value={u.month.toLocaleString('en-US')} note={`${u.questions_month} questions`} />
+          </div>
+          <p className="hint">Claude tokens. Only Ask mode uses them; logging never does.</p>
+        </div>
+      )}
+    </QueryView>
+  );
+}

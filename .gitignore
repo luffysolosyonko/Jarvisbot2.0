@@ -27,8 +27,12 @@ api/firebase-service-account.json
 Thumbs.db
 .idea/
 
-# ---------- app (Expo) ----------
+# ---------- web (Vite) ----------
 node_modules/
+web/dist/
+web/coverage/
+
+# ---------- app (Expo) ----------
 app/.expo/
 app/dist/
 app/web-build/
