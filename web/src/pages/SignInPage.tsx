@@ -83,7 +83,10 @@ export function SignInPage() {
     <main className="auth" id="main">
       <div className="auth-body">
         <header className="auth-head">
-          <h1 className="auth-wordmark">Jarvis</h1>
+          <h1 className="auth-wordmark">
+            Jarvis
+            <img className="auth-logo" src="/logo.png" alt="" width={56} height={56} />
+          </h1>
           <p className="auth-tagline">
             <span>Workout</span> <span className="accent">↳ logged.</span>
           </p>
