@@ -28,6 +28,24 @@ repo never creates cloud resources for you.
    | `Path` (append) | `%ANDROID_HOME%\platform-tools` and `%ANDROID_HOME%\emulator` |
 
    Open a new terminal and check that `adb --version` and `java -version` work.
+5. **Long paths for the native build.** React Native's generated C++ paths go
+   past Windows' 260-character limit (over 320 characters), and the build fails
+   with `ninja: error: ... Filename longer than 260 characters`. Two fixes,
+   both one-time:
+   - In an **admin** PowerShell:
+     ```powershell
+     New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" -Name LongPathsEnabled -Value 1 -PropertyType DWORD -Force
+     ```
+   - The `ninja.exe` bundled with the SDK's CMake (1.10.2) ignores that
+     setting. Download `ninja-win.zip` from the official
+     [ninja 1.12.1 release](https://github.com/ninja-build/ninja/releases/tag/v1.12.1)
+     and replace `%ANDROID_HOME%\cmake\<version>\bin\ninja.exe` (keep the old
+     one as `ninja.exe.bak`).
+   - Keep the project in a short folder such as `C:\dev\jarvis`.
+6. **Node via fnm:** if `node` isn't found in a new terminal, add
+   `fnm env --use-on-cd --shell powershell | Out-String | Invoke-Expression` to
+   your PowerShell profile (`notepad $PROFILE`), and use PowerShell rather than
+   Command Prompt.
 
 ## 2. Android emulator (Google Play image)
 
@@ -43,6 +61,9 @@ a plain "Google APIs" or AOSP one.
 4. Finish, then start it with ▶. Open the Play Store once and sign in with a
    Google account. Use a test account if you like; it's the account you'll pick
    when you tap "Continue with Google".
+5. If the emulator freezes on a black screen at boot, your GPU driver is too
+   old for its Vulkan renderer. In the device's settings set **Graphics** to
+   **Hardware**, or start it with `emulator -avd Pixel_8 -gpu host`.
 
 ## 3. Firebase project (auth)
 
