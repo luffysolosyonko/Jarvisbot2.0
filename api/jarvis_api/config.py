@@ -13,7 +13,7 @@ class Settings(BaseSettings):
 
     env: str = "local"
     log_level: str = "info"
-    cors_origins: str = ""  # comma-separated; the native app doesn't need CORS
+    cors_origins: str = "http://localhost:8081"  # comma-separated; the Expo web dev server
     trust_proxy_headers: bool = False  # True behind Cloud Run to read X-Forwarded-For
     max_body_bytes: int = 32_768
 
