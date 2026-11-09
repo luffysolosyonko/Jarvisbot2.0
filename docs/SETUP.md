@@ -3,9 +3,9 @@
 The tools and accounts Jarvis needs, in order. You do these by hand. The
 repo never creates cloud resources for you.
 
-- **Sections 1–5** are everything needed to run Jarvis locally on a Windows
-  laptop with the Android emulator. All of it is free.
-- **Sections 6–11** are only for deploying the API to Google Cloud Run from
+- **Sections 1–4** are everything needed to run Jarvis locally on a Windows
+  laptop: the API in Docker and the web app in Chrome. All of it is free.
+- **Sections 5–10** are only for deploying the API to Google Cloud Run from
   GitHub Actions.
 
 ---
@@ -14,58 +14,16 @@ repo never creates cloud resources for you.
 
 1. **Docker Desktop**: <https://www.docker.com/products/docker-desktop/>. Use
    the WSL 2 backend.
-2. **Node.js 24 LTS** (React Native 0.88 needs 22.13+, 24.3+ or 26+) and **Python 3.12**: both from their official
-   installers. Tick "Add python.exe to PATH".
-3. **Android Studio**: <https://developer.android.com/studio>. It bundles the
-   JDK that Gradle needs.
-4. Set user environment variables (Start > "Edit environment variables for
-   your account"):
+2. **Node.js 24 LTS**, from the official installer or a version manager such
+   as fnm. Check with `node --version` in a new PowerShell window.
+   - If you use fnm and `node` isn't found in a new terminal, add
+     `fnm env --use-on-cd --shell powershell | Out-String | Invoke-Expression`
+     to your PowerShell profile (`notepad $PROFILE`).
+3. **Python 3.12** (only to run the API tests outside Docker): the official
+   installer, with "Add python.exe to PATH" ticked.
+4. **Chrome** for the demo.
 
-   | Variable | Value |
-   |---|---|
-   | `ANDROID_HOME` | `%LOCALAPPDATA%\Android\Sdk` |
-   | `JAVA_HOME` | `C:\Program Files\Android\Android Studio\jbr` |
-   | `Path` (append) | `%ANDROID_HOME%\platform-tools` and `%ANDROID_HOME%\emulator` |
-
-   Open a new terminal and check that `adb --version` and `java -version` work.
-5. **Long paths for the native build.** React Native's generated C++ paths go
-   past Windows' 260-character limit (over 320 characters), and the build fails
-   with `ninja: error: ... Filename longer than 260 characters`. Two fixes,
-   both one-time:
-   - In an **admin** PowerShell:
-     ```powershell
-     New-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\FileSystem" -Name LongPathsEnabled -Value 1 -PropertyType DWORD -Force
-     ```
-   - The `ninja.exe` bundled with the SDK's CMake (1.10.2) ignores that
-     setting. Download `ninja-win.zip` from the official
-     [ninja 1.12.1 release](https://github.com/ninja-build/ninja/releases/tag/v1.12.1)
-     and replace `%ANDROID_HOME%\cmake\<version>\bin\ninja.exe` (keep the old
-     one as `ninja.exe.bak`).
-   - Keep the project in a short folder such as `C:\dev\jarvis`.
-6. **Node via fnm:** if `node` isn't found in a new terminal, add
-   `fnm env --use-on-cd --shell powershell | Out-String | Invoke-Expression` to
-   your PowerShell profile (`notepad $PROFILE`), and use PowerShell rather than
-   Command Prompt.
-
-## 2. Android emulator (Google Play image)
-
-Google sign-in needs Google Play services, so use a **Google Play** image, not
-a plain "Google APIs" or AOSP one.
-
-1. Android Studio > **More Actions** > **Virtual Device Manager** > **Create
-   device**.
-2. Pick a phone with the Play Store icon in the "Play Store" column (e.g.
-   **Pixel 8**).
-3. Choose a system image whose target says **Google Play** (API 35 or newer,
-   x86_64). Download it if needed.
-4. Finish, then start it with ▶. Open the Play Store once and sign in with a
-   Google account. Use a test account if you like; it's the account you'll pick
-   when you tap "Continue with Google".
-5. If the emulator freezes on a black screen at boot, your GPU driver is too
-   old for its Vulkan renderer. In the device's settings set **Graphics** to
-   **Hardware**, or start it with `emulator -avd Pixel_8 -gpu host`.
-
-## 3. Firebase project (auth)
+## 2. Firebase project (auth)
 
 Firebase Auth works on the free Spark plan; no billing account needed.
 
@@ -73,58 +31,21 @@ Firebase Auth works on the free Spark plan; no billing account needed.
    `jarvis-2`). Google Analytics isn't needed.
 2. **Build > Authentication > Get started**. Under **Sign-in method**, enable:
    - **Email/Password**
-   - **Google** (set a support email). This also creates a **Web client** OAuth
-     ID that you'll need in section 4.
-3. **Project settings > General > Your apps**:
-   - Add a **Web app** (nickname `jarvis-app`). Copy `apiKey`, `authDomain`,
-     `projectId` and `appId` into `app/.env.local` (see `app/.env.example`).
-     These are public client config, not secrets.
-   - Add an **Android app** with package name `com.luffysolosyonko.jarvis`
-     (must match `android.package` in `app/app.json`). Skip the SHA-1 for now
-     (section 4) and skip downloading `google-services.json`.
-4. Copy the project ID into `FIREBASE_PROJECT_ID` in `api/.env`.
+   - **Google** (optional; set a support email). The web app uses a Firebase
+     popup, so there's no client ID to copy.
+3. **Authentication > Settings > Authorized domains**: `localhost` is there by
+   default. Keep it; the Google popup only works on listed domains.
+4. **Project settings > General > Your apps > Add app > Web** (nickname
+   `jarvis-web`). Copy `apiKey`, `authDomain`, `projectId` and `appId` into
+   `web/.env.local` (section 4). These are public client config, not secrets.
+5. Copy the project ID into `FIREBASE_PROJECT_ID` in `api/.env` (section 3).
 
 There's no demo user to create and no demo password. "Try the demo" asks the
 API for a Firebase custom token for one fixed UID (`DEMO_UID` in `api/.env`,
 default `jarvis-demo`). Firebase creates that user on its first sign-in. The
 UID comes only from server config, never from the request.
 
-Email sign-in and "Try the demo" work once this section and section 5 are
-done. Section 4 is only needed for "Continue with Google".
-
-## 4. Google sign-in on the emulator (optional)
-
-Google checks that the app is signed with a key registered in Firebase. Local
-dev builds are signed with the debug keystore, so register its SHA-1.
-
-1. Build the app once so the `android/` folder exists:
-
-   ```powershell
-   cd app
-   npx expo run:android
-   ```
-
-2. Print the signing certificates:
-
-   ```powershell
-   cd android
-   .\gradlew signingReport        # Git Bash: ./gradlew signingReport
-   ```
-
-   Find the block with `Variant: debug` and `Config: debug`, and copy its
-   `SHA1` line (format `AB:CD:...`).
-3. Firebase console > **Project settings > General > Your apps > Android app**
-   > **Add fingerprint**, paste the SHA-1 and save.
-4. **Authentication > Sign-in method > Google > Web SDK configuration**: copy
-   the **Web client ID** into `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` in
-   `app/.env.local`.
-5. Rebuild: `npx expo run:android`.
-
-`android/` is generated and gitignored. Regenerating it (`npx expo prebuild
---clean`) keeps the same debug keystore, so the SHA-1 doesn't change. If it
-ever does, repeat steps 2–3.
-
-## 5. Local API configuration
+## 3. Local API configuration
 
 ```powershell
 cd api
@@ -132,7 +53,8 @@ copy .env.example .env
 ```
 
 Fill in `FIREBASE_PROJECT_ID`. `DATABASE_URL` already points at the Postgres
-in `docker-compose.yml`.
+in `docker-compose.yml`, and `CORS_ORIGINS` already allows the web app on
+`http://localhost:5173`.
 
 **Service account key** (needed to mint "Try the demo" tokens):
 
@@ -140,20 +62,42 @@ in `docker-compose.yml`.
    private key** > **Generate key**.
 2. Save the downloaded file as `api/firebase-service-account.json`. It's
    gitignored and excluded from the Docker image. `docker compose` mounts it
-   into the API container as a secret. `GOOGLE_APPLICATION_CREDENTIALS` in
-   `api/.env` already points at it.
+   into the API container as a secret.
 3. Treat it like a password: don't email it or put it anywhere else. If it
    leaks, delete the key under Google Cloud console > IAM > Service accounts >
    *firebase-adminsdk-…* > Keys.
 
-`docker compose up` needs this file to exist. Without it, run the API with
-`uvicorn` instead (README > Run locally); email sign-in still works and only
-"Try the demo" is unavailable.
+`docker compose up` needs this file to exist.
 
-`ANTHROPIC_API_KEY` is optional. Without it everything works except Ask
-Jarvis, which shows a clear "not configured" error. To enable it, create a key
-at <https://console.anthropic.com> > API keys, and set a monthly spend limit
-under Billing > Limits.
+`ANTHROPIC_API_KEY` is optional. Without it everything works except Ask mode,
+which shows a clear "not configured" error. Logging never uses it. To enable
+Ask, create a key at <https://console.anthropic.com> > API keys and set a
+monthly spend limit under Billing > Limits. `ASK_DEMO_DAILY_TOKEN_CAP` limits
+what the demo account can spend per day (one question uses about 4,000 tokens).
+
+Start the API and seed the demo account:
+
+```powershell
+docker compose up -d --build
+docker compose exec api python -m jarvis_api.seed
+```
+
+The database is published on host port 15432 (not 5432) so it never collides
+with a Postgres installed on the laptop; set `JARVIS_DB_PORT` to change it.
+
+## 4. Web app
+
+```powershell
+cd web
+copy .env.example .env.local     # then paste the Firebase web config from section 2
+npm install
+npm run dev                      # http://localhost:5173
+```
+
+`VITE_API_URL` defaults to `http://localhost:8000`. The dev server always uses
+port 5173 (it fails rather than pick another), because that's the origin the
+API allows. Other commands: `npm run lint`, `npm run typecheck`, `npm test`,
+`npm run build`.
 
 The day-of-demo steps are in [DEMO.md](DEMO.md).
 
@@ -165,16 +109,16 @@ Placeholders used below:
 
 | Placeholder | Example |
 |---|---|
-| `PROJECT_ID` | the Firebase project ID from section 3 (same GCP project) |
+| `PROJECT_ID` | the Firebase project ID from section 2 (same GCP project) |
 | `PROJECT_NUMBER` | shown on the GCP project dashboard |
 | `REGION` | `us-central1` |
 | `GITHUB_REPO` | `your-user/jarvis-2` |
 
 Cloud Run, Artifact Registry, Secret Manager and Neon have free tiers that
 cover a portfolio app, but GCP requires a billing account. Set a budget alert
-(6.3).
+(5.3).
 
-## 6. Google Cloud project
+## 5. Google Cloud project
 
 1. The Firebase project is already a GCP project. Open it at
    <https://console.cloud.google.com> and note `PROJECT_NUMBER`.
@@ -192,14 +136,14 @@ cover a portfolio app, but GCP requires a billing account. Set a budget alert
      --repository-format=docker --location=REGION
    ```
 
-## 7. Neon Postgres
+## 6. Neon Postgres
 
 1. Sign up at <https://neon.tech> and create a project (a region near
    `REGION`) with database `jarvis`.
 2. Copy the **pooled** connection string. Change the scheme to
    `postgresql+psycopg://` and keep `?sslmode=require`.
 
-## 8. Secret Manager
+## 7. Secret Manager
 
 ```bash
 printf '%s' 'postgresql+psycopg://...'  | gcloud secrets create DATABASE_URL --data-file=-
@@ -207,7 +151,7 @@ printf '%s' 'sk-ant-...'                | gcloud secrets create ANTHROPIC_API_KE
 openssl rand -hex 32 | tr -d '\n'       | gcloud secrets create DEMO_RESET_TOKEN --data-file=-
 ```
 
-## 9. Service accounts
+## 8. Service accounts
 
 A **runtime** account that Cloud Run runs as, and a **deployer** account that
 GitHub Actions impersonates. Don't create JSON keys for either.
@@ -238,7 +182,7 @@ gcloud secrets add-iam-policy-binding DATABASE_URL \
   --member="serviceAccount:$DEPLOYER" --role=roles/secretmanager.secretAccessor
 ```
 
-## 10. Workload Identity Federation for GitHub Actions
+## 9. Workload Identity Federation for GitHub Actions
 
 ```bash
 gcloud iam workload-identity-pools create github \
@@ -257,7 +201,7 @@ gcloud iam service-accounts add-iam-policy-binding $DEPLOYER \
 
 The attribute condition means only `main` of your repo can deploy.
 
-## 11. GitHub repository settings
+## 10. GitHub repository settings
 
 **Settings > Secrets and variables > Actions > Variables** (none of these are
 secret):

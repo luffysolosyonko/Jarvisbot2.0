@@ -1,7 +1,7 @@
 # Demo checklist
 
-A screen-shared demo on a Windows laptop with the Android emulator. One-time
-setup is in [SETUP.md](SETUP.md) sections 1–5.
+A screen-shared demo of the web app in Chrome on a Windows laptop. One-time
+setup is in [SETUP.md](SETUP.md) sections 1–4.
 
 ## The day before
 
@@ -9,13 +9,13 @@ setup is in [SETUP.md](SETUP.md) sections 1–5.
 - [ ] Run through the whole script below once.
 - [ ] Turn off Windows notifications (Focus assist) and close other apps.
 
-## 15 minutes before
+## 10 minutes before
 
 Run every command from the repo root unless it says otherwise. Use PowerShell.
 
 1. [ ] **Start Docker Desktop.** Wait until the status bar says *Engine
    running*.
-2. [ ] **Start the stack:**
+2. [ ] **Start the API and database:**
 
    ```powershell
    docker compose up -d --build
@@ -28,49 +28,53 @@ Run every command from the repo root unless it says otherwise. Use PowerShell.
    docker compose exec api python -m jarvis_api.seed
    ```
 
-4. [ ] **Boot the emulator:** Android Studio > Virtual Device Manager > ▶ on
-   the Google Play device. Then check that `adb devices` lists `emulator-5554
-   device`.
-5. [ ] **Launch the app:**
+4. [ ] **Start the web app** in a second PowerShell window:
 
    ```powershell
-   cd app
-   npx expo run:android
+   cd web
+   npm run dev
    ```
 
-   The first build takes a few minutes; after that it's quick. Leave Metro
-   running.
-6. [ ] **Sign in:** tap **Try the demo**. The dashboard should show charts.
-7. [ ] Set the emulator to the theme you want to present (Settings > Display >
-   Dark theme). The app follows it.
+   Leave it running. It serves <http://localhost:5173>.
+5. [ ] **Open Chrome** at <http://localhost:5173> and click **Try the demo**.
+   The Notebook should show the last two weeks of entries.
+6. [ ] Zoom the browser to 110–125% (Ctrl +) so text reads well over screen
+   share. Pick light or dark in Windows (Settings > Personalization > Colors);
+   the app follows it.
+7. [ ] Clear the input, switch to **Workout** mode, close any open tool panel.
 
 ## 5-minute script
 
-| Time | Screen | Do | Point out |
+| Time | Where | Do | Point out |
 |---|---|---|---|
-| 0:00 | Sign in | Show the form, then tap **Try the demo** | Email/password and Google via Firebase. The API verifies the Firebase ID token on every request. |
-| 0:30 | Dashboard | Scroll top to bottom | Today's summary, weekly sets and volume, body weight with a 7-day average and a dashed projection, top lifts with e1RM change. Everything is computed from raw logs on read. |
-| 1:30 | Log | Type `5x 155lb 2x1x1xf bench` slowly | The preview updates as you type and splits one line into sets. Show the failed-rep flag and the matched exercise. |
-| 2:00 | Log | Add a line `8x 70/80kg squat`, then **Save** | The estimated flag, kg converted to lb, and the new entry in today's logs. |
-| 2:30 | Exercise detail | Dashboard > Top lifts > **Bench** | The e1RM chart with its dashed forecast, best and heaviest sets, rep targets. Enter a target such as `225` to get a projected date. Today's 155 lb set is the newest point, and a new best. |
-| 3:30 | History | Scroll back a few days | Raw text above its parsed rows. The raw text is the source of truth; parsed rows can be rebuilt when the parser improves. |
-| 4:00 | Ask Jarvis | Ask "How is my bench trending?" | The answer uses only your own data, with a tokens-used line and a daily cap. Claude sits behind a swappable provider interface. |
-| 4:30 | Settings | Switch units to kg and back; show the time zone | Everything is stored in lb and converted for display. Sign out. |
+| 0:00 | Sign in | Show the form, then click **Try the demo** | Email, Google popup and the demo all go through Firebase. The demo is a custom token for one fixed account, minted by the API; there's no demo password. |
+| 0:30 | Notebook | Scroll the feed | A chat-style log like the Discord bot's channels: what was typed on top, parsed rows below, a "Logged" check. |
+| 1:00 | Notebook, Workout | Type `5x 155lb 2x1x1xf bench` slowly, then press Enter | The live preview splits one line into five sets, the last a failed rep. Enter saves; it shows up as "Logged". No AI is involved in logging. |
+| 1:30 | Notebook, Workout | Type `8`, click **x**, type ` 135`, click **lb**, then Shift+Enter and `8 135 squat` | Syntax buttons insert at the cursor. The bad line is flagged "Not understood" with fixes; click **Add unit: lb** and it's rewritten and re-parsed. |
+| 2:00 | Notebook, Weight | Switch to **Weight**, type `83.9kg`, Enter | Converted to 185 lb. Weight mode ignores set lines, just like the bot's #weight channel. |
+| 2:30 | Tools | **Tools > Predict lift**, pick **Bench**, target `225`, **Get date** | Every slash command is a button with dropdowns. The forecast is a regression over recent sessions, with the date you'd hit the target at this pace. |
+| 3:15 | History | Click a filled day in the calendar | Filled = workout, outlined = weigh-in only. The day's entries can be edited, fixed or deleted (with undo). |
+| 3:45 | Progress | Scroll; click **Bench** | Body weight with a 7-day average and a dashed projection, weekly volume, top lifts. Bench shows the deload dip and the forecast line. |
+| 4:15 | Notebook, Ask | Switch to **Ask** (accent color), ask "Is my bench still improving?" | Only Ask mode calls Claude. The answer uses only this account's data and shows the tokens used. |
 
 If there's time for questions, the strongest code to show: the `jarvis_core`
-parser tests, the test proving user A can't read user B's data, and the
-design-token contrast test.
+parser tests, the test that logging makes zero LLM calls
+(`api/tests/api/test_notebook.py`), the fix suggestions
+(`api/jarvis_api/services/fixes.py`), the test proving user A can't read user
+B's data, and the design-token contrast test.
 
 ## If something goes wrong
 
 | Symptom | Fix |
 |---|---|
-| App says it can't reach the server | Open `http://10.0.2.2:8000/healthz` in the emulator's Chrome. If that fails, check `docker compose ps`; the `api` container must be up and on port 8000. |
-| Ask Jarvis shows "not configured" or a timeout | Expected without `ANTHROPIC_API_KEY` in `api/.env`, or if the request takes more than 15 seconds. Move on; the rest of the app doesn't depend on it. |
-| Charts are empty | Re-run the seed command (step 3) and pull to refresh. |
-| Port 15432 or 8000 already in use | Stop whatever holds it, or set `JARVIS_DB_PORT` to another port (and match `DATABASE_URL` in `api/.env`). Then `docker compose down` and up again. |
-| Red screen or stale bundle | In the Metro terminal press `r` to reload. If it persists, stop Metro and run `npx expo start --clear`. |
-| "Continue with Google" fails | Use **Try the demo** or email sign-in. To fix it later, see SETUP.md section 4. |
+| "Can't reach the server" | Open <http://localhost:8000/healthz>. If that fails, check `docker compose ps`; the `api` container must be up on port 8000. |
+| Sign-in or the API fails with a CORS error in the console | The web app must be on exactly `http://localhost:5173` (not 127.0.0.1). `CORS_ORIGINS` in `api/.env` must include it; restart with `docker compose up -d`. |
+| Ask shows "not configured" or a timeout | Expected without `ANTHROPIC_API_KEY` in `api/.env`, or if a request takes more than 15 seconds. Move on; nothing else depends on it. |
+| Ask says today's allowance is used | Raise `ASK_DEMO_DAILY_TOKEN_CAP` in `api/.env` and run `docker compose up -d`. |
+| Charts or the calendar are empty | Re-run the seed command (step 3) and reload the page. |
+| Port 15432 or 8000 already in use | Stop whatever holds it, or set `JARVIS_DB_PORT` to another port. Then `docker compose down` and up again. |
+| Port 5173 already in use | Close the other `npm run dev` window (the port is fixed because the API's CORS allows only it). |
+| "Continue with Google" fails | Use **Try the demo** or email sign-in. See SETUP.md section 3 for enabling Google. |
 
 ## After the demo
 

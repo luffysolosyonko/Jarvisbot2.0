@@ -32,23 +32,11 @@ node_modules/
 web/dist/
 web/coverage/
 
-# ---------- app (Expo) ----------
-app/.expo/
-app/dist/
-app/web-build/
-app/expo-env.d.ts
-app/.kotlin/
-app/*.orig.*
-app/.metro-health-check*
-app/coverage/
 *.tsbuildinfo
 npm-debug.*
-yarn-debug.*
-yarn-error.*
 
-# Generated native folders (Continuous Native Generation)
-app/ios/
-app/android/
+# Leftovers from the removed Expo app (generated files only)
+app/
 
 # ---------- api (Python) ----------
 __pycache__/
