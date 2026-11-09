@@ -429,6 +429,7 @@ class ExerciseSummary:
     latest_e1rm: float | None  # best e1RM in the most recent session with one
     e1rm_change: float | None  # mean of last k sessions minus mean of first k (k <= 3)
     per_hand: bool
+    bodyweight_only: bool = False
 
 
 def _trend_change(sessions: list[tuple[date, float]]) -> float | None:
@@ -463,9 +464,22 @@ def exercise_summaries(sets: Sequence[SetRow]) -> list[ExerciseSummary]:
                 latest_e1rm=sessions[-1][1] if sessions else None,
                 e1rm_change=_trend_change(sessions),
                 per_hand=any(s.per_hand for s in rows),
+                bodyweight_only=all(s.bodyweight for s in rows),
             )
         )
     return sorted(out, key=lambda e: (-e.sets, e.exercise))
+
+
+def top_lifts(sets: Sequence[SetRow], limit: int = 5) -> list[ExerciseSummary]:
+    """The strongest loaded lifts by best e1RM, among those trained in 3+ sessions.
+    Bodyweight-only movements are left out: their "e1RM" just tracks body weight."""
+    lifts = [
+        e
+        for e in exercise_summaries(sets)
+        if e.latest_e1rm is not None and not e.bodyweight_only and e.sessions >= 3
+    ]
+    lifts.sort(key=lambda e: (-(e.best_e1rm or 0.0), e.exercise))
+    return lifts[:limit]
 
 
 @dataclass(frozen=True)

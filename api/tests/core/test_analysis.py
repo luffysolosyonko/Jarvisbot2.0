@@ -16,6 +16,7 @@ from jarvis_core.analysis import (
     moving_average,
     project,
     rep_targets,
+    top_lifts,
     weekly_series,
     weight_projection,
     window_summary,
@@ -192,3 +193,10 @@ def test_exercise_summaries_and_change() -> None:
     assert bench.sessions == 20 and bench.e1rm_change is not None and bench.e1rm_change > 0
     curl = next(s for s in summaries if s.exercise == "curl")
     assert curl.e1rm_change is None
+
+
+def test_top_lifts_skip_bodyweight_and_one_offs() -> None:
+    logs = [(MON + timedelta(days=d), "8x 100lb row\n10x uw pull ups") for d in (0, 3, 7)]
+    logs.append((MON, "5x 300lb deadlift"))
+    sets, _ = prepared(logs, weight_logs=[(MON, "180lb")])
+    assert [e.exercise for e in top_lifts(sets)] == ["row"]

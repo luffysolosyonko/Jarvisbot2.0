@@ -1,0 +1,223 @@
+"""Saving logs, and turning stored rows back into analysis inputs.
+
+Raw text is the source of truth. Sets and weigh-ins are derived by jarvis_core and
+can be rebuilt from the logs at any time (see `rebuild`).
+"""
+
+from __future__ import annotations
+
+from collections.abc import Sequence
+from dataclasses import dataclass
+from datetime import date, datetime, timedelta
+
+from sqlalchemy import delete, select
+from sqlalchemy.orm import Session, selectinload
+
+from jarvis_api.models import Alias, Log, LoggedSet, User, WeighIn
+from jarvis_api.services.users import local_now
+from jarvis_core import analysis
+from jarvis_core.names import canonical_names
+from jarvis_core.parser import PARSER_VERSION, DayContext, LogKind, ParsedLog, parse_log
+
+
+def parse_for_user(
+    db: Session,
+    user: User,
+    text: str,
+    day: date,
+    kind: LogKind | None = None,
+    before: datetime | None = None,
+) -> ParsedLog:
+    """Parse with the user's settings and the context of earlier logs that day."""
+    return parse_log(
+        text,
+        kind=kind,
+        default_unit=user.settings.set_unit,
+        bar_lb=user.settings.bar_lb,
+        context=day_context(db, user, day, before),
+    )
+
+
+def day_context(
+    db: Session, user: User, day: date, before: datetime | None = None
+) -> DayContext | None:
+    """Names and the last set carried over from the user's earlier workout logs on `day`."""
+    q = select(Log).where(Log.user_id == user.id, Log.local_date == day, Log.kind == "workout")
+    if before is not None:
+        q = q.where(Log.logged_at < before)
+    ctx: DayContext | None = None
+    for log in db.scalars(q.order_by(Log.logged_at, Log.id)):
+        ctx = parse_log(
+            log.raw_text,
+            kind="workout",
+            default_unit=user.settings.set_unit,
+            bar_lb=user.settings.bar_lb,
+            context=ctx,
+        ).context
+    return ctx
+
+
+def _store_parsed(log: Log, parsed: ParsedLog) -> None:
+    log.kind = parsed.kind
+    log.parser_version = PARSER_VERSION
+    log.sets = [
+        LoggedSet(
+            user_id=log.user_id,
+            idx=s.idx,
+            line=s.line,
+            exercise=s.exercise,
+            reps=s.reps,
+            good_reps=s.good_reps,
+            failed_reps=s.failed_reps,
+            weight_lb=s.weight_lb,
+            weight_text=s.weight_text,
+            flag=s.flag,
+            estimated=s.estimated,
+            bodyweight=s.bodyweight,
+            per_hand=s.per_hand,
+            inferred=s.inferred,
+        )
+        for s in parsed.sets
+    ]
+    w = parsed.weigh_in
+    log.weigh_in = WeighIn(user_id=log.user_id, weight_lb=w.weight_lb, note=w.note) if w else None
+
+
+@dataclass(frozen=True)
+class SaveResult:
+    log: Log
+    parsed: ParsedLog
+
+
+def save_log(
+    db: Session, user: User, text: str, now: datetime, kind: LogKind | None = None
+) -> SaveResult | None:
+    """Parse and store a log. Returns None (and stores nothing) if nothing parsed."""
+    day = local_now(user, now).date()
+    parsed = parse_for_user(db, user, text, day, kind, before=now)
+    if not parsed.ok:
+        return None
+    if parsed.weigh_in and parsed.weigh_in.day_offset:
+        day += timedelta(days=parsed.weigh_in.day_offset)
+    log = Log(
+        user_id=user.id,
+        kind=parsed.kind,
+        raw_text=text,
+        logged_at=now,
+        local_date=day,
+        parser_version=PARSER_VERSION,
+    )
+    db.add(log)
+    db.flush()
+    _store_parsed(log, parsed)
+    db.commit()
+    db.refresh(log)
+    return SaveResult(log, parsed)
+
+
+def logs_between(db: Session, user: User, start: date, end: date) -> Sequence[Log]:
+    return db.scalars(
+        select(Log)
+        .where(Log.user_id == user.id, Log.local_date >= start, Log.local_date <= end)
+        .options(selectinload(Log.sets), selectinload(Log.weigh_in))
+        .order_by(Log.logged_at.desc(), Log.id.desc())
+    ).all()
+
+
+def aliases_for(db: Session, user: User) -> dict[str, str]:
+    return {a.short: a.full for a in db.scalars(select(Alias).where(Alias.user_id == user.id))}
+
+
+@dataclass(frozen=True)
+class UserData:
+    sets: list[analysis.SetRow]  # prepared: canonical names, bodyweight loads
+    weighins: list[analysis.WeightPoint]
+    aliases: dict[str, str]
+    name_counts: dict[str, int]  # raw normalized name -> sets (for matching new names)
+
+    def canonical(self, name: str | None) -> str | None:
+        if not name:
+            return None
+        counts = dict(self.name_counts)
+        counts[name] = counts.get(name, 0) + 1
+        return canonical_names(counts, self.aliases)[name]
+
+
+def load_user_data(db: Session, user: User) -> UserData:
+    rows = db.execute(
+        select(LoggedSet, Log.local_date)
+        .join(Log, LoggedSet.log_id == Log.id)
+        .where(LoggedSet.user_id == user.id, Log.user_id == user.id)
+        .order_by(Log.local_date, Log.logged_at, Log.id, LoggedSet.idx)
+    ).all()
+    raw = [
+        analysis.SetRow(
+            day=d,
+            exercise=s.exercise,
+            reps=s.reps,
+            good_reps=s.good_reps,
+            failed_reps=s.failed_reps,
+            weight_lb=s.weight_lb,
+            estimated=s.estimated,
+            bodyweight=s.bodyweight,
+            per_hand=s.per_hand,
+            weight_text=s.weight_text,
+            flag=s.flag,
+            log_id=s.log_id,
+            idx=s.idx,
+        )
+        for s, d in rows
+    ]
+    weights = [
+        analysis.WeightPoint(d, w.weight_lb, w.note)
+        for w, d in db.execute(
+            select(WeighIn, Log.local_date)
+            .join(Log, WeighIn.log_id == Log.id)
+            .where(WeighIn.user_id == user.id, Log.user_id == user.id)
+            .order_by(Log.local_date, Log.logged_at, Log.id)
+        ).all()
+    ]
+    aliases = aliases_for(db, user)
+    counts: dict[str, int] = {}
+    for s in raw:
+        if s.exercise:
+            counts[s.exercise] = counts.get(s.exercise, 0) + 1
+    return UserData(analysis.prepare(raw, weights, aliases), weights, aliases, counts)
+
+
+def rebuild(db: Session, user: User, only_outdated: bool = True) -> int:
+    """Re-derive sets and weigh-ins from raw text, day by day in order so same-day
+    context carries over. Returns the number of logs re-parsed."""
+    q = select(Log).where(Log.user_id == user.id)
+    if only_outdated:
+        days = db.scalars(
+            select(Log.local_date)
+            .where(Log.user_id == user.id, Log.parser_version < PARSER_VERSION)
+            .distinct()
+        ).all()
+        if not days:
+            return 0
+        q = q.where(Log.local_date.in_(days))
+    count = 0
+    ctx: DayContext | None = None
+    day: date | None = None
+    for log in db.scalars(q.order_by(Log.local_date, Log.logged_at, Log.id)):
+        if log.local_date != day:
+            ctx, day = None, log.local_date
+        kind: LogKind = "weight" if log.kind == "weight" else "workout"
+        parsed = parse_log(
+            log.raw_text,
+            kind=kind,
+            default_unit=user.settings.set_unit,
+            bar_lb=user.settings.bar_lb,
+            context=ctx if kind == "workout" else None,
+        )
+        if kind == "workout":
+            ctx = parsed.context
+        db.execute(delete(LoggedSet).where(LoggedSet.log_id == log.id))
+        db.execute(delete(WeighIn).where(WeighIn.log_id == log.id))
+        db.expire(log, ["sets", "weigh_in"])
+        _store_parsed(log, parsed)
+        count += 1
+    db.commit()
+    return count

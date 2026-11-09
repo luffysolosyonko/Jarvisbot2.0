@@ -17,6 +17,7 @@ dependencies = [
   "psycopg[binary]>=3.2",
   "firebase-admin>=6.5",
   "anthropic>=0.40",
+  "tzdata>=2024.1",
 ]
 
 [project.optional-dependencies]
@@ -43,9 +44,13 @@ target-version = "py312"
 select = ["E", "F", "W", "I", "B", "UP", "S", "SIM", "RUF"]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**" = ["S101"]
+"tests/**" = ["S101", "E501"]
 
 [tool.mypy]
 python_version = "3.12"
 strict = true
 packages = ["jarvis_core", "jarvis_api"]
+
+[[tool.mypy.overrides]]
+module = ["firebase_admin", "firebase_admin.*"]
+ignore_missing_imports = true

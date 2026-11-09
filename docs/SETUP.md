@@ -62,12 +62,14 @@ Firebase Auth works on the free Spark plan; no billing account needed.
      (must match `android.package` in `app/app.json`). Skip the SHA-1 for now
      (section 4) and skip downloading `google-services.json`.
 4. Copy the project ID into `FIREBASE_PROJECT_ID` in `api/.env`.
-5. Create the demo user: **Authentication > Users > Add user**, email
-   `demo@example.com`, with a long random password. It only ever holds
-   made-up data, and the seed script resets it.
 
-Email sign-in and "Try the demo" work once this section is done. Section 4 is
-only needed for "Continue with Google".
+There's no demo user to create and no demo password. "Try the demo" asks the
+API for a Firebase custom token for one fixed UID (`DEMO_UID` in `api/.env`,
+default `jarvis-demo`). Firebase creates that user on its first sign-in. The
+UID comes only from server config, never from the request.
+
+Email sign-in and "Try the demo" work once this section and section 5 are
+done. Section 4 is only needed for "Continue with Google".
 
 ## 4. Google sign-in on the emulator (optional)
 
@@ -110,6 +112,22 @@ copy .env.example .env
 
 Fill in `FIREBASE_PROJECT_ID`. `DATABASE_URL` already points at the Postgres
 in `docker-compose.yml`.
+
+**Service account key** (needed to mint "Try the demo" tokens):
+
+1. Firebase console > **Project settings > Service accounts** > **Generate new
+   private key** > **Generate key**.
+2. Save the downloaded file as `api/firebase-service-account.json`. It's
+   gitignored and excluded from the Docker image. `docker compose` mounts it
+   into the API container as a secret. `GOOGLE_APPLICATION_CREDENTIALS` in
+   `api/.env` already points at it.
+3. Treat it like a password: don't email it or put it anywhere else. If it
+   leaks, delete the key under Google Cloud console > IAM > Service accounts >
+   *firebase-adminsdk-…* > Keys.
+
+`docker compose up` needs this file to exist. Without it, run the API with
+`uvicorn` instead (README > Run locally); email sign-in still works and only
+"Try the demo" is unavailable.
 
 `ANTHROPIC_API_KEY` is optional. Without it everything works except Ask
 Jarvis, which shows a clear "not configured" error. To enable it, create a key
