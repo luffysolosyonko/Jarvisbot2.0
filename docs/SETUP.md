@@ -14,7 +14,7 @@ repo never creates cloud resources for you.
 
 1. **Docker Desktop**: <https://www.docker.com/products/docker-desktop/>. Use
    the WSL 2 backend.
-2. **Node.js 20 LTS or newer** and **Python 3.12**: both from their official
+2. **Node.js 24 LTS** (React Native 0.88 needs 22.13+, 24.3+ or 26+) and **Python 3.12**: both from their official
    installers. Tick "Add python.exe to PATH".
 3. **Android Studio**: <https://developer.android.com/studio>. It bundles the
    JDK that Gradle needs.

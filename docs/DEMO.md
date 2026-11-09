@@ -51,11 +51,11 @@ Run every command from the repo root unless it says otherwise. Use PowerShell.
 | 0:00 | Sign in | Show the form, then tap **Try the demo** | Email/password and Google via Firebase. The API verifies the Firebase ID token on every request. |
 | 0:30 | Dashboard | Scroll top to bottom | Today's summary, weekly sets and volume, body weight with a 7-day average and a dashed projection, top lifts with e1RM change. Everything is computed from raw logs on read. |
 | 1:30 | Log | Type `5x 155lb 2x1x1xf bench` slowly | The preview updates as you type and splits one line into sets. Show the failed-rep flag and the matched exercise. |
-| 2:00 | Log | Add a line `70/80kg squat`, then **Save** | The estimated flag, kg converted to lb, and the new entry in today's logs. |
-| 2:30 | Exercise detail | Open **Bench press** | The e1RM chart with its forecast line, best and heaviest sets, rep targets. Enter a target such as `225` to get a projected date. The forecast now includes the set you just logged. |
-| 3:30 | History | Open today | Raw text beside the parsed rows. Edit a line to re-parse it, then delete it. |
+| 2:00 | Log | Add a line `8x 70/80kg squat`, then **Save** | The estimated flag, kg converted to lb, and the new entry in today's logs. |
+| 2:30 | Exercise detail | Dashboard > Top lifts > **Bench** | The e1RM chart with its dashed forecast, best and heaviest sets, rep targets. Enter a target such as `225` to get a projected date. Today's 155 lb set is the newest point, and a new best. |
+| 3:30 | History | Scroll back a few days | Raw text above its parsed rows. The raw text is the source of truth; parsed rows can be rebuilt when the parser improves. |
 | 4:00 | Ask Jarvis | Ask "How is my bench trending?" | The answer uses only your own data, with a tokens-used line and a daily cap. Claude sits behind a swappable provider interface. |
-| 4:30 | Settings | Show units, time zone, aliases; tap **Export CSV** | The Android share sheet, then sign out. |
+| 4:30 | Settings | Switch units to kg and back; show the time zone | Everything is stored in lb and converted for display. Sign out. |
 
 If there's time for questions, the strongest code to show: the `jarvis_core`
 parser tests, the test proving user A can't read user B's data, and the
