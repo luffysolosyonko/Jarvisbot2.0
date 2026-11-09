@@ -59,7 +59,6 @@ export function MoreMenu({ onPick, onHideAnswers }: { onPick: (id: ToolId) => vo
               role="menuitem"
               onClick={() => pick(() => onPick(t.id))}>
               {t.label}
-              <span className="hint">{t.command}</span>
             </button>
           ))}
           {onHideAnswers ? (

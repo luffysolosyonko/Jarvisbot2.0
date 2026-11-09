@@ -677,11 +677,10 @@ input[type='number']::-webkit-outer-spin-button {
 .panel {
   position: fixed;
   top: 0;
-  right: 0;
   bottom: var(--nav-h);
-  width: min(440px, 100vw);
+  left: max(0px, calc(50% - var(--column) / 2));
+  width: min(var(--column), 100%);
   background: var(--paper);
-  border-left: 1px solid var(--rule);
   z-index: 30;
   display: flex;
   flex-direction: column;
@@ -708,37 +707,44 @@ input[type='number']::-webkit-outer-spin-button {
   padding: var(--s4);
 }
 
-.result-card {
-  margin-top: var(--s4);
-  border-top: 1px solid var(--rule);
-  border-bottom: 1px solid var(--rule);
-  scroll-margin-top: var(--s4);
+.panel:focus {
+  outline: none;
 }
 
-.result-card > :not(.panel-header) {
-  margin: var(--s4) 0;
+/* Wider than the column: keep the column's side rules. */
+@media (min-width: 481px) {
+  .panel {
+    border-left: 1px solid var(--rule);
+    border-right: 1px solid var(--rule);
+  }
 }
 
-.result-card .panel-header {
-  padding-left: 0;
+.panel:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
 }
 
+/* Not positioned: the menu opens from the composer, at its full width. */
 .menu-anchor {
-  position: relative;
+  position: static;
 }
 
 .menu {
   position: absolute;
-  bottom: calc(100% + var(--s1));
-  right: 0;
+  bottom: calc(100% + var(--s2));
+  left: var(--s4);
+  right: var(--s4);
   z-index: 40;
-  min-width: 240px;
-  max-height: 60vh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  max-height: calc(100dvh - 260px);
   overflow-y: auto;
+  scrollbar-width: thin;
   background: var(--paper-raised);
   border: 1px solid var(--rule);
   border-radius: var(--radius);
-  padding: var(--s1) 0;
+  padding: var(--s2);
 }
 
 .menu [role='menuitem'] {
@@ -747,9 +753,10 @@ input[type='number']::-webkit-outer-spin-button {
   gap: var(--s2);
   width: 100%;
   min-height: var(--touch);
-  padding: 0 var(--s4);
+  padding: 0 var(--s3);
   background: none;
   border: none;
+  border-radius: 6px;
   text-align: left;
   color: var(--ink);
   cursor: pointer;
@@ -768,8 +775,13 @@ input[type='number']::-webkit-outer-spin-button {
 }
 
 .menu [role='separator'] {
+  grid-column: 1 / -1;
   margin: var(--s1) 0;
   border-top: 1px solid var(--rule);
+}
+
+.menu [role='separator'] + [role='menuitem'] {
+  grid-column: 1 / -1;
 }
 
 /* ---------- the notebook ---------- */

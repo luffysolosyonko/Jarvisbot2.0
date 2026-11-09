@@ -53,25 +53,22 @@ function Body({ id, onJump }: { id: ToolId; onJump: (log: Log) => void }) {
 }
 
 /**
- * A tool's result: a side panel on wide screens, or an inline card at the end of the
- * feed on narrow ones.
+ * A tool's result, as a sheet over the notebook: the app column's width, above the
+ * tab bar. Focus moves to it when it opens.
  */
 export function ToolPanel({
   id,
-  variant,
   onClose,
   onJump,
 }: {
   id: ToolId;
-  variant: 'side' | 'inline';
   onClose: () => void;
   onJump: (log: Log) => void;
 }) {
   const title = toolLabel(id);
-  const cardRef = useRef<HTMLElement>(null);
-  // Inline on narrow screens: bring the card into view when a tool opens.
+  const ref = useRef<HTMLElement>(null);
   useEffect(() => {
-    cardRef.current?.scrollIntoView({ block: 'start' });
+    ref.current?.focus();
   }, [id]);
   const header = (
     <div className="panel-header">
@@ -81,23 +78,17 @@ export function ToolPanel({
       </IconButton>
     </div>
   );
-  if (variant === 'side') {
-    return (
-      <aside className="panel" aria-label={title} onKeyDown={(e) => e.key === 'Escape' && onClose()}>
-        {header}
-        <div className="panel-body">
-          <Body id={id} onJump={onJump} />
-        </div>
-      </aside>
-    );
-  }
   return (
-    <section
-      className="result-card"
+    <aside
+      ref={ref}
+      tabIndex={-1}
+      className="panel"
       aria-label={title}
-      ref={cardRef}>
+      onKeyDown={(e) => e.key === 'Escape' && onClose()}>
       {header}
-      <Body id={id} onJump={onJump} />
-    </section>
+      <div className="panel-body">
+        <Body id={id} onJump={onJump} />
+      </div>
+    </aside>
   );
 }

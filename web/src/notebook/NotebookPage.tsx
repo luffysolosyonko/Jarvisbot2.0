@@ -5,7 +5,6 @@ import { Button } from '@/components/Button';
 import { EmptyState, ErrorState, SkeletonEntries } from '@/components/States';
 import { useToast } from '@/components/Toast';
 import { useAsk, useAskHistory, useClearAskHistory, useLogs, useMe, useSaveLog, useTz, useUnit } from '@/hooks/queries';
-import { useMediaQuery } from '@/hooks/useMediaQuery';
 import { useTitle } from '@/hooks/useTitle';
 import { errorMessage } from '@/lib/api';
 import { capsDate, clockTime, dayHeading, dayIn, isoDate, parseDate, todayIn } from '@/lib/format';
@@ -107,7 +106,6 @@ export function NotebookPage() {
   const [pendingAsks, setPendingAsks] = useState<PendingAsk[]>([]);
   const [tool, setTool] = useState<ToolId | null>(null);
   const [highlight, setHighlight] = useState<number | null>(null);
-  const wide = useMediaQuery('(min-width: 1100px)');
   const { pendingDeletes } = useToast();
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const headRef = useRef<HTMLElement>(null);
@@ -286,19 +284,19 @@ export function NotebookPage() {
     // Widen the feed to include the entry (kept in state, so it survives clearing ?log=).
     const back = Math.round((parseDate(today).getTime() - parseDate(log.local_date).getTime()) / 86_400_000) + 1;
     setDays((d) => Math.max(d, back));
-    setTool(wide ? tool : null);
+    setTool(null); // the sheet covers the notebook: close it to show the entry
     setHighlight(log.id);
     window.setTimeout(() => setHighlight((h) => (h === log.id ? null : h)), 3000);
     setParams({ log: String(log.id), date: log.local_date });
   }
 
   const panel = tool ? (
-    <ToolPanel id={tool} variant={wide ? 'side' : 'inline'} onClose={() => setTool(null)} onJump={jump} />
+    <ToolPanel id={tool} onClose={() => setTool(null)} onJump={jump} />
   ) : null;
 
   let lastDay = '';
   return (
-    <div className={`notebook${tool && wide ? ' with-panel' : ''}`}>
+    <div className="notebook">
       <main className="main" id="main">
         <header className="nb-head" ref={headRef}>
           <h1 className="wordmark">Jarvis</h1>
@@ -345,7 +343,6 @@ export function NotebookPage() {
               );
             })
           )}
-          {!wide ? panel : null}
         </div>
         <Composer
           mode={mode}
@@ -375,7 +372,7 @@ export function NotebookPage() {
           inputRef={inputRef}
         />
       </main>
-      {wide ? panel : null}
+      {panel}
     </div>
   );
 }
