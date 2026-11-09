@@ -795,20 +795,35 @@ input[type='number']::-webkit-outer-spin-button {
   border-bottom: 1px solid var(--rule);
 }
 
-/* Ruled lines every 32px and a margin line at 68px. */
+/* The ruled page. Every line of text in the feed is one 32px band (line-height
+   32px), so it sits between two rules. Each block (feed bar, day heading, entry)
+   draws its own ruling from its own top edge: a box of odd height, like a fix
+   list, can't knock the text after it off the lines. Blocks use padding, never
+   margins, so there is no gap where the ruling could slip. */
 .feed {
-  flex: 1;
-  padding: var(--s2) var(--s4) var(--s5) 0;
-  background-color: var(--paper);
-  background-image:
+  --ruling:
     linear-gradient(to right, transparent calc(var(--margin-w) - 1px), var(--margin-line) calc(var(--margin-w) - 1px), var(--margin-line) var(--margin-w), transparent var(--margin-w)),
     repeating-linear-gradient(to bottom, transparent 0, transparent calc(var(--ruled) - 1px), var(--rule-faint) calc(var(--ruled) - 1px), var(--rule-faint) var(--ruled));
+  flex: 1;
+  padding: 0 var(--s4) var(--ruled) 0;
+  background-color: var(--paper);
+  background-image: var(--ruling);
+}
+
+.feed-bar,
+.feed .day-divider,
+.feed .entry {
+  margin-right: calc(-1 * var(--s4)); /* rule all the way to the edge */
+  padding-right: var(--s4);
+  background-color: var(--paper);
+  background-image: var(--ruling);
 }
 
 .feed-bar {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  min-height: calc(2 * var(--ruled));
   padding-left: calc(var(--margin-w) + var(--s3));
 }
 
@@ -817,21 +832,21 @@ input[type='number']::-webkit-outer-spin-button {
   position: relative;
   display: grid;
   grid-template-columns: var(--margin-w) 1fr;
-  padding: var(--s1) 0;
   scroll-margin-top: var(--s4);
 }
 
 .entry.highlight .entry-main {
   outline: 2px solid var(--accent);
-  outline-offset: 4px;
+  outline-offset: -2px;
   border-radius: 4px;
 }
 
 .entry-time {
-  padding: 3px var(--s2) 0 0;
+  padding-right: var(--s2);
   text-align: right;
   font-family: var(--font-mono);
   font-size: var(--t-time);
+  line-height: var(--ruled);
   font-variant-numeric: tabular-nums;
   color: var(--ink-3);
 }
@@ -844,7 +859,7 @@ input[type='number']::-webkit-outer-spin-button {
 .entry-text {
   font-family: var(--font-mono);
   font-size: var(--t-log);
-  line-height: 1.6;
+  line-height: var(--ruled);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
@@ -871,8 +886,9 @@ input[type='number']::-webkit-outer-spin-button {
 .entry .entry-actions {
   position: absolute;
   top: 0;
-  right: 0;
+  right: var(--s4);
   display: flex;
+  height: var(--ruled);
   background: var(--paper);
   opacity: 0;
   transition: opacity 120ms ease;
@@ -883,11 +899,23 @@ input[type='number']::-webkit-outer-spin-button {
   opacity: 1;
 }
 
+/* One band tall, with the touch area stretched past it to 44px. */
+.entry .entry-actions .icon-btn {
+  position: relative;
+  height: var(--ruled);
+}
+
+.entry .entry-actions .icon-btn::after {
+  content: '';
+  position: absolute;
+  inset: calc((var(--ruled) - var(--touch)) / 2) 0;
+}
+
 @media (hover: none) {
   .entry .entry-actions {
     position: static;
-    grid-column: 2;
     justify-content: flex-end;
+    background: none;
     opacity: 1;
   }
 }
@@ -896,14 +924,14 @@ input[type='number']::-webkit-outer-spin-button {
 .note {
   display: block;
   width: 100%;
-  margin-top: 2px;
+  margin: 0;
   padding: 0;
   border: none;
   background: none;
   text-align: left;
   font-family: var(--font-mono);
   font-size: var(--t-note);
-  line-height: 1.6;
+  line-height: var(--ruled);
   font-variant-numeric: tabular-nums;
   color: var(--accent);
   cursor: pointer;
@@ -931,22 +959,46 @@ input[type='number']::-webkit-outer-spin-button {
   }
 }
 
-.entry-details {
-  margin-top: var(--s2);
+/* Inside an entry, everything keeps to the 32px bands. */
+.entry .error-text,
+.entry-fix,
+.entry-fix .warn-line {
+  line-height: var(--ruled);
 }
 
-.entry-edit,
-.entry-fix {
-  margin-top: var(--s2);
+.entry .stack-2 > * + * {
+  margin-top: 0;
 }
 
-/* The outlier weigh-in check. */
+.entry-details .table th,
+.entry-details .table td {
+  height: var(--ruled);
+  padding-top: 0;
+  padding-bottom: 0;
+  border: none; /* the page's own rules separate the rows */
+  line-height: var(--ruled);
+}
+
+.entry-edit .textarea {
+  min-height: 0;
+  padding: 0 var(--s2);
+  border: none;
+  box-shadow: inset 0 0 0 1.5px var(--ink);
+  line-height: var(--ruled);
+}
+
+.entry-edit .row {
+  min-height: calc(2 * var(--ruled));
+}
+
+/* The outlier weigh-in check: a title band, the reason on as many bands as it
+   needs, and the buttons in 64px rows (two rows when they wrap). The outline is a
+   shadow so it adds no height. */
 .warn {
-  margin-top: var(--s2);
-  padding: var(--s3);
-  border: 1px solid var(--warn-border);
+  padding: 0 var(--s3);
   border-radius: var(--radius);
   background: var(--warn-bg);
+  box-shadow: inset 0 0 0 1px var(--warn-border);
   color: var(--warn-text);
 }
 
@@ -954,18 +1006,20 @@ input[type='number']::-webkit-outer-spin-button {
   font-family: var(--font-mono);
   font-weight: 700;
   font-size: var(--t-log);
+  line-height: var(--ruled);
 }
 
 .warn-body {
-  margin-top: var(--s1);
   font-size: var(--t-label);
+  line-height: var(--ruled);
 }
 
 .warn-actions {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--s2);
-  margin-top: var(--s3);
+  column-gap: var(--s2);
+  row-gap: calc(2 * var(--ruled) - var(--touch)); /* 20px */
+  padding: calc((2 * var(--ruled) - var(--touch)) / 2) 0;
 }
 
 .warn-actions .btn {
@@ -986,6 +1040,7 @@ input[type='number']::-webkit-outer-spin-button {
 
 .warn-line svg {
   flex: none;
+  margin-top: 7px;
   color: var(--fail);
 }
 
@@ -993,16 +1048,18 @@ input[type='number']::-webkit-outer-spin-button {
   display: flex;
   flex-wrap: wrap;
   gap: var(--s2);
-  margin-top: var(--s2);
+  padding: var(--s2) 0;
 }
 
-/* Day dividers: italic serif day, mono summary on the right. */
+/* Day headings: a blank band, then the italic day and its summary on one band. */
 .day-divider {
   display: grid;
   grid-template-columns: var(--margin-w) 1fr auto;
   align-items: baseline;
-  margin: var(--s5) 0 var(--s1);
+  margin: 0;
+  padding-top: var(--ruled);
   font-weight: normal;
+  line-height: var(--ruled);
 }
 
 .day-divider .day {
@@ -1020,9 +1077,9 @@ input[type='number']::-webkit-outer-spin-button {
   color: var(--ink-2);
 }
 
-/* A question and Jarvis's answer: plain, in the content column. */
+/* A question and Jarvis's answer: plain, in the content column, on the lines. */
 .answer {
-  margin-top: var(--s1);
+  margin: 0;
 }
 
 .answer-label {
@@ -1030,13 +1087,23 @@ input[type='number']::-webkit-outer-spin-button {
   font-size: var(--t-time);
   font-weight: 600;
   letter-spacing: 0.08em;
+  line-height: var(--ruled);
   text-transform: uppercase;
   color: var(--accent);
 }
 
 .answer-text {
   color: var(--ink-2);
+  line-height: var(--ruled);
   white-space: pre-wrap;
+}
+
+.answer .danger {
+  line-height: var(--ruled);
+}
+
+.answer .btn {
+  margin: calc((2 * var(--ruled) - var(--touch)) / 2) 0; /* 64px with the button */
 }
 
 /* ---------- composer ---------- */
