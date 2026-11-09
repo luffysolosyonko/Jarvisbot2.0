@@ -1,56 +1,120 @@
-# Welcome to your Expo app 👋
+# Jarvis 2.0
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+Jarvis turns gym shorthand like `8x 160lb bench` into structured training and
+body-weight data, then shows trends, one-rep-max forecasts and answers
+questions about your training.
 
-## Get started
+It's a React Native app (iOS and Android) backed by a Python API. It replaces
+Jarvis 1.0, a Discord bot.
 
-1. Install dependencies
+> Status: in development. Sections marked _TODO_ are filled in as each phase
+> lands.
 
-   ```bash
-   npm install
-   ```
+## Screenshots
 
-2. Start the app
+| Log | Dashboard | Exercise | Ask Jarvis |
+|---|---|---|---|
+| _screenshot_ | _screenshot_ | _screenshot_ | _screenshot_ |
 
-   ```bash
-   npx expo start
-   ```
+## What it does
 
-In the output, you'll find options to open the app in a
+- **Log in shorthand.** Type `5x 155lb 2x1x1xf bench`. A live preview splits it
+  into sets, flags failed reps, and converts weights to pounds.
+- **See progress.** Weekly sets and volume, a body-weight trend with a 7-day
+  average and a projection.
+- **Forecast lifts.** Estimated 1RM per exercise (Epley), rep targets, and the
+  date you're projected to hit a target weight.
+- **Ask Jarvis.** Ask about your training in plain English. Answers draw only on
+  your own data.
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+## Architecture
 
-You can start developing by editing the files inside the **src/app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
+```mermaid
+flowchart LR
+  subgraph Device
+    App[Expo app<br/>React Native]
+  end
+  App -- Firebase ID token --> API
+  App -- sign in --> Auth[Firebase Auth]
+  subgraph GCP[Google Cloud]
+    API[FastAPI on Cloud Run<br/>jarvis_core engine]
+    SM[Secret Manager]
+  end
+  API -- verify token --> Auth
+  API --> DB[(Neon Postgres)]
+  API --> LLM[Claude API]
+  SM -.-> API
 ```
 
-This command will move the starter code to the **example** directory and create a blank **src/app** directory where you can start developing.
+_TODO: refine once Phase 2 is in._
 
-### Other setup steps
+## Repository layout
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+```
+app/    Expo app (Expo Router, TypeScript)
+api/    FastAPI service
+  jarvis_core/   parsing and analysis engine (no web or DB code)
+  jarvis_api/    HTTP layer, persistence, auth
+docs/   setup and design notes
+.github/workflows/  CI and deploy
+```
 
-## Learn more
+## Tech stack
 
-To learn more about developing your project with Expo, look at the following resources:
+_TODO: one-line reason per choice._
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+| Layer | Choice | Why |
+|---|---|---|
+| App | Expo + Expo Router | |
+| Data fetching | TanStack Query | |
+| Charts | Victory Native | |
+| Auth | Firebase Auth | |
+| API | FastAPI + Pydantic v2 | |
+| Persistence | SQLAlchemy 2 + Alembic, Postgres (Neon) | |
+| AI | Claude via a swappable `LLMProvider` | |
+| Hosting | Cloud Run | |
+| CI/CD | GitHub Actions, Workload Identity Federation, EAS | |
 
-## Join the community
+## Design system
 
-Join our community of developers creating universal apps.
+_TODO: tokens summary (color, spacing, type, components)._
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Run locally
+
+Prerequisites: Node 20+, Python 3.12, Docker (optional, for Postgres). Cloud
+setup steps are in [docs/SETUP.md](docs/SETUP.md).
+
+### API
+
+```bash
+cd api
+python -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+pip install -e ".[dev]"
+cp .env.example .env             # then fill in values
+uvicorn jarvis_api.main:app --reload
+```
+
+### App
+
+```bash
+cd app
+npm install
+cp .env.example .env.local       # then fill in values
+npx expo start
+```
+
+## Test
+
+```bash
+cd api && ruff check . && mypy && pytest
+cd app && npx expo lint && npx tsc --noEmit && npm test
+```
+
+## Deployment
+
+_TODO: Cloud Run via GitHub Actions + WIF; EAS Build/Submit/Update._
+
+## License
+
+_TODO_
