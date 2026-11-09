@@ -48,7 +48,7 @@ is now a button.
   dots weigh-in days; click a day for one table of its sets ("3 ✓ · 1 ✗") and
   its weigh-in. Progress leads with your latest confirmed weigh-in, then body
   weight with a 7-day average and a dashed forecast, this week's sets, volume
-  and sessions, the month heatmap, and top lifts with e1RM charts and
+  and sessions, and top lifts with e1RM charts and
   forecasts.
 - **Ask, on purpose.** Only Ask mode calls Claude, and it sends only the data
   relevant to the question. Questions and Jarvis's answers appear as messages,

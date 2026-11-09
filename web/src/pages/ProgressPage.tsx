@@ -1,15 +1,12 @@
-import { useState } from 'react';
 import { Link, useNavigate } from 'react-router';
 
 import { Section } from '@/components/Section';
-import { EmptyState, QueryView, SkeletonCalendar, SkeletonChart } from '@/components/States';
+import { EmptyState, QueryView, SkeletonChart } from '@/components/States';
 import { WeightChart } from '@/components/WeightChart';
-import { useCalendar, useDashboard, useTz, useUnit } from '@/hooks/queries';
+import { useDashboard, useUnit } from '@/hooks/queries';
 import { useTitle } from '@/hooks/useTitle';
-import { exerciseName, fromLb, longDate, num, parseDate, signedWeight, todayIn, weight } from '@/lib/format';
+import { exerciseName, fromLb, longDate, num, parseDate, signedWeight, weight } from '@/lib/format';
 import type { Point } from '@/lib/types';
-
-import { Calendar } from './Calendar';
 
 const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
 
@@ -31,12 +28,8 @@ function weekLabel(startIso: string): string {
 export function ProgressPage() {
   useTitle('Progress');
   const unit = useUnit();
-  const today = todayIn(useTz());
   const q = useDashboard();
   const navigate = useNavigate();
-  const [picked, setPicked] = useState<string | null>(null);
-  const month = today.slice(0, 7);
-  const cal = useCalendar(month);
 
   return (
     <main className="main" id="main">
@@ -119,19 +112,6 @@ export function ProgressPage() {
                   <span className="caps">Sessions</span>
                 </div>
               </div>
-
-              <Section title="This month">
-                <QueryView query={cal} skeleton={<SkeletonCalendar />}>
-                  {(c) => (
-                    <Calendar month={month} days={c.days} today={today} selected={picked} onSelect={(iso) => setPicked(iso === picked ? null : iso)} />
-                  )}
-                </QueryView>
-                {picked ? (
-                  <p className="t-label">
-                    <Link to={`/history?date=${picked}`}>See {longDate(picked)} in History</Link>
-                  </p>
-                ) : null}
-              </Section>
 
               <Section title="Top lifts">
                 {!d.top_lifts.length ? (
