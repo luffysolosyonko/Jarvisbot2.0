@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router';
 
 import { Button } from '@/components/Button';
@@ -146,16 +146,21 @@ export function NotebookPage() {
   const settled = asks.filter((a) => a.answer || a.error).length; // an answer arriving grows the feed too
   // Scroll the page itself: the composer is sticky, so aligning the last entry with the
   // viewport bottom would leave it hidden behind the composer.
+  // Only when the feed grows: clearing ?log= after a jump mustn't scroll away from it.
+  const jumpRef = useRef(jumpId);
   useEffect(() => {
-    if (!jumpId) window.scrollTo({ top: document.documentElement.scrollHeight });
-  }, [count, settled, jumpId]);
+    jumpRef.current = jumpId;
+  }, [jumpId]);
+  useEffect(() => {
+    if (!jumpRef.current) window.scrollTo({ top: document.documentElement.scrollHeight });
+  }, [count, settled]);
 
   // Jump to a search result once it's loaded, then clear the URL.
   useEffect(() => {
     if (!jumpId || !logs.data) return;
     const el = document.getElementById(`log-${jumpId}`);
     if (!el) return;
-    el.scrollIntoView({ block: 'center' });
+    el.scrollIntoView({ block: 'start' });
     setParams({}, { replace: true });
   }, [jumpId, logs.data, setParams]);
 
@@ -188,6 +193,9 @@ export function NotebookPage() {
   }
 
   function jump(log: Log) {
+    // Widen the feed to include the entry (kept in state, so it survives clearing ?log=).
+    const back = Math.round((parseDate(today).getTime() - parseDate(log.local_date).getTime()) / 86_400_000) + 1;
+    setDays((d) => Math.max(d, back));
     setTool(wide ? tool : null);
     setHighlight(log.id);
     window.setTimeout(() => setHighlight((h) => (h === log.id ? null : h)), 3000);

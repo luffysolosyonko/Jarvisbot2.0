@@ -110,7 +110,7 @@ export function Composer(props: Props) {
               </button>
             ))}
           </div>
-          <div className="row" role="toolbar" aria-label="Quick inserts">
+          <div className="row quick-row" role="toolbar" aria-label="Quick inserts">
             {mode === 'workout' ? (
               <>
                 <Button

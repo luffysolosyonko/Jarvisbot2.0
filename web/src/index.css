@@ -691,6 +691,7 @@ a:hover {
 
 .entry {
   position: relative;
+  scroll-margin-top: calc(var(--nav-h) + var(--s3)); /* clear the sticky nav when jumped to */
   padding: var(--s3) 0;
   border-bottom: 1px solid var(--border);
 }
@@ -969,5 +970,20 @@ a:hover {
   .notebook.with-panel .main {
     margin-left: max(0px, calc((100vw - 440px - var(--column)) / 2));
     margin-right: 440px;
+  }
+}
+
+/* Phone width: the syntax and quick-button rows scroll sideways instead of wrapping,
+   so the composer doesn't take over the screen. */
+@media (max-width: 560px) {
+  .composer .chips,
+  .composer .quick-row {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .composer .chips > *,
+  .composer .quick-row > * {
+    flex: none;
   }
 }

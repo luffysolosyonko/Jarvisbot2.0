@@ -1,4 +1,5 @@
 import { X } from 'lucide-react';
+import { useEffect, useRef } from 'react';
 
 import { IconButton } from '@/components/Button';
 import { ICON } from '@/components/icons';
@@ -70,6 +71,11 @@ export function ToolPanel({
   onJump: (log: Log) => void;
 }) {
   const title = toolLabel(id);
+  const cardRef = useRef<HTMLElement>(null);
+  // Inline on narrow screens: bring the card into view when a tool opens.
+  useEffect(() => {
+    cardRef.current?.scrollIntoView({ block: 'start' });
+  }, [id]);
   const header = (
     <div className="panel-header">
       <h2 className="t-heading">{title}</h2>
@@ -89,7 +95,11 @@ export function ToolPanel({
     );
   }
   return (
-    <section className="result-card" aria-label={title} style={{ marginTop: 24 }}>
+    <section
+      className="result-card"
+      aria-label={title}
+      style={{ marginTop: 24, scrollMarginTop: 80 }}
+      ref={cardRef}>
       {header}
       <Body id={id} onJump={onJump} />
     </section>

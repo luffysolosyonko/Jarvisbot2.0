@@ -48,8 +48,11 @@ function DayDetail({ day, summary }: { day: string; summary: CalendarDay | undef
 export function HistoryPage() {
   const unit = useUnit();
   const today = todayIn(useTz());
-  const [month, setMonth] = useState(today.slice(0, 7));
-  const [selected, setSelected] = useState<string | null>(today);
+  // Until you pick, follow "today" (it settles once the account's time zone loads).
+  const [pickedMonth, setMonth] = useState<string | null>(null);
+  const [picked, setSelected] = useState<string | null>(null);
+  const month = pickedMonth ?? today.slice(0, 7);
+  const selected = picked ?? today;
   const cal = useCalendar(month);
   const current = cal.data?.month === month ? cal.data : undefined;
 
