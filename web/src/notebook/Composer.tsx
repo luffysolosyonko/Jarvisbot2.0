@@ -1,8 +1,6 @@
-import { CircleHelp, Send } from 'lucide-react';
-import { useId, useRef, type KeyboardEvent, type ReactNode } from 'react';
+import { useId, useRef, type KeyboardEvent, type ReactNode, type RefObject } from 'react';
 
 import { Button } from '@/components/Button';
-import { ICON } from '@/components/icons';
 import { Segmented } from '@/components/Segmented';
 import { useRecentExercises } from '@/hooks/queries';
 import { exerciseName, fromLb, num } from '@/lib/format';
@@ -15,7 +13,7 @@ import { Preview } from './Preview';
 const PLACEHOLDER: Record<Mode, string> = {
   workout: '5x 155lb 2x1x1xf bench',
   weight: '83.9kg',
-  ask: 'Ask Jarvis, e.g. Is my bench still improving?',
+  ask: 'Is my bench still improving?',
 };
 
 type Props = {
@@ -33,11 +31,13 @@ type Props = {
   lastWeightLb: number | null;
   tools: ReactNode;
   onHelp: () => void;
+  inputRef?: RefObject<HTMLTextAreaElement | null>;
 };
 
 export function Composer(props: Props) {
   const { mode, text, onTextChange, onSend, sending, unit } = props;
-  const ref = useRef<HTMLTextAreaElement>(null);
+  const localRef = useRef<HTMLTextAreaElement>(null);
+  const ref = props.inputRef ?? localRef;
   const inputId = useId();
   const recentId = useId();
   const recent = useRecentExercises();
@@ -84,7 +84,7 @@ export function Composer(props: Props) {
         />
         {props.tools}
         {!isAsk ? (
-          <Button size="small" variant="ghost" icon={<CircleHelp {...ICON} aria-hidden="true" />} onClick={props.onHelp}>
+          <Button size="small" variant="ghost" onClick={props.onHelp}>
             Syntax help
           </Button>
         ) : null}
@@ -127,8 +127,7 @@ export function Composer(props: Props) {
                 </label>
                 <select
                   id={recentId}
-                  className="select"
-                  style={{ width: 'auto', minHeight: 44 }}
+                  className="select select-inline"
                   value=""
                   disabled={!recent.length}
                   onChange={(e) => {
@@ -204,12 +203,13 @@ export function Composer(props: Props) {
           variant="primary"
           loading={sending}
           disabled={!text.trim() || (isAsk && text.trim().length < 3)}
-          onClick={onSend}
-          icon={<Send {...ICON} aria-hidden="true" />}>
-          {isAsk ? 'Ask' : 'Log'}
+          onClick={onSend}>
+          {isAsk ? 'Ask Jarvis' : mode === 'weight' ? 'Save weight' : text.trim().includes('\n') ? 'Log sets' : 'Log set'}
         </Button>
       </div>
-      <p className="hint">Enter to {isAsk ? 'ask' : 'log'} · Shift+Enter for a new line</p>
+      <p className="hint">
+        Enter to {isAsk ? 'ask' : 'save'} · Shift+Enter for a new line · Ctrl+K jumps here
+      </p>
     </div>
   );
 }

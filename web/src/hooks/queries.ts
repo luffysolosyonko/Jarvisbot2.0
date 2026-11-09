@@ -86,11 +86,39 @@ export function useParse(text: string, mode: LogMode) {
   });
 }
 
-export function useSaveLog() {
+/**
+ * Save a log, showing it in the feed right away. If the save fails, the feed is
+ * rolled back (the caller puts the text back in the input).
+ */
+export function useSaveLog(today: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: { text: string; mode: LogMode }) => api<Log>('/logs', { method: 'POST', body }),
-    onSuccess: () => invalidateLogData(qc),
+    onMutate: async (body) => {
+      await qc.cancelQueries({ queryKey: keys.allLogs });
+      const snapshot = qc.getQueriesData<Log[]>({ queryKey: keys.allLogs });
+      const preview = qc.getQueryData<ParseResult>(['parse', body.mode, body.text.trim()]);
+      const temp: Log = {
+        id: -Date.now(),
+        kind: body.mode,
+        raw_text: body.text,
+        logged_at: new Date().toISOString(),
+        local_date: today,
+        sets: preview?.sets ?? [],
+        weigh_in: preview?.weigh_in ?? null,
+        warnings: [],
+        pending: true,
+      };
+      for (const [key, logs] of snapshot) {
+        const [, from, to] = key as [string, string, string];
+        if (logs && from <= today && today <= to) qc.setQueryData<Log[]>(key, [temp, ...logs]);
+      }
+      return { snapshot };
+    },
+    onError: (_e, _body, ctx) => {
+      for (const [key, logs] of ctx?.snapshot ?? []) qc.setQueryData(key, logs);
+    },
+    onSettled: () => invalidateLogData(qc),
   });
 }
 

@@ -124,6 +124,6 @@ describe('charts and dates', () => {
     const base = { exercise: 'bench', best_e1rm: 180, target_lb: 225, optimistic: false, projection };
     expect(reachText({ ...base, reach: 'flat', reach_date: null }, 'lb')).toMatch(/Not trending up/);
     expect(reachText({ ...base, reach: 'already', reach_date: null }, 'lb')).toMatch(/already hit 225 lb/);
-    expect(reachText({ ...base, reach: 'date', reach_date: '2099-04-06' }, 'lb')).toBe('About Monday, Apr 6, 2099 at this pace.');
+    expect(reachText({ ...base, reach: 'date', reach_date: '2099-04-06' }, 'lb')).toBe('About Mon, Apr 6, 2099 at this pace.');
   });
 });

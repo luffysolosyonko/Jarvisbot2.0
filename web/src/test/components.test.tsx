@@ -115,9 +115,20 @@ describe('Composer', () => {
     wrap(<ComposerHarness onSend={vi.fn()} />);
     await userEvent.click(screen.getByRole('radio', { name: 'Ask' }));
     expect(screen.getByText(/goes to Claude/)).toBeInTheDocument();
-    expect(screen.getByLabelText('Question for Jarvis')).toHaveAttribute('placeholder', expect.stringMatching(/^Ask Jarvis/));
+    expect(screen.getByLabelText('Question for Jarvis')).toHaveAttribute('placeholder', 'Is my bench still improving?');
     expect(screen.queryByRole('toolbar', { name: 'Insert syntax' })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Ask' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Ask Jarvis' })).toBeInTheDocument();
+  });
+
+  it('labels the send button with what it does', async () => {
+    wrap(<ComposerHarness onSend={vi.fn()} />);
+    const input = screen.getByLabelText('Sets, one per line');
+    await userEvent.type(input, '5x 155lb bench');
+    expect(screen.getByRole('button', { name: 'Log set' })).toBeEnabled();
+    await userEvent.type(input, '{Shift>}{Enter}{/Shift}8x 135lb row');
+    expect(screen.getByRole('button', { name: 'Log sets' })).toBeEnabled();
+    await userEvent.click(screen.getByRole('radio', { name: 'Weight' }));
+    expect(screen.getByRole('button', { name: 'Save weight' })).toBeInTheDocument();
   });
 
   it('weight mode offers Same as last in the chosen unit', async () => {

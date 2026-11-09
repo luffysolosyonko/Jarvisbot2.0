@@ -98,7 +98,6 @@ export function ToolPanel({
     <section
       className="result-card"
       aria-label={title}
-      style={{ marginTop: 24, scrollMarginTop: 80 }}
       ref={cardRef}>
       {header}
       <Body id={id} onJump={onJump} />

@@ -61,6 +61,7 @@ export type Log = {
   sets: ParsedSet[];
   weigh_in: WeighIn | null;
   warnings: ParseWarning[];
+  pending?: boolean; // client only: shown while the save is in flight
 };
 
 export type Point = { date: string; value: number };

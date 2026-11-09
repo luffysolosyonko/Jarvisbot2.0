@@ -65,7 +65,7 @@ export function Calendar({
         <h2 className="t-heading" aria-live="polite">
           {monthLabel(month)}
         </h2>
-        <div className="row" style={{ gap: 4 }}>
+        <div className="row tight">
           <IconButton label="Previous month" onClick={() => onMonth(shiftMonth(month, -1))}>
             <ChevronLeft {...ICON} />
           </IconButton>
@@ -121,9 +121,7 @@ export function Calendar({
           <i className="swatch outlined" aria-hidden="true" /> Weigh-in only
         </span>
         <span>
-          <span className="semibold" style={{ textDecoration: 'underline', textDecorationThickness: 2, textUnderlineOffset: 4 }}>
-            Today
-          </span>
+          <span className="today-sample">Today</span>
         </span>
       </div>
     </div>

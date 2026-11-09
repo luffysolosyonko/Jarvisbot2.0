@@ -5,11 +5,13 @@ import { TrendChart, WeeklyBars } from '@/components/Charts';
 import { ICON } from '@/components/icons';
 import { Section } from '@/components/Section';
 import { Stat } from '@/components/Stat';
-import { EmptyState, QueryView } from '@/components/States';
+import { EmptyState, QueryView, SkeletonChart } from '@/components/States';
 import { useDashboard, useUnit } from '@/hooks/queries';
-import { exerciseName, shortDate, signedWeight, volume, weight } from '@/lib/format';
+import { useTitle } from '@/hooks/useTitle';
+import { exerciseName, longDate, signedWeight, volume, weight } from '@/lib/format';
 
 export function ProgressPage() {
+  useTitle('Progress');
   const unit = useUnit();
   const q = useDashboard();
   const navigate = useNavigate();
@@ -18,7 +20,7 @@ export function ProgressPage() {
       <div className="page-header">
         <h1 className="t-title">Progress</h1>
       </div>
-      <QueryView query={q} lines={8}>
+      <QueryView query={q} skeleton={<SkeletonChart />}>
         {(d) => {
           const p = d.weight.projection;
           const setsDelta = d.week.sets - d.previous_week.sets;
@@ -26,7 +28,7 @@ export function ProgressPage() {
             <>
               <Section title="Body weight">
                 {d.weight.points.length < 2 ? (
-                  <EmptyState message="Log a few weigh-ins to see the trend." actionLabel="Go to notebook" onAction={() => navigate('/')} />
+                  <EmptyState message="Log weigh-ins like 182.4 in Weight mode to see the trend." actionLabel="Open notebook" onAction={() => navigate('/')} />
                 ) : (
                   <div className="stack-3">
                     <TrendChart
@@ -42,7 +44,7 @@ export function ProgressPage() {
                     {p ? (
                       <p className="t-label">
                         Latest {weight(p.now, unit)}. Trend {signedWeight(p.slope_per_week, unit)} a week; about {weight(p.pred, unit)} by{' '}
-                        {shortDate(p.target_date)} ({weight(p.low, unit)} to {weight(p.high, unit)}).
+                        {longDate(p.target_date)} ({weight(p.low, unit)} to {weight(p.high, unit)}).
                       </p>
                     ) : null}
                   </div>
@@ -54,8 +56,8 @@ export function ProgressPage() {
                   <div className="stats">
                     <Stat
                       label="Sets"
-                      value={String(d.week.sets)}
-                      note={`${setsDelta > 0 ? '+' : setsDelta < 0 ? '−' : '±'}${Math.abs(setsDelta)} vs last week`}
+                      value={`${d.week.sets} sets`}
+                      note={`${setsDelta > 0 ? '+' : setsDelta < 0 ? '−' : '±'}${Math.abs(setsDelta)} sets vs last week`}
                     />
                     <Stat label="Volume" value={volume(d.week.volume_lb, unit)} note={`${d.week.sessions} sessions`} />
                   </div>
@@ -65,7 +67,7 @@ export function ProgressPage() {
 
               <Section title="Top lifts">
                 {!d.top_lifts.length ? (
-                  <EmptyState message="Log a few sessions to see your lifts." actionLabel="Go to notebook" onAction={() => navigate('/')} />
+                  <EmptyState message="Log sets like 8x 160lb bench to see your top lifts." actionLabel="Open notebook" onAction={() => navigate('/')} />
                 ) : (
                   <div className="stack-2">
                     <ul className="list">
@@ -75,8 +77,7 @@ export function ProgressPage() {
                             <span className="list-title">{exerciseName(l.exercise)}</span>
                             <span className="mono t-label">{weight(l.latest_e1rm, unit, 0)}</span>
                             <span
-                              className={`mono t-label ${l.e1rm_change && l.e1rm_change > 0 ? 'success' : l.e1rm_change && l.e1rm_change < 0 ? 'danger' : 'secondary'}`}
-                              style={{ minWidth: 72, textAlign: 'right' }}>
+                              className={`mono t-label lift-change ${l.e1rm_change && l.e1rm_change > 0 ? 'success' : l.e1rm_change && l.e1rm_change < 0 ? 'danger' : 'secondary'}`}>
                               {l.e1rm_change === null ? '–' : signedWeight(l.e1rm_change, unit, 0)}
                             </span>
                             <ChevronRight {...ICON} className="secondary" aria-hidden="true" />

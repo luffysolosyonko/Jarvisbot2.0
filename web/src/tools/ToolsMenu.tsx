@@ -1,8 +1,6 @@
-import { Wrench } from 'lucide-react';
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
 
 import { Button } from '@/components/Button';
-import { ICON } from '@/components/icons';
 
 import { TOOLS, type ToolId } from './registry';
 
@@ -38,7 +36,6 @@ export function ToolsMenu({ onPick }: { onPick: (id: ToolId) => void }) {
     <div className="menu-anchor" ref={wrap} onKeyDown={onKey}>
       <Button
         size="small"
-        icon={<Wrench {...ICON} aria-hidden="true" />}
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={() => setOpen((o) => !o)}>

@@ -6,9 +6,10 @@ import { TrendChart } from '@/components/Charts';
 import { ICON } from '@/components/icons';
 import { Section } from '@/components/Section';
 import { Stat } from '@/components/Stat';
-import { QueryView } from '@/components/States';
+import { QueryView, SkeletonChart } from '@/components/States';
 import { useExercise, useUnit } from '@/hooks/queries';
-import { exerciseName, shortDate, signedWeight, weight } from '@/lib/format';
+import { useTitle } from '@/hooks/useTitle';
+import { exerciseName, longDate, signedWeight, weight } from '@/lib/format';
 import { setRefText } from '@/lib/describe';
 import { RepTargets, TargetForm } from '@/tools/ToolViews';
 
@@ -18,15 +19,16 @@ export function LiftPage() {
   const unit = useUnit();
   const navigate = useNavigate();
   const q = useExercise(name);
+  useTitle(exerciseName(name));
   return (
     <main className="main" id="main">
-      <div className="page-header" style={{ justifyContent: 'flex-start' }}>
+      <div className="page-header start">
         <IconButton label="Back to progress" onClick={() => navigate('/progress')}>
           <ArrowLeft {...ICON} />
         </IconButton>
         <h1 className="t-title">{exerciseName(name)}</h1>
       </div>
-      <QueryView query={q} lines={8}>
+      <QueryView query={q} skeleton={<SkeletonChart />}>
         {(d) => (
           <>
             <Section title="Estimated 1-rep max">
@@ -50,7 +52,7 @@ export function LiftPage() {
                 {d.forecast ? (
                   <p className="t-label">
                     Trend {signedWeight(d.forecast.projection.slope_per_week, unit)} a week over {d.forecast.projection.points} sessions. About{' '}
-                    {weight(d.forecast.projection.pred, unit, 0)} by {shortDate(d.forecast.projection.target_date)}.
+                    {weight(d.forecast.projection.pred, unit, 0)} by {longDate(d.forecast.projection.target_date)}.
                   </p>
                 ) : (
                   <p className="t-label secondary">A forecast needs at least 4 sessions over 2 or more weeks.</p>
@@ -59,8 +61,8 @@ export function LiftPage() {
             </Section>
             <Section title="Best sets">
               <div className="stats">
-                <Stat label="Highest e1RM" value={setRefText(d.best_set, unit)} note={d.best_set ? shortDate(d.best_set.date) : undefined} />
-                <Stat label="Heaviest" value={setRefText(d.heaviest_set, unit)} note={d.heaviest_set ? shortDate(d.heaviest_set.date) : undefined} />
+                <Stat label="Highest e1RM" value={setRefText(d.best_set, unit)} note={d.best_set ? longDate(d.best_set.date) : undefined} />
+                <Stat label="Heaviest" value={setRefText(d.heaviest_set, unit)} note={d.heaviest_set ? longDate(d.heaviest_set.date) : undefined} />
               </div>
             </Section>
             <Section title="Rep targets">

@@ -30,8 +30,7 @@ function TemplateFix({ fix, onApply }: { fix: Fix; onApply: (value: string) => v
       </label>
       <input
         id={id}
-        className="input mono"
-        style={{ width: 120 }}
+        className="input mono input-short"
         autoFocus
         placeholder={fix.placeholder ?? ''}
         value={value}
@@ -65,7 +64,7 @@ export function FixList({
       {warnings.map((w, i) => (
         <li key={`${w.line}-${i}`}>
           <div className="warn-line">
-            <CircleAlert {...ICON} className="danger" aria-hidden="true" style={{ flex: 'none' }} />
+            <CircleAlert {...ICON} className="danger" aria-hidden="true" />
             <div>
               {showLine && lines[w.line - 1] !== undefined ? (
                 <div className="raw">

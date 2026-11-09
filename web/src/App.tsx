@@ -4,7 +4,7 @@ import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-route
 
 import { AuthProvider, useAuth } from '@/auth/AuthProvider';
 import { Layout } from '@/components/Layout';
-import { Skeleton } from '@/components/States';
+import { SkeletonEntries } from '@/components/States';
 import { ToastProvider } from '@/components/Toast';
 import { makeQueryClient } from '@/lib/queryClient';
 import { NotebookPage } from '@/notebook/NotebookPage';
@@ -34,7 +34,7 @@ function SignedOutOnly({ children }: { children: ReactNode }) {
 function Splash() {
   return (
     <main className="main" aria-label="Loading">
-      <Skeleton lines={4} />
+      <SkeletonEntries count={3} />
     </main>
   );
 }

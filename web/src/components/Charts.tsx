@@ -28,7 +28,7 @@ type SeriesKey = 'main' | 'avg' | 'forecast';
 
 function Legend({ items }: { items: { label: string; kind: SeriesKey }[] }) {
   return (
-    <div className="legend" aria-hidden="true" style={{ marginTop: 8 }}>
+    <div className="legend" aria-hidden="true">
       {items.map((i) => (
         <span key={i.label}>
           <i

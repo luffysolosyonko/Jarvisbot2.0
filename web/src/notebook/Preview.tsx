@@ -23,7 +23,7 @@ function NewExercise({ match, onPick }: { match: ExerciseMatch; onPick: (name: s
           <label htmlFor={id} className="visually-hidden">
             Use an existing exercise instead of {match.written}
           </label>
-          <select id={id} className="select" style={{ width: 'auto', minHeight: 44 }} value="" onChange={(e) => e.target.value && onPick(e.target.value)}>
+          <select id={id} className="select select-inline" value="" onChange={(e) => e.target.value && onPick(e.target.value)}>
             <option value="">Keep as new</option>
             {names.map((n) => (
               <option key={n} value={n}>
@@ -60,7 +60,7 @@ export function Preview({
   const stale = debounced.trim() !== text.trim() || parse.isFetching;
   const renamed = r.exercises.filter((e) => !e.is_new && e.written !== e.matched);
   return (
-    <section className="preview stack-2" aria-label="Preview" aria-busy={stale} style={{ opacity: stale ? 0.7 : 1 }}>
+    <section className={`preview stack-2${stale ? ' is-stale' : ''}`} aria-label="Preview" aria-busy={stale}>
       <div className="t-caption secondary semibold">Preview</div>
       {r.sets.length ? <SetRows sets={r.sets} unit={unit} caption="Preview of parsed sets" /> : null}
       {r.weigh_in ? (

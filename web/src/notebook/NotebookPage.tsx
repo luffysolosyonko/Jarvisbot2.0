@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useSearchParams } from 'react-router';
+import { useLocation, useNavigate, useSearchParams } from 'react-router';
 
 import { Button } from '@/components/Button';
-import { EmptyState, ErrorState, Skeleton } from '@/components/States';
+import { EmptyState, ErrorState, SkeletonEntries } from '@/components/States';
 import { useToast } from '@/components/Toast';
 import { useAsk, useLogs, useMe, useSaveLog, useTz, useUnit } from '@/hooks/queries';
 import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { useTitle } from '@/hooks/useTitle';
 import { errorMessage } from '@/lib/api';
 import { clockTime, dayIn, dayLabel, isoDate, parseDate, todayIn } from '@/lib/format';
 import { load, save } from '@/lib/storage';
@@ -53,7 +54,7 @@ function AskReply({ item, onRetry, tz }: { item: AskItem; onRetry: () => void; t
       <div className="t-caption accent semibold">Jarvis</div>
       {a ? (
         <>
-          <p className="t-body" style={{ whiteSpace: 'pre-wrap' }}>
+          <p className="t-body prewrap">
             {a.answer}
           </p>
           <p className="t-caption secondary mono">
@@ -70,14 +71,22 @@ function AskReply({ item, onRetry, tz }: { item: AskItem; onRetry: () => void; t
         </div>
       ) : (
         <p className="secondary" aria-live="polite">
-          Thinking…
+          Asking Jarvis…
         </p>
       )}
     </article>
   );
 }
 
+const MODES: Mode[] = ['workout', 'weight', 'ask'];
+
+/** Typing into a field: single-key shortcuts must not fire. */
+function isTyping(el: Element | null): boolean {
+  return !!el && (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement || (el as HTMLElement).isContentEditable);
+}
+
 export function NotebookPage() {
+  useTitle('Notebook');
   const unit = useUnit();
   const me = useMe();
   const tz = useTz();
@@ -96,6 +105,9 @@ export function NotebookPage() {
   const [highlight, setHighlight] = useState<number | null>(null);
   const wide = useMediaQuery('(min-width: 1100px)');
   const { pendingDeletes } = useToast();
+  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const location = useLocation();
+  const navigate = useNavigate();
 
   // A search result can point at an entry older than the default range: widen it.
   const from = useMemo(() => {
@@ -103,7 +115,7 @@ export function NotebookPage() {
     return jumpDate && jumpDate < base ? jumpDate : base;
   }, [today, days, jumpDate]);
   const logs = useLogs(from, addDays(today, 1));
-  const save_ = useSaveLog();
+  const save_ = useSaveLog(today);
   const ask = useAsk();
 
   const setMode = (m: Mode) => {
@@ -117,6 +129,33 @@ export function NotebookPage() {
   };
 
   useEffect(() => save(ASK_KEY, asks.slice(-20)), [asks]);
+
+  // Ctrl/Cmd+K from another page lands here with the input focused.
+  useEffect(() => {
+    if ((location.state as { focusInput?: boolean } | null)?.focusInput) {
+      inputRef.current?.focus();
+      navigate('.', { replace: true, state: null });
+    }
+  }, [location.state, navigate]);
+
+  // Shortcuts: Ctrl/Cmd+K focuses the input, 1/2/3 switch modes (when not typing),
+  // Esc closes the open tool panel.
+  useEffect(() => {
+    function onKey(e: globalThis.KeyboardEvent) {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        inputRef.current?.focus();
+      } else if (e.key === 'Escape' && tool) {
+        setTool(null);
+      } else if (!e.ctrlKey && !e.metaKey && !e.altKey && ['1', '2', '3'].includes(e.key) && !isTyping(document.activeElement)) {
+        const m = MODES[Number(e.key) - 1];
+        setModeState(m);
+        save(MODE_KEY, m);
+      }
+    }
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [tool]);
 
   const visible = useMemo(() => (logs.data ?? []).filter((l) => !pendingDeletes.has(l.id)), [logs.data, pendingDeletes]);
 
@@ -183,11 +222,16 @@ export function NotebookPage() {
       return;
     }
     const body = mode === 'weight' ? withUnit(t, weightUnit) : t;
+    // Optimistic: clear the input and show the entry now; if the save fails, the entry
+    // is removed again and the text comes back so nothing is lost.
+    setText('');
     save_.mutate(
       { text: body, mode },
       {
-        onSuccess: () => setText(''),
-        onError: (e) => setSendError(errorMessage(e)),
+        onError: (e) => {
+          setText((current) => (current.trim() ? current : t));
+          setSendError(`Not saved: ${errorMessage(e)} Your text is back in the box.`);
+        },
       },
     );
   }
@@ -212,18 +256,22 @@ export function NotebookPage() {
       <main className="main" id="main">
         <h1 className="visually-hidden">Notebook</h1>
         <div className="feed" aria-live="polite">
-          <div className="row-between" style={{ marginBottom: 8 }}>
-            <Button size="small" variant="ghost" onClick={() => setDays((d) => d + 14)} disabled={logs.isFetching}>
-              Show earlier
-            </Button>
+          <div className="row-between feed-bar">
+            {feed.length ? (
+              <Button size="small" variant="ghost" onClick={() => setDays((d) => d + 14)} disabled={logs.isFetching}>
+                Show earlier
+              </Button>
+            ) : (
+              <span />
+            )}
             {me.data?.is_demo ? <span className="hint">Demo account: made-up data</span> : null}
           </div>
           {logs.error && !logs.data ? (
             <ErrorState error={logs.error} onRetry={() => void logs.refetch()} />
           ) : !logs.data ? (
-            <Skeleton lines={6} />
+            <SkeletonEntries count={4} />
           ) : !feed.length ? (
-            <EmptyState message="Nothing here yet. Type your first set below, like 8x 135lb bench." />
+            <EmptyState message="Type a set like 8x 160lb bench in the box below to start your notebook." />
           ) : (
             feed.map((f) => {
               const header = f.day !== lastDay ? <h2 className="feed-day">{dayLabel(f.day, today)}</h2> : null;
@@ -251,7 +299,7 @@ export function NotebookPage() {
             if (sendError) setSendError(null);
           }}
           onSend={send}
-          sending={save_.isPending || (mode === 'ask' && ask.isPending)}
+          sending={mode === 'ask' && ask.isPending}
           error={sendError}
           unit={unit}
           weightUnit={weightUnit}
@@ -260,6 +308,7 @@ export function NotebookPage() {
           lastWeightLb={lastWeightLb}
           tools={<ToolsMenu onPick={setTool} />}
           onHelp={() => setTool('help')}
+          inputRef={inputRef}
         />
       </main>
       {wide ? panel : null}

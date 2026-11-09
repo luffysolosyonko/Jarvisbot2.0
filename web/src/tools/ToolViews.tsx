@@ -1,4 +1,4 @@
-import { Download, Trash2 } from 'lucide-react';
+import { Trash2 } from 'lucide-react';
 import { useId, useState, type FormEvent } from 'react';
 
 import { Button, IconButton } from '@/components/Button';
@@ -26,7 +26,7 @@ import {
 } from '@/hooks/queries';
 import { useDebounced } from '@/hooks/useDebounced';
 import { downloadFile, errorMessage } from '@/lib/api';
-import { exerciseName, longDate, num, shortDate, signedWeight, toLb, volume, weight } from '@/lib/format';
+import { exerciseName, longDate, num, signedWeight, toLb, volume, weight } from '@/lib/format';
 import { reachText, setRefText } from '@/lib/describe';
 import type { ExerciseDetail, Log, Unit } from '@/lib/types';
 
@@ -47,11 +47,11 @@ export function TodayTool({ unit }: { unit: Unit }) {
     <QueryView query={q}>
       {(t) =>
         !t.logs.length ? (
-          <EmptyState message="Nothing logged today yet." />
+          <EmptyState message="Nothing logged today. Type a set like 8x 160lb bench in the Notebook." />
         ) : (
           <div className="stack-4">
             <div className="stats">
-              <Stat label="Sets" value={String(t.sets)} />
+              <Stat label="Sets" value={`${t.sets} sets`} />
               <Stat label="Volume" value={volume(t.volume_lb, unit)} />
               <Stat label="Weigh-in" value={t.weight_lb === null ? '–' : weight(t.weight_lb, unit)} />
             </div>
@@ -79,13 +79,13 @@ export function StatsTool({ unit }: { unit: Unit }) {
       <QueryView query={q}>
         {(s) => (
           <div className="stats">
-            <Stat label="Gym days" value={String(s.gym_days)} note={`${num(s.gym_days_per_week)} a week`} />
-            <Stat label="Sets" value={String(s.sets)} note={`${s.good_reps} good · ${s.failed_reps} failed reps`} />
+            <Stat label="Gym days" value={`${s.gym_days} days`} note={`${num(s.gym_days_per_week)} a week`} />
+            <Stat label="Sets" value={`${s.sets} sets`} note={`${s.good_reps} good reps · ${s.failed_reps} failed`} />
             <Stat label="Volume" value={volume(s.volume_lb, unit)} />
             <Stat
               label="Weight change"
               value={s.weight_change_lb === null ? '–' : signedWeight(s.weight_change_lb, unit)}
-              note={s.weight_end_lb === null ? 'No weigh-ins' : `Now ${weight(s.weight_end_lb, unit)}`}
+              note={s.weight_end_lb === null ? 'No weigh-ins in this period' : `Now ${weight(s.weight_end_lb, unit)}`}
             />
           </div>
         )}
@@ -104,8 +104,8 @@ function LiftBody({ d, unit }: { d: ExerciseDetail; unit: Unit }) {
   return (
     <div className="stack-4">
       <div className="stats">
-        <Stat label="Best set" value={setRefText(d.best_set, unit)} note={d.best_set ? shortDate(d.best_set.date) : undefined} />
-        <Stat label="Heaviest" value={setRefText(d.heaviest_set, unit)} note={d.heaviest_set ? shortDate(d.heaviest_set.date) : undefined} />
+        <Stat label="Best set" value={setRefText(d.best_set, unit)} note={d.best_set ? longDate(d.best_set.date) : undefined} />
+        <Stat label="Heaviest" value={setRefText(d.heaviest_set, unit)} note={d.heaviest_set ? longDate(d.heaviest_set.date) : undefined} />
       </div>
       <TrendChart
         main={d.sessions}
@@ -115,7 +115,7 @@ function LiftBody({ d, unit }: { d: ExerciseDetail; unit: Unit }) {
         label={`Estimated 1-rep max for ${d.summary.exercise} over ${d.sessions.length} sessions.`}
       />
       <div className="stack-2">
-        <h3 className="t-label semibold">Last session · {shortDate(d.summary.last_date)}</h3>
+        <h3 className="t-label semibold">Last session · {longDate(d.summary.last_date)}</h3>
         <ul className="t-label mono stack-1">
           {d.last_session.map((s, i) => (
             <li key={i}>{setRefText(s, unit)}</li>
@@ -191,12 +191,12 @@ export function PredictWeightTool({ unit }: { unit: Unit }) {
     <QueryView query={q}>
       {(f) =>
         !f.projection ? (
-          <EmptyState message={`A forecast needs a few more weigh-ins (you have ${f.weigh_ins}).`} />
+          <EmptyState message={`Log weigh-ins like 182.4 in Weight mode; a forecast needs a few more than the ${f.weigh_ins} you have.`} />
         ) : (
           <div className="stack-3">
             <div className="stats">
               <Stat label="Trend" value={`${signedWeight(f.projection.slope_per_week, unit)}/wk`} />
-              <Stat label={`By ${shortDate(f.projection.target_date)}`} value={weight(f.projection.pred, unit)} />
+              <Stat label={`By ${longDate(f.projection.target_date)}`} value={weight(f.projection.pred, unit)} />
             </div>
             <p className="t-label">
               Likely range {weight(f.projection.low, unit)} to {weight(f.projection.high, unit)}, from {f.projection.points} weigh-ins over{' '}
@@ -221,8 +221,8 @@ export function TargetForm({ name, unit, initialTarget = '' }: { name: string; u
   }
   return (
     <div className="stack-3">
-      <form className="row" onSubmit={submit} style={{ alignItems: 'flex-end' }}>
-        <div className="field" style={{ flex: 1, minWidth: 140 }}>
+      <form className="form-row" onSubmit={submit}>
+        <div className="field field-grow">
           <label htmlFor={id}>Target 1RM ({unit})</label>
           <input id={id} className="input mono" inputMode="decimal" value={input} onChange={(e) => setInput(e.target.value)} placeholder={unit === 'kg' ? '100' : '225'} />
         </div>
@@ -235,7 +235,7 @@ export function TargetForm({ name, unit, initialTarget = '' }: { name: string; u
       {q.data ? (
         <div className="stack-3" aria-live="polite">
           <div className="stats">
-            <Stat label={`By ${shortDate(q.data.projection.target_date)}`} value={weight(q.data.projection.pred, unit, 0)} />
+            <Stat label={`By ${longDate(q.data.projection.target_date)}`} value={weight(q.data.projection.pred, unit, 0)} />
             <Stat label="Rate" value={`${signedWeight(q.data.projection.slope_per_week, unit)}/wk`} />
           </div>
           <p className="t-body semibold">{reachText(q.data, unit)}</p>
@@ -264,7 +264,7 @@ export function VolumeTool({ unit }: { unit: Unit }) {
       <QueryView query={q}>
         {(v) =>
           !v.exercises.length ? (
-            <EmptyState message={`No sets in the last ${days} days.`} />
+            <EmptyState message={`No sets in the last ${days} days. Type a set like 8x 160lb bench in the Notebook.`} />
           ) : (
             <table className="table">
               <caption className="visually-hidden">Volume per exercise</caption>
@@ -370,20 +370,20 @@ export function SearchTool({ unit, onJump }: { unit: Unit; onJump: (log: Log) =>
         <QueryView query={res}>
           {(r) =>
             !r.logs.length ? (
-              <EmptyState message={`Nothing matches “${r.query}”.`} />
+              <EmptyState message={`No logs contain “${r.query}”. Try an exercise name like bench.`} />
             ) : (
               <ul className="list">
                 {r.logs.map((lg) => (
                   <li key={lg.id}>
                     <button type="button" className="list-row" onClick={() => onJump(lg)}>
-                      <span className="stack-1" style={{ flex: 1, minWidth: 0 }}>
+                      <span className="stack-1 grow">
                         <span className="t-caption secondary">{longDate(lg.local_date)}</span>
-                        <span className="raw" style={{ display: 'block' }}>
+                        <span className="raw block">
                           {lg.raw_text}
                         </span>
                         {lg.weigh_in ? <span className="t-caption secondary">→ {weight(lg.weigh_in.weight_lb, unit)}</span> : null}
                       </span>
-                      <span className="t-label accent" style={{ flex: 'none' }}>
+                      <span className="t-label accent no-shrink">
                         Show in notebook
                       </span>
                     </button>
@@ -415,31 +415,31 @@ export function AliasesTool() {
   return (
     <div className="stack-4">
       <form className="stack-3" onSubmit={submit}>
-        <div className="row" style={{ alignItems: 'flex-end' }}>
-          <div className="field" style={{ flex: 1, minWidth: 100 }}>
+        <div className="form-row">
+          <div className="field field-grow">
             <label htmlFor={shortId}>Shortcut</label>
             <input id={shortId} className="input mono" value={short} onChange={(e) => setShort(e.target.value)} placeholder="sldl" />
           </div>
-          <div className="field" style={{ flex: 2, minWidth: 160 }}>
+          <div className="field field-grow-2">
             <label htmlFor={fullId}>Full name</label>
             <input id={fullId} className="input" value={full} onChange={(e) => setFull(e.target.value)} placeholder="stiff leg deadlift" />
           </div>
           <Button type="submit" variant="primary" loading={add.isPending} disabled={!short.trim() || !full.trim()}>
-            Add
+            Add shortcut
           </Button>
         </div>
         {add.error ? <p className="error-text" role="alert">{errorMessage(add.error)}</p> : null}
       </form>
       <div className="stack-2">
         <h3 className="t-label semibold">Your shortcuts</h3>
-        <QueryView query={aliases} lines={2}>
+        <QueryView query={aliases}>
           {(list) =>
             !list.length ? (
-              <p className="t-label secondary">None yet. Add one above.</p>
+              <p className="t-label secondary">No shortcuts yet. Add one like sldl = stiff leg deadlift.</p>
             ) : (
               <ul className="list">
                 {list.map((a) => (
-                  <li key={a.id} className="row-between" style={{ minHeight: 48 }}>
+                  <li key={a.id} className="list-item">
                     <span className="t-label">
                       <span className="mono">{a.short}</span> = {a.full}
                     </span>
@@ -456,18 +456,18 @@ export function AliasesTool() {
       <div className="stack-2">
         <h3 className="t-label semibold">Matched automatically</h3>
         <p className="hint">Names you’ve typed that count as another exercise: initials, word prefixes, plurals and your shortcuts.</p>
-        <QueryView query={matches} lines={2}>
+        <QueryView query={matches}>
           {(list) =>
             !list.length ? (
-              <p className="t-label secondary">No automatic matches yet.</p>
+              <p className="t-label secondary">No names matched to another exercise yet.</p>
             ) : (
               <ul className="list">
                 {list.map((m) => (
-                  <li key={m.written} className="row-between" style={{ minHeight: 48 }}>
+                  <li key={m.written} className="list-item">
                     <span className="t-label">
                       <span className="mono">{m.written}</span> → {exerciseName(m.matched)}
                     </span>
-                    <span className="hint">{m.sets} sets</span>
+                    <span className="hint mono">{m.sets} sets</span>
                   </li>
                 ))}
               </ul>
@@ -495,13 +495,13 @@ export function ExportTool() {
   }
   return (
     <div className="stack-3">
-      <p className="t-label secondary">CSV files, weights in lb.</p>
+      <p className="t-label secondary">One row per set or weigh-in, weights in lb.</p>
       <div className="row">
-        <Button icon={<Download {...ICON} aria-hidden="true" />} loading={busy === '/export/sets.csv'} onClick={() => void get('/export/sets.csv', 'jarvis-sets.csv')}>
-          Sets
+        <Button loading={busy === '/export/sets.csv'} onClick={() => void get('/export/sets.csv', 'jarvis-sets.csv')}>
+          Download sets CSV
         </Button>
-        <Button icon={<Download {...ICON} aria-hidden="true" />} loading={busy === '/export/weighins.csv'} onClick={() => void get('/export/weighins.csv', 'jarvis-weigh-ins.csv')}>
-          Weigh-ins
+        <Button loading={busy === '/export/weighins.csv'} onClick={() => void get('/export/weighins.csv', 'jarvis-weigh-ins.csv')}>
+          Download weigh-ins CSV
         </Button>
       </div>
       {error ? <p className="error-text" role="alert">{error}</p> : null}
@@ -516,9 +516,9 @@ export function UsageTool() {
       {(u) => (
         <div className="stack-3">
           <div className="stats">
-            <Stat label="Today" value={u.today.toLocaleString('en-US')} note={`of ${u.daily_token_cap.toLocaleString('en-US')} a day`} />
-            <Stat label="Last 7 days" value={u.week.toLocaleString('en-US')} />
-            <Stat label="This month" value={u.month.toLocaleString('en-US')} note={`${u.questions_month} question${u.questions_month === 1 ? '' : 's'}`} />
+            <Stat label="Today" value={`${u.today.toLocaleString('en-US')} tokens`} note={`of ${u.daily_token_cap.toLocaleString('en-US')} a day`} />
+            <Stat label="Last 7 days" value={`${u.week.toLocaleString('en-US')} tokens`} />
+            <Stat label="This month" value={`${u.month.toLocaleString('en-US')} tokens`} note={`${u.questions_month} question${u.questions_month === 1 ? '' : 's'}`} />
           </div>
           <p className="hint">Claude tokens. Only Ask mode uses them; logging never does.</p>
         </div>

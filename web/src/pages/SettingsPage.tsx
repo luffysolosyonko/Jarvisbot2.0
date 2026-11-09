@@ -6,6 +6,7 @@ import { Section } from '@/components/Section';
 import { Segmented } from '@/components/Segmented';
 import { QueryView } from '@/components/States';
 import { useMe, useUpdateSettings } from '@/hooks/queries';
+import { useTitle } from '@/hooks/useTitle';
 import { errorMessage } from '@/lib/api';
 import { deviceTimeZone, fromLb, num, toLb } from '@/lib/format';
 import type { Me, Unit } from '@/lib/types';
@@ -23,13 +24,13 @@ function BarWeight({ me }: { me: Me }) {
   }
   return (
     <form className="stack-2" onSubmit={submit}>
-      <div className="row" style={{ alignItems: 'flex-end' }}>
-        <div className="field" style={{ width: 160 }}>
+      <div className="form-row">
+        <div className="field field-fixed">
           <label htmlFor={id}>Bar weight ({unit})</label>
           <input id={id} className="input mono" inputMode="decimal" value={value} onChange={(e) => setValue(e.target.value)} />
         </div>
         <Button type="submit" loading={update.isPending}>
-          Save
+          Save bar weight
         </Button>
       </div>
       <p className="hint">What “bar” means in a set, like 8x bar bench.</p>
@@ -57,6 +58,7 @@ function TimeZone({ me }: { me: Me }) {
 }
 
 export function SettingsPage() {
+  useTitle('Settings');
   const me = useMe();
   const update = useUpdateSettings();
   const { signOut } = useAuth();
@@ -65,7 +67,7 @@ export function SettingsPage() {
       <div className="page-header">
         <h1 className="t-title">Settings</h1>
       </div>
-      <QueryView query={me} lines={6}>
+      <QueryView query={me}>
         {(m) => (
           <>
             <Section title="Units">

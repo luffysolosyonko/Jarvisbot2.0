@@ -57,10 +57,17 @@ export function Entry({ log, unit, highlight = false }: { log: Log; unit: Unit; 
       <div className="entry-head">
         <span className="t-caption secondary">{time(log.logged_at)}</span>
         <span className="t-caption secondary">· {log.kind === 'weight' ? 'Weight' : 'Workout'}</span>
-        <span className="status success">
-          <Check size={16} strokeWidth={1.75} aria-hidden="true" />
-          Logged
-        </span>
+        {log.pending ? (
+          <span className="status secondary" role="status">
+            Saving…
+          </span>
+        ) : (
+          <span className="status success">
+            <Check {...ICON} aria-hidden="true" />
+            Logged
+          </span>
+        )}
+        {log.pending ? null : (
         <div className="entry-actions">
           <IconButton label="Edit entry" onClick={() => { setEditing(true); setFixing(false); }}>
             <Pencil {...ICON} />
@@ -74,10 +81,11 @@ export function Entry({ log, unit, highlight = false }: { log: Log; unit: Unit; 
             <Trash2 {...ICON} />
           </IconButton>
         </div>
+        )}
       </div>
 
       {editing ? (
-        <div className="stack-2" style={{ marginTop: 8 }}>
+        <div className="stack-2 entry-edit">
           <label htmlFor={editId} className="visually-hidden">
             Edit entry text
           </label>
@@ -98,20 +106,20 @@ export function Entry({ log, unit, highlight = false }: { log: Log; unit: Unit; 
             <Button size="small" variant="ghost" onClick={() => { setEditing(false); setDraft(log.raw_text); }}>
               Cancel
             </Button>
-            <span className="hint">Saving re-parses it.</span>
+            <span className="hint">Saving re-reads every line.</span>
           </div>
         </div>
       ) : (
-        <div className="stack-2" style={{ marginTop: 4 }}>
+        <div className="stack-2 entry-body">
           <div className="raw">
             {lines.map((line, i) => (
-              <div key={i} className="row-between" style={{ gap: 8 }}>
+              <div key={i} className="raw-line">
                 <span>{line || ' '}</span>
                 {badLines.has(i + 1) ? (
-                  <span className="status danger" style={{ flex: 'none' }}>
+                  <span className="status danger no-shrink">
                     Not logged
                     {!fixing ? (
-                      <button type="button" className="link-btn t-caption" onClick={() => setFixing(true)}>
+                      <button type="button" className="link-btn" onClick={() => setFixing(true)}>
                         Fix
                       </button>
                     ) : null}
@@ -132,9 +140,9 @@ export function Entry({ log, unit, highlight = false }: { log: Log; unit: Unit; 
       )}
 
       {fixing && !editing && log.warnings.length ? (
-        <div style={{ marginTop: 16 }}>
+        <div className="stack-2 entry-fix">
           <FixList warnings={log.warnings} text={log.raw_text} onApply={(text, mode) => save(text, mode)} />
-          {edit.error ? <p className="error-text" role="alert" style={{ marginTop: 8 }}>{errorMessage(edit.error)}</p> : null}
+          {edit.error ? <p className="error-text" role="alert">{errorMessage(edit.error)}</p> : null}
         </div>
       ) : null}
     </article>

@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 
 import { useAuth } from '@/auth/AuthProvider';
 import { Button } from '@/components/Button';
+import { useTitle } from '@/hooks/useTitle';
 import { errorMessage } from '@/lib/api';
 
 type View = 'sign-in' | 'sign-up' | 'reset';
@@ -42,12 +43,13 @@ export function SignInPage() {
   }
 
   const title = view === 'sign-in' ? 'Sign in to Jarvis' : view === 'sign-up' ? 'Create your account' : 'Reset your password';
+  useTitle(view === 'sign-in' ? 'Sign in' : view === 'sign-up' ? 'Create account' : 'Reset password');
 
   return (
     <main className="auth" id="main">
-      <div className="stack-1" style={{ marginBottom: 32 }}>
+      <div className="stack-1 auth-head">
         <h1 className="t-title">{title}</h1>
-        <p className="t-label secondary">Type your workout like a note. Jarvis does the rest.</p>
+        <p className="t-label secondary">Log sets and weigh-ins in gym shorthand, like 8x 160lb bench.</p>
       </div>
 
       <form className="stack-4" onSubmit={submit} noValidate>
@@ -92,7 +94,7 @@ export function SignInPage() {
         </Button>
       </form>
 
-      <div className="row" style={{ marginTop: 16 }}>
+      <div className="row auth-links">
         {view === 'sign-in' ? (
           <>
             <button type="button" className="link-btn" onClick={() => setView('reset')}>

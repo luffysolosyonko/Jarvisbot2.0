@@ -2,35 +2,47 @@ import { useState } from 'react';
 
 import { Button } from '@/components/Button';
 import { Stat } from '@/components/Stat';
-import { EmptyState, ErrorState, QueryView, Skeleton } from '@/components/States';
+import { EmptyState, ErrorState, QueryView, SkeletonCalendar, SkeletonEntries } from '@/components/States';
 import { useToast } from '@/components/Toast';
+import { useNavigate } from 'react-router';
+
 import { useCalendar, useLogs, useTz, useUnit } from '@/hooks/queries';
+import { useTitle } from '@/hooks/useTitle';
 import { longDate, signedWeight, todayIn, volume, weight } from '@/lib/format';
 import type { CalendarDay } from '@/lib/types';
 import { Entry } from '@/notebook/Entry';
 
 import { Calendar } from './Calendar';
 
-function DayDetail({ day, summary }: { day: string; summary: CalendarDay | undefined }) {
+function DayDetail({ day, today, summary }: { day: string; today: string; summary: CalendarDay | undefined }) {
   const unit = useUnit();
+  const navigate = useNavigate();
   const logs = useLogs(day, day);
   const { pendingDeletes } = useToast();
   const list = (logs.data ?? []).filter((l) => !pendingDeletes.has(l.id)).reverse();
   return (
     <section className="section" aria-label={longDate(day)}>
-      <h2 className="t-heading" style={{ marginBottom: 24 }}>
+      <h2 className="t-heading section-head">
         {longDate(day)}
       </h2>
       {logs.error && !logs.data ? (
         <ErrorState error={logs.error} onRetry={() => void logs.refetch()} />
       ) : !logs.data ? (
-        <Skeleton lines={4} />
+        <SkeletonEntries count={2} />
       ) : !list.length ? (
-        <EmptyState message="Nothing logged this day." />
+        <EmptyState
+          message={
+            day === today
+              ? 'Nothing logged today. Type a set like 8x 160lb bench in the Notebook.'
+              : `Nothing logged on ${longDate(day)}. To log today, type a set like 8x 160lb bench in the Notebook.`
+          }
+          actionLabel="Open notebook"
+          onAction={() => navigate('/')}
+        />
       ) : (
         <div className="stack-4">
           <div className="stats">
-            <Stat label="Sets" value={String(summary?.sets ?? list.flatMap((l) => l.sets).length)} />
+            <Stat label="Sets" value={`${summary?.sets ?? list.flatMap((l) => l.sets).length} sets`} />
             <Stat label="Volume" value={volume(summary?.volume_lb ?? 0, unit)} />
             <Stat label="Weigh-in" value={summary?.weight_lb != null ? weight(summary.weight_lb, unit) : '–'} />
           </div>
@@ -46,6 +58,7 @@ function DayDetail({ day, summary }: { day: string; summary: CalendarDay | undef
 }
 
 export function HistoryPage() {
+  useTitle('History');
   const unit = useUnit();
   const today = todayIn(useTz());
   // Until you pick, follow "today" (it settles once the account's time zone loads).
@@ -70,7 +83,7 @@ export function HistoryPage() {
         </Button>
       </div>
       <section className="section">
-        <QueryView query={cal} lines={6}>
+        <QueryView query={cal} skeleton={<SkeletonCalendar />}>
           {(c) => (
             <div className="stack-3">
               <Calendar
@@ -89,7 +102,7 @@ export function HistoryPage() {
           )}
         </QueryView>
       </section>
-      {selected ? <DayDetail day={selected} summary={current?.days.find((d) => d.date === selected)} /> : null}
+      {selected ? <DayDetail day={selected} today={today} summary={current?.days.find((d) => d.date === selected)} /> : null}
     </main>
   );
 }

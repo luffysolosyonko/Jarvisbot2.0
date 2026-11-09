@@ -33,7 +33,7 @@ const WEIGHT: [string, string][] = [
 function Table({ caption, rows }: { caption: string; rows: [string, string][] }) {
   return (
     <table className="table">
-      <caption className="t-heading" style={{ textAlign: 'left', paddingBottom: 8 }}>
+      <caption className="t-heading">
         {caption}
       </caption>
       <thead>
@@ -45,8 +45,47 @@ function Table({ caption, rows }: { caption: string; rows: [string, string][] })
       <tbody>
         {rows.map(([type, rec]) => (
           <tr key={type}>
-            <td className="mono" style={{ whiteSpace: 'nowrap' }}>{type}</td>
+            <td className="mono nowrap">{type}</td>
             <td>{rec}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
+
+const SHORTCUTS: [string[], string][] = [
+  [['Enter'], 'Save the entry, or ask in Ask mode'],
+  [['Shift', 'Enter'], 'New line (one set per line)'],
+  [['Ctrl', 'K'], 'Jump to the input (Cmd+K on a Mac)'],
+  [['1'], 'Workout mode (when not typing)'],
+  [['2'], 'Weight mode'],
+  [['3'], 'Ask mode'],
+  [['Esc'], 'Close this panel or a menu'],
+];
+
+function Shortcuts() {
+  return (
+    <table className="table">
+      <caption className="t-heading">Keyboard</caption>
+      <thead>
+        <tr>
+          <th scope="col">Keys</th>
+          <th scope="col">Does</th>
+        </tr>
+      </thead>
+      <tbody>
+        {SHORTCUTS.map(([keys, does]) => (
+          <tr key={does}>
+            <td className="nowrap">
+              {keys.map((k, i) => (
+                <span key={k}>
+                  {i ? ' + ' : null}
+                  <kbd className="kbd">{k}</kbd>
+                </span>
+              ))}
+            </td>
+            <td>{does}</td>
           </tr>
         ))}
       </tbody>
@@ -57,9 +96,10 @@ function Table({ caption, rows }: { caption: string; rows: [string, string][] })
 export function SyntaxHelp() {
   return (
     <div className="stack-4">
-      <p className="t-label secondary">One set per line. Shift+Enter starts a new line; Enter saves.</p>
+      <p className="t-label secondary">One set per line, the way you’d write it in your notes.</p>
       <Table caption="Workout" rows={WORKOUT} />
       <Table caption="Weight" rows={WEIGHT} />
+      <Shortcuts />
     </div>
   );
 }

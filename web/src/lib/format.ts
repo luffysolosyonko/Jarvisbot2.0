@@ -33,7 +33,7 @@ export function volume(lb: number, unit: Unit): string {
 }
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-const DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 /** "2026-03-02" -> a Date at local midnight (no UTC shift). */
 export function parseDate(iso: string): Date {
@@ -51,15 +51,16 @@ export function shortDate(iso: string): string {
   return `${MONTHS[d.getMonth()]} ${d.getDate()}`;
 }
 
+/** "Mon, Nov 9": the one date format for headings and notes (charts use shortDate). */
 export function longDate(iso: string): string {
   const d = parseDate(iso);
   return `${DAYS[d.getDay()]}, ${MONTHS[d.getMonth()]} ${d.getDate()}`;
 }
 
 export function dayLabel(iso: string, todayIso: string): string {
-  if (iso === todayIso) return 'Today';
+  if (iso === todayIso) return `Today · ${longDate(iso)}`;
   const diff = Math.round((parseDate(todayIso).getTime() - parseDate(iso).getTime()) / 86_400_000);
-  if (diff === 1) return 'Yesterday';
+  if (diff === 1) return `Yesterday · ${longDate(iso)}`;
   return longDate(iso);
 }
 

@@ -4,7 +4,7 @@ import type { ReactNode } from 'react';
 export function Section({ title, action, children }: { title: string; action?: ReactNode; children: ReactNode }) {
   return (
     <section className="section">
-      <div className="row-between" style={{ marginBottom: 24 }}>
+      <div className="row-between section-head">
         <h2 className="t-heading">{title}</h2>
         {action}
       </div>
