@@ -12,10 +12,6 @@ export const fonts = {
   monoSemiBold: 'JetBrainsMono_600SemiBold',
 } as const;
 
-export const fontAssets = {
-  mono: require('@expo-google-fonts/jetbrains-mono/400Regular/JetBrainsMono_400Regular.ttf'),
-} as const;
-
 type Scale = { fontSize: number; lineHeight: number };
 
 export const scale = {

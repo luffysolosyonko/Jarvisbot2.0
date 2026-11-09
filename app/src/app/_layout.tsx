@@ -5,12 +5,13 @@ import { DarkTheme, DefaultTheme, Stack, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
+import { Platform, StyleSheet, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { AuthProvider, useAuth } from '@/auth/AuthProvider';
 import { ApiError } from '@/lib/api';
-import { fonts, useTheme } from '@/theme';
+import { fonts, layout, sizes, useTheme } from '@/theme';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -77,25 +78,43 @@ function RootNavigator({ ready }: { ready: boolean }) {
   return (
     <ThemeProvider value={navTheme}>
       <StatusBar style={scheme === 'dark' ? 'light' : 'dark'} />
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: colors.bg },
-          headerStyle: { backgroundColor: colors.bg },
-          headerTintColor: colors.ink,
-          headerTitleStyle: { fontFamily: fonts.uiSemiBold },
-          headerShadowVisible: false,
-        }}>
-        {/* Signed out: "/" and the app screens send you to sign-in, and back after. */}
-        <Stack.Protected guard={!user} redirectTo="/">
-          <Stack.Screen name="(auth)" />
-        </Stack.Protected>
-        <Stack.Protected guard={!!user} redirectTo="/sign-in">
-          <Stack.Screen name="(tabs)" />
-          <Stack.Screen name="exercise/[name]" options={{ headerShown: true, title: '' }} />
-          <Stack.Screen name="exercises" options={{ headerShown: true, title: '' }} />
-        </Stack.Protected>
-      </Stack>
+      {/* In a desktop browser the app sits in a centred, phone-width column. */}
+      <View style={[styles.page, { backgroundColor: colors.surface }]}>
+        <View style={[styles.column, { backgroundColor: colors.bg }, isWeb && { borderColor: colors.border }]}>
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: colors.bg },
+              headerStyle: { backgroundColor: colors.bg },
+              headerTintColor: colors.ink,
+              headerTitleStyle: { fontFamily: fonts.uiSemiBold },
+              headerShadowVisible: false,
+            }}>
+            {/* Signed out: "/" and the app screens send you to sign-in, and back after. */}
+            <Stack.Protected guard={!user} redirectTo="/">
+              <Stack.Screen name="(auth)" />
+            </Stack.Protected>
+            <Stack.Protected guard={!!user} redirectTo="/sign-in">
+              <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="exercise/[name]" options={{ headerShown: true, title: '' }} />
+              <Stack.Screen name="exercises" options={{ headerShown: true, title: '' }} />
+            </Stack.Protected>
+          </Stack>
+        </View>
+      </View>
     </ThemeProvider>
   );
 }
+
+const isWeb = Platform.OS === 'web';
+
+const styles = StyleSheet.create({
+  page: { flex: 1, alignItems: 'center' },
+  column: {
+    flex: 1,
+    width: '100%',
+    maxWidth: sizes.maxContentWidth,
+    overflow: 'hidden',
+    ...(isWeb ? { borderLeftWidth: layout.hairline, borderRightWidth: layout.hairline } : null),
+  },
+});

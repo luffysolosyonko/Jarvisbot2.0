@@ -57,6 +57,7 @@ export function Screen({
             style={styles.fill}
             contentContainerStyle={styles.content}
             keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={Platform.OS !== 'web'} // the browser column scrolls like a phone
             refreshControl={
               onRefresh ? (
                 <RefreshControl

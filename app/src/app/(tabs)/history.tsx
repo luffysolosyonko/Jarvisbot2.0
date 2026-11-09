@@ -52,8 +52,8 @@ export default function HistoryScreen() {
           {byDay.map(([day, logs], i) => (
             <Section key={day} title={dayLabel(day, today)} first={i === 0}>
               <View style={styles.logs}>
-                {[...logs].reverse().map((log) => (
-                  <LogEntry key={log.id} log={log} unit={unit} />
+                {[...logs].reverse().map((log, j) => (
+                  <LogEntry key={log.id} log={log} unit={unit} last={j === logs.length - 1} />
                 ))}
               </View>
             </Section>

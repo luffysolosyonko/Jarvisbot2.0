@@ -38,7 +38,7 @@ export const sizes = {
   chartStroke: 2,
   chartDot: 3,
   barRadius: 4,
-  maxContentWidth: 640,
+  maxContentWidth: 520, // the phone-width column the web build is centred in
 } as const;
 
 export const icon = {

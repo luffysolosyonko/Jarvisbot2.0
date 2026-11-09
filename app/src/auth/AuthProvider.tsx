@@ -1,10 +1,8 @@
 import { useQueryClient } from '@tanstack/react-query';
 import {
   createUserWithEmailAndPassword,
-  GoogleAuthProvider,
   onAuthStateChanged,
   sendPasswordResetEmail,
-  signInWithCredential,
   signInWithCustomToken,
   signInWithEmailAndPassword,
   signOut as fbSignOut,
@@ -13,10 +11,11 @@ import {
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { api, ApiError, setTokenGetter } from '@/lib/api';
-import { config, firebaseConfigured, googleConfigured } from '@/lib/config';
+import { firebaseConfigured } from '@/lib/config';
 import { getFirebaseAuth } from '@/lib/firebase';
 
 import { authErrorMessage } from './errors';
+import { googleSignIn, googleSignOut } from './google';
 
 type AuthState = {
   user: User | null;
@@ -84,28 +83,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  const signInWithGoogle = useCallback(
-    () =>
-      wrap(async () => {
-        if (!googleConfigured) {
-          throw new ApiError(
-            0,
-            'google_not_configured',
-            'Google sign-in isn’t set up in this build. Use email or try the demo.',
-          );
-        }
-        const auth = requireAuth();
-        const { GoogleSignin, isSuccessResponse } = await import('@react-native-google-signin/google-signin');
-        GoogleSignin.configure({ webClientId: config.googleWebClientId });
-        await GoogleSignin.hasPlayServices({ showPlayServicesUpdateDialog: true });
-        const response = await GoogleSignin.signIn();
-        if (!isSuccessResponse(response)) return; // cancelled
-        const idToken = response.data.idToken;
-        if (!idToken) throw new ApiError(0, 'google', 'Google didn’t return a sign-in token. Try again.');
-        await signInWithCredential(auth, GoogleAuthProvider.credential(idToken));
-      }),
-    [],
-  );
+  const signInWithGoogle = useCallback(() => wrap(() => googleSignIn(requireAuth())), []);
 
   const signInDemo = useCallback(
     () =>
@@ -119,14 +97,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signOut = useCallback(async () => {
     const auth = getFirebaseAuth();
-    if (auth?.currentUser?.providerData.some((p) => p.providerId === 'google.com')) {
-      try {
-        const { GoogleSignin } = await import('@react-native-google-signin/google-signin');
-        await GoogleSignin.signOut();
-      } catch {
-        // Not signed in with Google on this device; nothing to do.
-      }
-    }
+    if (auth?.currentUser?.providerData.some((p) => p.providerId === 'google.com')) await googleSignOut();
     if (auth) await fbSignOut(auth);
     queryClient.clear();
   }, [queryClient]);

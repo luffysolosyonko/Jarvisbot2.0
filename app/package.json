@@ -7,7 +7,6 @@
     "@expo-google-fonts/manrope": "^0.4.3",
     "@react-native-async-storage/async-storage": "2.2.0",
     "@react-native-google-signin/google-signin": "^17.0.0",
-    "@shopify/react-native-skia": "2.14.0",
     "@tanstack/react-query": "^5.107.1",
     "@testing-library/react-native": "^14.1.0",
     "@types/jest": "30.0.0",
@@ -32,8 +31,7 @@
     "react-native-screens": "~4.30.1",
     "react-native-svg": "15.16.0",
     "react-native-web": "~0.21.4",
-    "react-native-worklets": "0.13.0",
-    "victory-native": "42.0.1"
+    "react-native-worklets": "0.13.0"
   },
   "devDependencies": {
     "@types/react": "~19.3.0",
@@ -43,6 +41,8 @@
   },
   "scripts": {
     "start": "expo start",
+    "web": "expo start --web",
+    "web:prod": "expo start --web --no-dev --minify",
     "android": "expo run:android",
     "ios": "expo run:ios",
     "lint": "expo lint",
@@ -53,7 +53,7 @@
   "jest": {
     "preset": "jest-expo",
     "transformIgnorePatterns": [
-      "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|react-native-svg|lucide-react-native|victory-native|@shopify/react-native-skia|@react-native-google-signin/.*|firebase|@firebase/.*)"
+      "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|react-native-svg|lucide-react-native|@react-native-google-signin/.*|firebase|@firebase/.*)"
     ],
     "testPathIgnorePatterns": [
       "/node_modules/",

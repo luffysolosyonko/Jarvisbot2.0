@@ -1,11 +1,11 @@
 import { Tabs } from 'expo-router/js-tabs';
 import { History, LayoutDashboard, MessageCircle, NotebookPen, Settings, type LucideIcon } from 'lucide-react-native';
 import { useEffect } from 'react';
-import type { ColorValue } from 'react-native';
+import { Platform, type ColorValue } from 'react-native';
 
 import { useMe, useUpdateSettings } from '@/hooks/queries';
 import { deviceTimeZone } from '@/lib/format';
-import { fonts, icon, layout, scale, useTheme } from '@/theme';
+import { fonts, icon, layout, scale, space, useTheme } from '@/theme';
 
 function tabIcon(Icon: LucideIcon) {
   return function TabIcon({ color }: { color: ColorValue }) {
@@ -39,6 +39,8 @@ export default function TabsLayout() {
           borderTopWidth: layout.hairline,
           elevation: 0,
           shadowOpacity: 0,
+          // The web tab bar has no safe-area inset to grow into, so give the labels room.
+          ...(Platform.OS === 'web' ? { height: layout.touchTarget + space.sm, paddingBottom: space.xs } : null),
         },
         tabBarLabelStyle: { fontFamily: fonts.uiSemiBold, fontSize: scale.caption.fontSize },
         sceneStyle: { backgroundColor: colors.bg },

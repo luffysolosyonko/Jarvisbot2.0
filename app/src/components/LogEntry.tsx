@@ -7,12 +7,12 @@ import { layout, space, useTheme } from '@/theme';
 import { SetTable } from './SetTable';
 import { Text } from './Text';
 
-/** One saved log: time, the raw text as typed, and what it parsed to. */
-export function LogEntry({ log, unit }: { log: Log; unit: Unit }) {
+/** One saved log: time, the raw text as typed, and what it parsed to. The last in a group has no rule under it. */
+export function LogEntry({ log, unit, last = false }: { log: Log; unit: Unit; last?: boolean }) {
   const { colors } = useTheme();
   const time = new Date(log.logged_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
   return (
-    <View style={[styles.entry, { borderBottomColor: colors.border }]}>
+    <View style={[styles.entry, last ? styles.last : { borderBottomColor: colors.border }]}>
       <Text variant="caption" tone="secondary">
         {time}
       </Text>
@@ -33,4 +33,5 @@ export function LogEntry({ log, unit }: { log: Log; unit: Unit }) {
 
 const styles = StyleSheet.create({
   entry: { gap: space.xs, paddingBottom: space.md, borderBottomWidth: layout.hairline },
+  last: { paddingBottom: 0, borderBottomWidth: 0 },
 });

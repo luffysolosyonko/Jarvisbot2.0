@@ -10,6 +10,10 @@ const MESSAGES: Record<string, string> = {
   'auth/too-many-requests': 'Too many attempts. Wait a minute and try again.',
   'auth/network-request-failed': 'Can’t reach the sign-in service. Check your connection.',
   'auth/user-disabled': 'This account has been disabled.',
+  'auth/popup-blocked': 'Your browser blocked the Google sign-in window. Allow pop-ups for this site and try again.',
+  'auth/operation-not-allowed': 'That sign-in method isn’t turned on for this Firebase project. See docs/SETUP.md.',
+  'auth/unauthorized-domain':
+    'This web address can’t sign in yet. Add it under Firebase > Authentication > Settings > Authorized domains.',
 };
 
 export function authErrorMessage(error: unknown): string {
