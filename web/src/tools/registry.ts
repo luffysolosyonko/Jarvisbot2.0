@@ -27,8 +27,9 @@ export const TOOLS: { id: ToolId; label: string; command: string }[] = [
   { id: 'aliases', label: 'Aliases', command: '/alias' },
   { id: 'export', label: 'Export', command: '/export' },
   { id: 'usage', label: 'AI usage', command: '/usage' },
+  { id: 'help', label: 'Syntax help', command: '/howto' },
 ];
 
 export function toolLabel(id: ToolId): string {
-  return id === 'help' ? 'Syntax help' : (TOOLS.find((t) => t.id === id)?.label ?? id);
+  return TOOLS.find((t) => t.id === id)?.label ?? id;
 }

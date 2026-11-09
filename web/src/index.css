@@ -776,39 +776,10 @@ a:hover {
   flex-wrap: wrap;
 }
 
-.mode-note {
-  font-size: 12px;
-  line-height: 16px;
-  font-weight: 600;
-}
 
-.chips {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--s1);
-}
 
-.chip {
-  min-height: 44px;
-  min-width: 44px;
-  padding: 0 var(--s2);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-control);
-  background: var(--surface);
-  color: var(--ink);
-  font-family: var(--font-mono);
-  font-size: 14px;
-  cursor: pointer;
-}
 
-.chip:hover {
-  border-color: var(--ink-secondary);
-}
 
-.chip.text {
-  font-family: var(--font-ui);
-  font-weight: 600;
-}
 
 .input-row {
   display: flex;
@@ -830,11 +801,6 @@ a:hover {
   border-color: var(--accent);
 }
 
-.preview {
-  max-height: 240px;
-  overflow-y: auto;
-  padding: var(--s2) 0;
-}
 
 /* ---------- calendar ---------- */
 .calendar {
@@ -969,21 +935,6 @@ a:hover {
   }
 }
 
-/* Phone width: the syntax and quick-button rows scroll sideways instead of wrapping,
-   so the composer doesn't take over the screen. */
-@media (max-width: 560px) {
-  .composer .chips,
-  .composer .quick-row {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    scrollbar-width: none;
-  }
-  .composer .chips > *,
-  .composer .quick-row > * {
-    flex: none;
-  }
-}
-
 /* ---------- layout helpers (instead of inline styles) ---------- */
 .section-head { margin-bottom: var(--s4); }
 .page-header.start { justify-content: flex-start; }
@@ -1012,7 +963,6 @@ a:hover {
 figure .legend { margin-top: var(--s2); }
 .lift-change { min-width: 80px; text-align: right; }
 .result-card { margin-top: var(--s4); scroll-margin-top: calc(var(--nav-h) + var(--s3)); }
-.is-stale { opacity: 0.7; }
 .today-sample { font-weight: 600; text-decoration: underline; text-decoration-thickness: 2px; text-underline-offset: 4px; }
 .kbd {
   font-family: var(--font-mono);
@@ -1038,7 +988,6 @@ figure .legend { margin-top: var(--s2); }
 /* ---------- motion: short color and opacity transitions only ---------- */
 .btn,
 .icon-btn,
-.chip,
 .navlink,
 .segmented button,
 .cal-day,
@@ -1051,8 +1000,7 @@ figure .legend { margin-top: var(--s2); }
   transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease;
 }
 
-.entry-actions,
-.preview {
+.entry-actions {
   transition: opacity 150ms ease;
 }
 
@@ -1064,4 +1012,21 @@ figure .legend { margin-top: var(--s2); }
     animation: none !important;
     scroll-behavior: auto !important;
   }
+}
+
+/* The line above the input: the time the entry will be logged at, and what it reads as. */
+.composer-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--s1) var(--s3);
+  font-size: 12px;
+  line-height: 16px;
+  min-height: 16px;
+}
+
+.composer-fixes {
+  flex-basis: 100%;
+  font-size: 14px;
+  line-height: 20px;
 }

@@ -24,7 +24,7 @@ const WEIGHT: [string, string][] = [
   ['182lb', '182 lb'],
   ['83.9kg', '185.0 lb'],
   ['182', 'no unit, 100+: lb'],
-  ['86', 'no unit, under 100: kg (or pick the unit with the lb/kg toggle)'],
+  ['86', 'no unit, under 100: kg'],
   ['182 4', 'a missed decimal point: 182.4 lb'],
   ['182.4 different scale', 'the words are kept as a note'],
   ['yesterday 182.6', 'logged for the previous day'],

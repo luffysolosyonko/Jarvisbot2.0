@@ -1,5 +1,5 @@
-import { longDate, parseDate, weight } from './format';
-import type { Forecast, SetRef, Unit } from './types';
+import { exerciseName, longDate, parseDate, weight } from './format';
+import type { Forecast, ParseResult, SetRef, Unit } from './types';
 
 /** "5 + 1f × 155 lb" */
 export function setRefText(s: SetRef | null, unit: Unit): string {
@@ -18,4 +18,14 @@ export function reachText(f: Forecast, unit: Unit): string {
     return `About ${when} at this pace${f.optimistic ? ' (an optimistic read; few sessions)' : ''}.`;
   }
   return '';
+}
+
+/** "5 sets · Bench" or "→ 185 lb": what the text will log, in one line. */
+export function summarize(r: ParseResult, unit: Unit): string {
+  if (r.weigh_in) return `→ ${weight(r.weigh_in.weight_lb, unit)}${r.weigh_in.note ? ` · ${r.weigh_in.note}` : ''}`;
+  if (!r.sets.length) return '';
+  const names = [...new Set(r.sets.map((s) => exerciseName(s.matched_exercise ?? s.exercise)))];
+  const fresh = r.exercises.filter((e) => e.is_new).map((e) => exerciseName(e.matched));
+  const sets = `${r.sets.length} set${r.sets.length === 1 ? '' : 's'}`;
+  return `${sets} · ${names.join(', ')}${fresh.length ? ` (new: ${fresh.join(', ')})` : ''}`;
 }

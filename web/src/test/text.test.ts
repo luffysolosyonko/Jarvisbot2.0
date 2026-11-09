@@ -3,50 +3,11 @@ import { describe, expect, it } from 'vitest';
 import { buildRows } from '@/lib/chartRows';
 import { reachText, setRefText } from '@/lib/describe';
 import { monthLabel, shiftMonth } from '@/lib/month';
-import { appendLine, applyFix, insertToken, insertWord, replaceLine, replaceName, setToLine, withUnit } from '@/lib/text';
-import type { Fix, ParsedSet } from '@/lib/types';
+import { applyFix, replaceLine } from '@/lib/text';
+import type { Fix } from '@/lib/types';
 
 const fix = (f: Partial<Fix>): Fix => ({ label: 'x', line: 1, text: null, template: null, placeholder: null, mode: null, ...f });
 
-const set = (s: Partial<ParsedSet>): ParsedSet => ({
-  idx: 0,
-  line: 1,
-  exercise: 'bench',
-  matched_exercise: 'bench',
-  reps: 5,
-  good_reps: 5,
-  failed_reps: 0,
-  weight_lb: 155,
-  weight_text: '155lb',
-  estimated: false,
-  bodyweight: false,
-  per_hand: false,
-  inferred: false,
-  ...s,
-});
-
-describe('insertToken', () => {
-  it('attaches unit and rep suffixes to the number before them', () => {
-    expect(insertToken('8', 1, 1, 'x')).toEqual({ text: '8x', cursor: 2 });
-    expect(insertToken('8x 135', 6, 6, 'lb')).toEqual({ text: '8x 135lb', cursor: 8 });
-    expect(insertToken('12x1', 4, 4, 'f').text).toBe('12x1f');
-  });
-
-  it('spaces words like uw, bar and each hand', () => {
-    expect(insertToken('10x', 3, 3, 'uw')).toEqual({ text: '10x uw ', cursor: 7 });
-    expect(insertToken('25x 15kg', 8, 8, 'each hand').text).toBe('25x 15kg each hand ');
-    expect(insertToken('', 0, 0, '^').text).toBe('^ ');
-  });
-
-  it('inserts mid-text and replaces a selection', () => {
-    expect(insertToken('8x bench', 3, 3, 'bar')).toEqual({ text: '8x bar bench', cursor: 7 });
-    expect(insertToken('8x 135kg bench', 6, 8, 'lb').text).toBe('8x 135lb bench');
-  });
-
-  it('inserts names with spaces around them', () => {
-    expect(insertWord('8x 135lb', 8, 8, 'bench press').text).toBe('8x 135lb bench press ');
-  });
-});
 
 describe('fixes', () => {
   it('replaces or removes one line', () => {
@@ -65,31 +26,6 @@ describe('fixes', () => {
     expect(applyFix('8x bench', f, '  ')).toBeNull();
   });
 
-  it('renames a whole-word exercise only', () => {
-    expect(replaceName('5x 140lb bp\n8x 50lb bpx', 'bp', 'bench press')).toBe('5x 140lb bench press\n8x 50lb bpx');
-  });
-});
-
-describe('quick buttons', () => {
-  it('writes a set back as shorthand', () => {
-    expect(setToLine(set({}))).toBe('5x 155lb bench');
-    expect(setToLine(set({ reps: 2, good_reps: 1, failed_reps: 1, weight_text: '200lb' }))).toBe('1x1f 200lb bench');
-    expect(setToLine(set({ bodyweight: true, weight_lb: null, weight_text: 'uw', exercise: 'dips', matched_exercise: 'dips' }))).toBe('5x uw dips');
-    expect(setToLine(set({ per_hand: true, weight_text: '15kg', matched_exercise: 'shrug' }))).toBe('5x 15kg each hand shrug');
-    expect(setToLine(set({ weight_text: '^' }))).toBe('5x 155lb bench');
-  });
-
-  it('adds the chosen unit to a bare weigh-in number only', () => {
-    expect(withUnit('84', 'kg')).toBe('84kg');
-    expect(withUnit(' 182.4 ', 'lb')).toBe('182.4lb');
-    expect(withUnit('83.9kg', 'lb')).toBe('83.9kg');
-    expect(withUnit('182 different scale', 'kg')).toBe('182 different scale');
-  });
-
-  it('appends a line', () => {
-    expect(appendLine('', '5x 155lb bench')).toBe('5x 155lb bench');
-    expect(appendLine('8x 135lb bench\n', '5x 155lb bench')).toBe('8x 135lb bench\n5x 155lb bench');
-  });
 });
 
 describe('charts and dates', () => {

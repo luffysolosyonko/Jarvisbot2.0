@@ -10,8 +10,7 @@ import { useTitle } from '@/hooks/useTitle';
 import { errorMessage } from '@/lib/api';
 import { clockTime, dayIn, dayLabel, isoDate, parseDate, todayIn } from '@/lib/format';
 import { load, save } from '@/lib/storage';
-import { withUnit } from '@/lib/text';
-import type { AskAnswer, Log, Mode, ParsedSet, Unit } from '@/lib/types';
+import type { AskAnswer, Log, Mode } from '@/lib/types';
 import { ToolPanel } from '@/tools/ToolPanel';
 import { ToolsMenu } from '@/tools/ToolsMenu';
 import type { ToolId } from '@/tools/registry';
@@ -20,12 +19,10 @@ import { Composer } from './Composer';
 import { Entry } from './Entry';
 
 const MODE_KEY = 'jarvis.mode';
-const WEIGHT_UNIT_KEY = 'jarvis.weightUnit';
 const ASK_KEY = 'jarvis.ask';
 const DEFAULT_DAYS = 14;
 
 const isMode = (v: unknown): v is Mode => v === 'workout' || v === 'weight' || v === 'ask';
-const isUnit = (v: unknown): v is Unit => v === 'lb' || v === 'kg';
 
 type AskItem = {
   id: string;
@@ -96,7 +93,6 @@ export function NotebookPage() {
   const jumpDate = params.get('date');
 
   const [mode, setModeState] = useState<Mode>(() => load(MODE_KEY, 'workout', isMode));
-  const [weightUnit, setWeightUnitState] = useState<Unit>(() => load(WEIGHT_UNIT_KEY, 'lb', isUnit));
   const [text, setText] = useState('');
   const [sendError, setSendError] = useState<string | null>(null);
   const [days, setDays] = useState(DEFAULT_DAYS);
@@ -122,10 +118,6 @@ export function NotebookPage() {
     setModeState(m);
     save(MODE_KEY, m);
     setSendError(null);
-  };
-  const setWeightUnit = (u: Unit) => {
-    setWeightUnitState(u);
-    save(WEIGHT_UNIT_KEY, u);
   };
 
   useEffect(() => save(ASK_KEY, asks.slice(-20)), [asks]);
@@ -169,16 +161,6 @@ export function NotebookPage() {
     return items.sort((a, b) => a.at.localeCompare(b.at));
   }, [visible, asks, from, tz]);
 
-  const lastSet: ParsedSet | null = useMemo(() => {
-    for (const l of [...visible].sort((a, b) => b.logged_at.localeCompare(a.logged_at))) {
-      if (l.sets.length) return l.sets[l.sets.length - 1];
-    }
-    return null;
-  }, [visible]);
-  const lastWeightLb = useMemo(() => {
-    const w = [...visible].sort((a, b) => b.logged_at.localeCompare(a.logged_at)).find((l) => l.weigh_in);
-    return w?.weigh_in?.weight_lb ?? null;
-  }, [visible]);
 
   // Start at the newest entry, like a chat; follow new entries as they arrive.
   const count = feed.length;
@@ -221,7 +203,7 @@ export function NotebookPage() {
       setText('');
       return;
     }
-    const body = mode === 'weight' ? withUnit(t, weightUnit) : t;
+    const body = t;
     // Optimistic: clear the input and show the entry now; if the save fails, the entry
     // is removed again and the text comes back so nothing is lost.
     setText('');
@@ -302,12 +284,8 @@ export function NotebookPage() {
           sending={mode === 'ask' && ask.isPending}
           error={sendError}
           unit={unit}
-          weightUnit={weightUnit}
-          onWeightUnitChange={setWeightUnit}
-          lastSet={lastSet}
-          lastWeightLb={lastWeightLb}
+          tz={tz}
           tools={<ToolsMenu onPick={setTool} />}
-          onHelp={() => setTool('help')}
           inputRef={inputRef}
         />
       </main>

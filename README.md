@@ -11,32 +11,30 @@ is now a button.
 
 ## Screenshots
 
-| Notebook | Preview and fixes | History | Progress | Ask mode |
+| Notebook | Fixes | History | Progress | Ask mode |
 |---|---|---|---|---|
 | _screenshot_ | _screenshot_ | _screenshot_ | _screenshot_ | _screenshot_ |
 
 ## What it does
 
-- **A notebook, not a form.** One feed, oldest to newest, with the input pinned
-  at the bottom. Pick a mode, **Workout**, **Weight** or **Ask**, type, press
-  Enter. Shift+Enter starts a new line, so a whole session can go in at once.
+- **A notebook, not a form.** One feed, oldest to newest, with a plain text box
+  at the bottom, like a chat. Pick a mode, **Workout**, **Weight** or **Ask**,
+  type, press Enter. Shift+Enter starts a new line, so a whole session can go
+  in at once. A small line above the box shows the date and time the entry will
+  be logged at; that's its timestamp, so there's no date field to fill in.
 - **Deterministic logging.** Workout and Weight modes use the parser, never an
-  LLM, so logging is instant and free. As you type, a live preview splits
-  `5x 155lb 2x1x1xf bench` into five sets (the last a failed rep). kg is
-  converted to lb, `?` and ranges are estimates, `uw` is bodyweight, and `^` or
-  a bare number repeats the set above.
+  LLM, so logging is instant and free. As you type, the same line reads the
+  text back: `5x 155lb 2x1x1xf bench` shows "5 sets · Bench" (the last one a
+  failed rep). kg is converted to lb, `?` and ranges are estimates, `uw` is
+  bodyweight, and `^` or a bare number repeats the set above.
 - **Fix, don't retype.** Lines that don't parse are flagged with the reason and
   one-click fixes ("Add unit: lb", "Mark as estimate", "Set exercise
   name…", "Log as a weigh-in"). Saved entries can be edited, fixed or deleted
   (with undo); edits re-parse, like the bot re-parsed edited messages.
-- **Syntax at your fingertips.** Buttons insert `x`, `lb`, `kg`, `f`, `?`,
-  `uw`, `bar`, `each hand` and `^` at the cursor. Quick buttons repeat the last
-  set, reuse the last exercise, or log the same weight as last time. A
-  cheat sheet lists every format.
 - **Every bot command is a button.** Tools: Today, Stats (7/30/90 days), Lift,
   Estimate (maxes for 3–12 reps), Predict weight, Predict lift (the date
   you'll hit a target), Volume, Charts, Search, Aliases, Export (CSV) and AI
-  usage.
+  usage, plus the Syntax help cheat sheet.
 - **History and Progress.** A month calendar marks workout days (filled) and
   weigh-in days (outlined); click a day for its entries. Progress shows body
   weight with a 7-day average and a dashed projection, this week's volume, and
@@ -85,7 +83,7 @@ flowchart LR
 
 ```
 web/                React web app (Vite, TypeScript strict)
-  src/notebook/     the Notebook: feed, entry, composer, preview, fixes
+  src/notebook/     the Notebook: feed, entry, composer, parse line, fixes
   src/tools/        the Tools menu (the bot's slash commands)
   src/pages/        History (calendar), Progress, lift detail, Settings, sign-in
   src/components/   UI built on the design tokens
@@ -105,7 +103,7 @@ docs/               SETUP.md (one-time setup), DEMO.md (demo checklist)
 |---|---|---|
 | Web | Vite, React 19, TypeScript strict | Fast dev server and builds; strict types end to end |
 | Routing | React Router | Signed-in and signed-out route guards, deep links like `/progress/bench` |
-| Data fetching | TanStack Query | Caching, debounced live preview, invalidation after every save |
+| Data fetching | TanStack Query | Caching, the debounced parse-as-you-type, optimistic saves with rollback |
 | Charts | Recharts (SVG) | Composed line, dot and bar charts with full control of colors and dashes |
 | Auth | Firebase Auth (JS SDK) + Admin SDK | Email, Google popup and custom tokens without running an auth server |
 | API | FastAPI + Pydantic v2 | Typed request and response models and automatic validation |
@@ -179,7 +177,7 @@ Highlights:
   (with same-day re-parsing), the calendar, the tools, CSV export, and that
   logging makes zero LLM calls.
 - `web/src/test`: design-token contrast, the API client's timeout and error
-  handling, the text helpers behind the syntax buttons and fixes, and the
+  handling, the fix helpers, optimistic saving with rollback, and the
   composer (Enter vs Shift+Enter, Ask mode), fixes, edit, delete with undo, and
   the calendar.
 

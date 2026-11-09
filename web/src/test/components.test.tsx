@@ -5,7 +5,7 @@ import { useState, type ReactNode } from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ToastProvider, UNDO_MS } from '@/components/Toast';
-import type { Log, Mode, ParseResult, ParseWarning, Unit } from '@/lib/types';
+import type { Log, Mode, ParseResult, ParseWarning } from '@/lib/types';
 import { Composer } from '@/notebook/Composer';
 import { Entry } from '@/notebook/Entry';
 import { FixList } from '@/notebook/FixList';
@@ -62,7 +62,6 @@ beforeEach(() => {
 function ComposerHarness({ onSend, initialMode = 'workout' }: { onSend: (text: string) => void; initialMode?: Mode }) {
   const [text, setText] = useState('');
   const [mode, setMode] = useState<Mode>(initialMode);
-  const [wu, setWu] = useState<Unit>('lb');
   return (
     <Composer
       mode={mode}
@@ -73,17 +72,20 @@ function ComposerHarness({ onSend, initialMode = 'workout' }: { onSend: (text: s
       sending={false}
       error={null}
       unit="lb"
-      weightUnit={wu}
-      onWeightUnitChange={setWu}
-      lastSet={null}
-      lastWeightLb={182.4}
+      tz="America/Chicago"
       tools={null}
-      onHelp={() => {}}
     />
   );
 }
 
 describe('Composer', () => {
+  it('is just the mode switch, a time line and the text box', () => {
+    wrap(<ComposerHarness onSend={vi.fn()} />);
+    expect(screen.queryByRole('toolbar')).not.toBeInTheDocument();
+    expect(screen.getByLabelText('Sets, one per line')).toBeInTheDocument();
+    expect(document.querySelector('time')?.textContent).toMatch(/^(Sun|Mon|Tue|Wed|Thu|Fri|Sat), \w{3} \d{1,2} · \d{1,2}:\d{2} (AM|PM)$/);
+  });
+
   it('sends on Enter and adds a line on Shift+Enter', async () => {
     const onSend = vi.fn();
     wrap(<ComposerHarness onSend={onSend} />);
@@ -95,28 +97,18 @@ describe('Composer', () => {
     expect(onSend).toHaveBeenCalledWith('5x 155lb bench\n8x 135lb');
   });
 
-  it('syntax buttons insert at the cursor', async () => {
-    wrap(<ComposerHarness onSend={vi.fn()} />);
-    const input = screen.getByLabelText('Sets, one per line');
-    await userEvent.type(input, '8');
-    await userEvent.click(screen.getByRole('button', { name: /Insert x/ }));
-    await userEvent.click(screen.getByRole('button', { name: /Insert uw/ }));
-    expect(input).toHaveValue('8x uw ');
-  });
-
-  it('shows the live preview from /parse with the mode', async () => {
+  it('reads the text in one line, using the mode', async () => {
     wrap(<ComposerHarness onSend={vi.fn()} />);
     await userEvent.type(screen.getByLabelText('Sets, one per line'), '5x 155lb 1x bench');
-    expect(await screen.findByRole('table', { name: 'Preview of parsed sets' })).toBeInTheDocument();
+    expect(await screen.findByText('2 sets · Bench')).toBeInTheDocument();
     expect(apiMock).toHaveBeenCalledWith('/parse', expect.objectContaining({ body: { text: '5x 155lb 1x bench', mode: 'workout' } }));
   });
 
-  it('Ask mode is clearly marked and has no logging tools', async () => {
+  it('Ask mode is clearly marked', async () => {
     wrap(<ComposerHarness onSend={vi.fn()} />);
     await userEvent.click(screen.getByRole('radio', { name: 'Ask' }));
     expect(screen.getByText(/goes to Claude/)).toBeInTheDocument();
     expect(screen.getByLabelText('Question for Jarvis')).toHaveAttribute('placeholder', 'Is my bench still improving?');
-    expect(screen.queryByRole('toolbar', { name: 'Insert syntax' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Ask Jarvis' })).toBeInTheDocument();
   });
 
@@ -129,13 +121,6 @@ describe('Composer', () => {
     expect(screen.getByRole('button', { name: 'Log sets' })).toBeEnabled();
     await userEvent.click(screen.getByRole('radio', { name: 'Weight' }));
     expect(screen.getByRole('button', { name: 'Save weight' })).toBeInTheDocument();
-  });
-
-  it('weight mode offers Same as last in the chosen unit', async () => {
-    wrap(<ComposerHarness onSend={vi.fn()} initialMode="weight" />);
-    await userEvent.click(screen.getByRole('radio', { name: 'kg' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Same as last' }));
-    expect(screen.getByLabelText('Weigh-in')).toHaveValue('82.7kg');
   });
 });
 

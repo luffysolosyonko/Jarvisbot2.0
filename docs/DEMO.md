@@ -49,8 +49,8 @@ Run every command from the repo root unless it says otherwise. Use PowerShell.
 |---|---|---|---|
 | 0:00 | Sign in | Show the form, then click **Try the demo** | Email, Google popup and the demo all go through Firebase. The demo is a custom token for one fixed account, minted by the API; there's no demo password. |
 | 0:30 | Notebook | Scroll the feed | A chat-style log like the Discord bot's channels: what was typed on top, parsed rows below, a "Logged" check. |
-| 1:00 | Notebook, Workout | Type `5x 155lb 2x1x1xf bench` slowly, then press Enter | The live preview splits one line into five sets, the last a failed rep. Enter saves; it shows up as "Logged". No AI is involved in logging. |
-| 1:30 | Notebook, Workout | Type `8`, click **x**, type ` 135`, click **lb**, then Shift+Enter and `8 135 squat` | Syntax buttons insert at the cursor. The bad line is flagged "Not understood" with fixes; click **Add unit: lb** and it's rewritten and re-parsed. |
+| 1:00 | Notebook, Workout | Type `5x 155lb 2x1x1xf bench`, then press Enter | The line above the box reads it back as "5 sets · Bench" and shows the time it'll be logged at, like a chat. Enter saves and it appears at once as "Logged" (the table shows the last set as a failed rep). No AI is involved in logging. |
+| 1:30 | Notebook, Workout | Type `8x 135lb bench`, Shift+Enter, then `8 135 squat` | The bad line is flagged "Not understood" with fixes; click **Add unit: lb** and it's rewritten and re-parsed. **Tools > Syntax help** has every format and the keyboard shortcuts. |
 | 2:00 | Notebook, Weight | Switch to **Weight**, type `83.9kg`, Enter | Converted to 185 lb. Weight mode ignores set lines, just like the bot's #weight channel. |
 | 2:30 | Tools | **Tools > Predict lift**, pick **Bench**, target `225`, **Get date** | Every slash command is a button with dropdowns. The forecast is a regression over recent sessions, with the date you'd hit the target at this pace. |
 | 3:15 | History | Click a filled day in the calendar | Filled = workout, outlined = weigh-in only. The day's entries can be edited, fixed or deleted (with undo). |
