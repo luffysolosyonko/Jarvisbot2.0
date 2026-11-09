@@ -83,7 +83,8 @@ describe('Composer', () => {
     wrap(<ComposerHarness onSend={vi.fn()} />);
     expect(screen.getByRole('radio', { name: 'Workout' })).toHaveAttribute('aria-checked', 'true');
     expect(screen.getByRole('button', { name: 'Ask' })).toHaveAttribute('aria-pressed', 'false');
-    expect(screen.getByLabelText('Log a set')).toHaveAttribute('placeholder', '8x 135lb bench');
+    expect(screen.getByLabelText('Log a set')).toHaveAttribute('placeholder', 'reps x weight exercise');
+    expect(screen.getByText('e.g. 8x 135lb bench')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Save entry' })).toBeDisabled();
   });
 
@@ -108,7 +109,8 @@ describe('Composer', () => {
   it('Weight mode has its own label and placeholder', async () => {
     wrap(<ComposerHarness onSend={vi.fn()} />);
     await userEvent.click(screen.getByRole('radio', { name: 'Weight' }));
-    expect(screen.getByLabelText('Log weight')).toHaveAttribute('placeholder', '70.3kg');
+    expect(screen.getByLabelText('Log weight')).toHaveAttribute('placeholder', 'weight kg or lb');
+    expect(screen.getByText('e.g. 70.3kg or 155lb')).toBeInTheDocument();
   });
 
   it('Ask is a toggle: the question box, no preview, nothing selected in the switch', async () => {
@@ -120,7 +122,7 @@ describe('Composer', () => {
     const box = screen.getByLabelText('Ask Jarvis');
     expect(box).toHaveAttribute('placeholder', 'Is my bench still improving?');
     await userEvent.type(box, 'How is my squat?');
-    expect(screen.queryByText(/↳/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/↳|e\.g\./)).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Send question' }));
     expect(onSend).toHaveBeenCalledWith('How is my squat?');
     await userEvent.click(screen.getByRole('button', { name: 'Ask' }));

@@ -6,10 +6,17 @@ import type { LogMode, Mode, Unit } from '@/lib/types';
 
 import { ParseLine } from './ParseLine';
 
+/** The box shows the pattern; the line under it, an example of it. */
 const PLACEHOLDER: Record<Mode, string> = {
-  workout: '8x 135lb bench',
-  weight: '70.3kg',
+  workout: 'reps x weight exercise',
+  weight: 'weight kg or lb',
   ask: 'Is my bench still improving?',
+};
+
+const EXAMPLE: Record<Mode, string> = {
+  workout: 'e.g. 8x 135lb bench',
+  weight: 'e.g. 70.3kg or 155lb',
+  ask: '',
 };
 
 const LABEL: Record<Mode, string> = {
@@ -111,7 +118,9 @@ export function Composer({ mode, onModeChange, text, onTextChange, onSend, sendi
           {error}
         </p>
       ) : null}
-      {isAsk ? null : <ParseLine text={text} mode={mode} unit={unit} onTextChange={onTextChange} onModeChange={onModeChange} />}
+      {isAsk ? null : (
+        <ParseLine text={text} mode={mode} unit={unit} example={EXAMPLE[mode]} onTextChange={onTextChange} onModeChange={onModeChange} />
+      )}
     </div>
   );
 }

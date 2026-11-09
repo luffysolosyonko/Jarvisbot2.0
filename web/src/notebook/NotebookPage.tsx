@@ -206,7 +206,8 @@ export function NotebookPage() {
   }, [count, settled, tail]);
 
   // The header shows the date of the day you're reading: the last day heading that
-  // has scrolled up to (or under) the header, or the first day on the page.
+  // has scrolled up to (or under) the header, the first day at the top of the page,
+  // and the newest day at the bottom.
   useEffect(() => {
     let frame = 0;
     function update() {
@@ -217,6 +218,11 @@ export function NotebookPage() {
       for (const h of heads) {
         if (h.getBoundingClientRect().top > line) break;
         day = h.dataset.day ?? day;
+      }
+      // Scrolled to the end: the newest day, even if the one before still peeks in.
+      const doc = document.documentElement;
+      if (heads.length && window.scrollY + window.innerHeight >= doc.scrollHeight - 2) {
+        day = heads[heads.length - 1].dataset.day ?? day;
       }
       setShownDay(day);
     }
