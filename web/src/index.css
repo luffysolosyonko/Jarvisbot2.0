@@ -674,16 +674,35 @@ input[type='number']::-webkit-outer-spin-button {
 }
 
 /* ---------- tool panel and menu ---------- */
-.panel {
+/* A tool opens as a popup card: centered, sized to its content (up to most of the
+   screen), over a dimmed page. */
+.popup-backdrop {
   position: fixed;
-  top: 0;
-  bottom: var(--nav-h);
-  left: max(0px, calc(50% - var(--column) / 2));
-  width: min(var(--column), 100%);
-  background: var(--paper);
-  z-index: 30;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--s4);
+  background: rgb(28 26 23 / 0.35);
+  animation: fade-in 140ms ease both;
+}
+
+.panel {
   display: flex;
   flex-direction: column;
+  width: min(440px, 100%);
+  max-height: min(640px, calc(100dvh - 2 * var(--s5)));
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  overflow: hidden;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
 }
 
 .panel-header {
@@ -704,19 +723,13 @@ input[type='number']::-webkit-outer-spin-button {
 .panel-body {
   flex: 1;
   overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule) transparent;
   padding: var(--s4);
 }
 
 .panel:focus {
   outline: none;
-}
-
-/* Wider than the column: keep the column's side rules. */
-@media (min-width: 481px) {
-  .panel {
-    border-left: 1px solid var(--rule);
-    border-right: 1px solid var(--rule);
-  }
 }
 
 .panel:focus-visible {

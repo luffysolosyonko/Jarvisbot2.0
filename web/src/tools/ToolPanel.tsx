@@ -53,8 +53,8 @@ function Body({ id, onJump }: { id: ToolId; onJump: (log: Log) => void }) {
 }
 
 /**
- * A tool's result, as a sheet over the notebook: the app column's width, above the
- * tab bar. Focus moves to it when it opens.
+ * A tool's result, as a popup over the notebook (which is dimmed behind it). Close it
+ * with the ×, Escape, or a click outside. Focus moves to it when it opens.
  */
 export function ToolPanel({
   id,
@@ -79,16 +79,20 @@ export function ToolPanel({
     </div>
   );
   return (
-    <aside
-      ref={ref}
-      tabIndex={-1}
-      className="panel"
-      aria-label={title}
-      onKeyDown={(e) => e.key === 'Escape' && onClose()}>
-      {header}
-      <div className="panel-body">
-        <Body id={id} onJump={onJump} />
-      </div>
-    </aside>
+    <div className="popup-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+      <section
+        ref={ref}
+        tabIndex={-1}
+        role="dialog"
+        aria-modal="true"
+        aria-label={title}
+        className="panel"
+        onKeyDown={(e) => e.key === 'Escape' && onClose()}>
+        {header}
+        <div className="panel-body">
+          <Body id={id} onJump={onJump} />
+        </div>
+      </section>
+    </div>
   );
 }
