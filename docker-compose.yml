@@ -1,0 +1,21 @@
+# Local stack for development and the demo.
+# The api service is added in Phase 2 alongside its Dockerfile.
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: jarvis
+      POSTGRES_PASSWORD: jarvis # local-only throwaway credentials
+      POSTGRES_DB: jarvis
+    ports:
+      - "5432:5432"
+    volumes:
+      - jarvis-pg:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jarvis -d jarvis"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+
+volumes:
+  jarvis-pg:
