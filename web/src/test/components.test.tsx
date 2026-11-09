@@ -83,7 +83,7 @@ describe('Composer', () => {
     wrap(<ComposerHarness onSend={vi.fn()} />);
     expect(screen.getByRole('radio', { name: 'Workout' })).toHaveAttribute('aria-checked', 'true');
     expect(screen.getByRole('button', { name: 'Ask' })).toHaveAttribute('aria-pressed', 'false');
-    expect(screen.getByLabelText('Log a set')).toHaveAttribute('placeholder', 'reps x weight exercise');
+    expect(screen.getByLabelText('Log a set')).toHaveAttribute('placeholder', '(reps)x (weight) (lift)');
     expect(screen.getByText('e.g. 8x 135lb bench')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Save entry' })).toBeDisabled();
   });

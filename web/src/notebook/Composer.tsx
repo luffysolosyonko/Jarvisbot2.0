@@ -8,7 +8,7 @@ import { ParseLine } from './ParseLine';
 
 /** The box shows the pattern; the line under it, an example of it. */
 const PLACEHOLDER: Record<Mode, string> = {
-  workout: 'reps x weight exercise',
+  workout: '(reps)x (weight) (lift)',
   weight: 'weight kg or lb',
   ask: 'Is my bench still improving?',
 };
