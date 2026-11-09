@@ -1,6 +1,7 @@
 # Local stack for development and the demo: Postgres + the API on :8000.
 #   docker compose up -d --build
 #   docker compose exec api python -m jarvis_api.seed
+name: jarvis # fixed, so containers and the data volume don't depend on the folder name
 services:
   db:
     image: postgres:16
