@@ -1878,3 +1878,317 @@ figure .legend {
     scroll-behavior: auto !important;
   }
 }
+
+/* ---------- settings ----------
+   Sections ruled with --rule, rows with --rule-faint; no cards except the shorthand
+   block. Every control is at least 44px. */
+.settings .page-header {
+  margin-bottom: 0;
+  border-bottom: none;
+}
+
+.set-section {
+  padding: var(--s4) 0 var(--s3);
+  border-top: 1px solid var(--rule);
+}
+
+.set-heading {
+  margin-bottom: var(--s2);
+  font-family: var(--font-head);
+  font-style: italic;
+  font-weight: 600;
+  font-size: 20px;
+  line-height: 1.3;
+}
+
+.set-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s4);
+  min-height: 56px;
+  padding: var(--s2) 0;
+  border-top: 1px solid var(--rule-faint);
+  color: inherit;
+  text-decoration: none;
+}
+
+.set-heading + .set-row {
+  border-top: none;
+}
+
+.set-text {
+  min-width: 0;
+}
+
+.set-label {
+  font-size: 15px;
+}
+
+.set-caption {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--ink-3);
+}
+
+.set-meta {
+  margin-top: 2px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--ink-3);
+  overflow-wrap: anywhere;
+}
+
+.set-error {
+  color: var(--fail);
+  font-weight: 600;
+}
+
+.set-control {
+  flex: none;
+}
+
+/* The name: 15px medium, edited in place. */
+.set-name,
+.set-name-input {
+  display: block;
+  min-height: var(--touch);
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink);
+  text-align: left;
+  cursor: text;
+}
+
+.set-name-input {
+  width: 100%;
+  border-bottom: 1.5px solid var(--ink);
+}
+
+.set-name-input:focus {
+  outline: none;
+  border-bottom-color: var(--accent);
+}
+
+.set-placeholder {
+  color: var(--ink-3);
+}
+
+.set-account {
+  border-top: none;
+}
+
+.set-action {
+  min-height: var(--touch);
+  padding: 0 var(--s3);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--paper-raised);
+  color: var(--ink);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.set-action:hover:not(:disabled) {
+  border-color: var(--ink-3);
+}
+
+.set-action:disabled {
+  color: var(--ink-3);
+  cursor: default;
+}
+
+.set-expand {
+  padding: var(--s2) 0 var(--s4);
+}
+
+.set-link {
+  font-weight: normal;
+  cursor: pointer;
+}
+
+.set-link:hover .set-label {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.set-chevron {
+  flex: none;
+  color: var(--ink-3);
+}
+
+.set-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* −/+ stepper */
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--paper-raised);
+}
+
+.step-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--touch);
+  height: var(--touch);
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.step-btn:disabled {
+  color: var(--rule);
+  cursor: default;
+}
+
+.step-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  border-radius: var(--radius);
+}
+
+.step-value {
+  min-width: 3.2ch;
+  font-family: var(--font-mono);
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+
+.set-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s2);
+}
+
+.set-number {
+  width: 64px;
+  min-height: var(--touch);
+  padding: 0 var(--s2);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: var(--paper-raised);
+  font-family: var(--font-mono);
+  font-size: 15px;
+  text-align: right;
+  color: var(--ink);
+}
+
+.set-number:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 0;
+}
+
+.set-unit {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+/* The one card: shorthand examples. */
+.shorthand {
+  display: grid;
+  gap: var(--s2) var(--s4);
+  padding: var(--s4);
+  border-radius: var(--radius);
+  background: var(--paper-sunk);
+}
+
+.shorthand-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  gap: var(--s4);
+  align-items: baseline;
+}
+
+.shorthand dt {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.shorthand dd {
+  margin: 0;
+  font-size: 13px;
+  color: var(--ink-2);
+}
+
+.set-end {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--s2);
+  padding-top: var(--s5);
+}
+
+.set-signout {
+  min-height: 48px;
+}
+
+.set-delete {
+  align-self: center;
+  min-height: var(--touch);
+  padding: 0 var(--s3);
+  border: none;
+  background: none;
+  color: var(--fail);
+  font: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.set-delete:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.set-delete:focus-visible {
+  outline: 2px solid var(--fail);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.set-center {
+  text-align: center;
+}
+
+.set-footer {
+  padding: var(--s5) 0 var(--s4);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-3);
+  text-align: center;
+}
+
+.set-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  min-height: var(--touch);
+  margin-bottom: var(--s1);
+  color: var(--accent);
+  font-size: 14px;
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.set-intro {
+  margin-bottom: var(--s5);
+  font-size: 13px;
+}

@@ -1,6 +1,6 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
-import { api } from '@/lib/api';
+import { api, uploadFile } from '@/lib/api';
 import type {
   Alias,
   AliasMatch,
@@ -8,9 +8,11 @@ import type {
   AskMessage,
   CalendarMonth,
   Dashboard,
+  DataSummary,
   ExerciseDetail,
   ExerciseSummary,
   Forecast,
+  ImportResult,
   Log,
   LogMode,
   Me,
@@ -35,7 +37,7 @@ export const keys = {
 
 /** Anything derived from logs: refresh it all after a log changes. */
 function invalidateLogData(qc: ReturnType<typeof useQueryClient>) {
-  for (const key of [['logs'], ['dashboard'], ['exercises'], ['exercise'], ['calendar'], ['today'], ['stats'], ['volume'], ['search'], ['forecast'], ['weight-forecast']]) {
+  for (const key of [['logs'], ['data-summary'], ['dashboard'], ['exercises'], ['exercise'], ['calendar'], ['today'], ['stats'], ['volume'], ['search'], ['forecast'], ['weight-forecast']]) {
     void qc.invalidateQueries({ queryKey: key });
   }
 }
@@ -177,6 +179,30 @@ export function useClearAskHistory() {
   return useMutation({
     mutationFn: () => api<{ cleared: number }>('/ask/history/clear', { method: 'POST' }),
     onSuccess: () => qc.setQueryData(['ask-history'], []),
+  });
+}
+
+/** How much is stored: "N sets · M weigh-ins". */
+export function useDataSummary() {
+  return useQuery({ queryKey: ['data-summary'], queryFn: () => api<DataSummary>('/me/data') });
+}
+
+/** Import a Jarvis 1.0 database file; everything derived from logs refreshes after. */
+export function useImportJarvis1() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (file: File) => uploadFile<ImportResult>('/import/jarvis1', file),
+    onSuccess: () => {
+      invalidateLogData(qc);
+      void qc.invalidateQueries({ queryKey: ['aliases'] });
+    },
+  });
+}
+
+/** Delete the account and all its data (the server checks the typed DELETE too). */
+export function useDeleteAccount() {
+  return useMutation({
+    mutationFn: () => api<void>('/me', { method: 'DELETE', body: { confirm: 'DELETE' } }),
   });
 }
 

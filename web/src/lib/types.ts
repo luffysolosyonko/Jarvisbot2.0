@@ -10,7 +10,7 @@ export type Me = {
   auth_provider: string;
   is_demo: boolean;
   created_at: string;
-  settings: { tz_name: string; set_unit: Unit; bar_lb: number };
+  settings: { tz_name: string; set_unit: Unit; bar_lb: number; outlier_pct: number };
 };
 
 export type ParsedSet = {
@@ -236,4 +236,6 @@ export type SearchResult = { query: string; logs: Log[]; truncated: boolean };
 
 
 export type Alias = { id: number; short: string; full: string };
+export type DataSummary = { sets: number; weigh_ins: number };
+export type ImportResult = { imported: number; duplicates: number; unreadable: number; aliases_added: number };
 export type AliasMatch = { written: string; matched: string; sets: number };
