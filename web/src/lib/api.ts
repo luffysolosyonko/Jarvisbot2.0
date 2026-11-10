@@ -99,35 +99,6 @@ export function setTokenGetter(getter: () => Promise<string | null>): void {
   tokenGetter = getter;
 }
 
-/** Upload a file as the raw request body (the Jarvis 1.0 import). */
-export async function uploadFile<T>(path: string, file: Blob, timeoutMs = 120_000): Promise<T> {
-  const token = await tokenGetter();
-  if (!token) throw new ApiError(401, 'unauthenticated', 'Sign in to continue.');
-  const controller = new AbortController();
-  const timer = setTimeout(() => controller.abort(), timeoutMs);
-  let res: Response;
-  try {
-    res = await fetch(`${config.apiUrl}${API_PREFIX}${path}`, {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/octet-stream' },
-      body: file,
-      signal: controller.signal,
-    });
-  } catch {
-    throw controller.signal.aborted
-      ? new ApiError(0, 'timeout', 'The import took too long. Try again.')
-      : new ApiError(0, 'network', "Can't reach the server. Check your connection and try again.");
-  } finally {
-    clearTimeout(timer);
-  }
-  const data: unknown = await res.json().catch(() => null);
-  if (!res.ok) {
-    const err = (data as { error?: { code?: string; message?: string } } | null)?.error;
-    throw new ApiError(res.status, err?.code ?? 'error', err?.message ?? 'The import didn’t work. Try again.');
-  }
-  return data as T;
-}
-
 /** The current ID token (waits for the sign-in to be restored), or null. */
 export function authToken(): Promise<string | null> {
   return tokenGetter();

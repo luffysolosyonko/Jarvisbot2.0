@@ -1,23 +1,20 @@
-import { ChevronRight, Minus, Plus } from 'lucide-react';
+import { ChevronRight } from 'lucide-react';
 import { useEffect, useId, useRef, useState, type FormEvent, type KeyboardEvent, type ReactNode } from 'react';
 import { Link, useNavigate } from 'react-router';
 
 import { useAuth } from '@/auth/AuthProvider';
-import { Dots } from '@/components/Loading';
 import { Segmented } from '@/components/Segmented';
 import { QueryView } from '@/components/States';
 import {
   useAliases,
   useDataSummary,
   useDeleteAccount,
-  useImportJarvis1,
   useMe,
   useUpdateSettings,
 } from '@/hooks/queries';
-import { useDelayedFlag } from '@/hooks/useDelayedFlag';
 import { useTitle } from '@/hooks/useTitle';
 import { downloadFile, errorMessage } from '@/lib/api';
-import { exerciseName, fromLb, num, toLb } from '@/lib/format';
+import { exerciseName } from '@/lib/format';
 import type { Me, Unit } from '@/lib/types';
 
 import { ChangePassword } from './ChangePassword';
@@ -51,26 +48,24 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
   );
 }
 
-/** The name, edited in place: click it, type, Enter (or click away) saves. */
+/** Your name: shown with an Edit button; Enter or Save keeps it, Escape cancels. */
 function DisplayName({ me }: { me: Me }) {
   const update = useUpdateSettings();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(me.display_name ?? '');
   const id = useId();
-  function commit() {
+  function save(e?: FormEvent) {
+    e?.preventDefault();
     setEditing(false);
     if (draft.trim() !== (me.display_name ?? '')) update.mutate({ display_name: draft.trim() });
   }
-  function onKey(e: KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Enter') commit();
-    else if (e.key === 'Escape') {
-      setDraft(me.display_name ?? '');
-      setEditing(false);
-    }
+  function cancel() {
+    setDraft(me.display_name ?? '');
+    setEditing(false);
   }
   if (editing)
     return (
-      <>
+      <form className="set-row set-name-form" onSubmit={save}>
         <label htmlFor={id} className="visually-hidden">
           Your name
         </label>
@@ -80,55 +75,22 @@ function DisplayName({ me }: { me: Me }) {
           value={draft}
           maxLength={60}
           autoFocus
+          autoComplete="name"
+          placeholder="Your name"
           onChange={(e) => setDraft(e.target.value)}
-          onBlur={commit}
-          onKeyDown={onKey}
+          onKeyDown={(e: KeyboardEvent<HTMLInputElement>) => e.key === 'Escape' && cancel()}
         />
-      </>
+        <button type="submit" className="set-action">
+          Save
+        </button>
+      </form>
     );
   return (
-    <button type="button" className="set-name" onClick={() => setEditing(true)} title="Edit your name">
-      {me.display_name || <span className="set-placeholder">Add your name</span>}
-    </button>
-  );
-}
-
-/** −/+ for "Double-check weigh-ins": 1–15%, saved as you press. */
-function Stepper({ value, onChange, labelledBy }: { value: number; onChange: (v: number) => void; labelledBy: string }) {
-  return (
-    <div className="stepper" role="group" aria-labelledby={labelledBy}>
-      <button type="button" className="step-btn" aria-label="Less" disabled={value <= 1} onClick={() => onChange(value - 1)}>
-        <Minus size={18} strokeWidth={2} aria-hidden="true" />
+    <Row label="Name" caption={me.display_name || 'Not set'}>
+      <button type="button" className="set-action" onClick={() => setEditing(true)}>
+        Edit
       </button>
-      <output className="step-value" aria-live="polite">
-        {value}%
-      </output>
-      <button type="button" className="step-btn" aria-label="More" disabled={value >= 15} onClick={() => onChange(value + 1)}>
-        <Plus size={18} strokeWidth={2} aria-hidden="true" />
-      </button>
-    </div>
-  );
-}
-
-function BarWeight({ me }: { me: Me }) {
-  const unit = me.settings.set_unit;
-  const [value, setValue] = useState(num(fromLb(me.settings.bar_lb, unit)));
-  const update = useUpdateSettings();
-  const id = useId();
-  function save(e?: FormEvent) {
-    e?.preventDefault();
-    const v = Number(value);
-    const lb = Math.round(toLb(v, unit) * 10) / 10;
-    if (Number.isFinite(v) && v >= 0 && lb !== me.settings.bar_lb) update.mutate({ bar_lb: lb });
-  }
-  return (
-    <form className="set-inline" onSubmit={save}>
-      <label htmlFor={id} className="visually-hidden">
-        Bar weight in {unit}
-      </label>
-      <input id={id} className="set-number" inputMode="decimal" value={value} onChange={(e) => setValue(e.target.value)} onBlur={() => save()} />
-      <span className="set-unit">{unit}</span>
-    </form>
+    </Row>
   );
 }
 
@@ -143,68 +105,6 @@ function AliasCaption() {
       {first.short} → {exerciseName(first.full)}
       {list.length > 1 ? ` · ${list.length - 1} more` : ''}
     </>
-  );
-}
-
-const SHORTHAND: [string, string][] = [
-  ['8x 160lb bench', 'reps, weight, exercise'],
-  ['5x 70kg squat', 'kg becomes lb'],
-  ['10x uw dips', 'bodyweight'],
-  ['3x 70/80kg row', 'estimated weight'],
-  ['5x2f 135lb', '2 reps failed'],
-  ['3xf 155lb', 'last rep failed'],
-];
-
-function ImportRow() {
-  const run = useImportJarvis1();
-  const input = useRef<HTMLInputElement>(null);
-  const busy = useDelayedFlag(run.isPending);
-  const r = run.data;
-  return (
-    <Row
-      label="Import from Jarvis 1.0"
-      caption={
-        run.isPending ? (
-          busy ? (
-            <span role="status">
-              Importing
-              <Dots />
-            </span>
-          ) : (
-            'The Discord bot’s jarvis.db file'
-          )
-        ) : run.error ? (
-          <span className="set-error" role="alert">
-            {errorMessage(run.error)}
-          </span>
-        ) : r ? (
-          <span role="status">
-            Imported {r.imported} {r.imported === 1 ? 'entry' : 'entries'}
-            {r.duplicates ? ` · ${r.duplicates} already here` : ''}
-            {r.unreadable ? ` · ${r.unreadable} unreadable` : ''}
-            {r.aliases_added ? ` · ${r.aliases_added} names` : ''}
-          </span>
-        ) : (
-          'The Discord bot’s jarvis.db file; duplicates are skipped'
-        )
-      }>
-      <input
-        ref={input}
-        type="file"
-        accept=".db,.sqlite,.sqlite3,application/x-sqlite3,application/vnd.sqlite3"
-        className="visually-hidden"
-        tabIndex={-1}
-        aria-hidden="true"
-        onChange={(e) => {
-          const f = e.target.files?.[0];
-          if (f) run.mutate(f);
-          e.target.value = '';
-        }}
-      />
-      <button type="button" className="set-action" disabled={run.isPending} onClick={() => input.current?.click()}>
-        Choose file
-      </button>
-    </Row>
   );
 }
 
@@ -325,7 +225,6 @@ export function SettingsPage() {
   const { signOut, hasPassword } = useAuth();
   const [showPassword, setShowPassword] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  const checkId = useId();
 
   return (
     <main className="main settings" id="main">
@@ -338,12 +237,11 @@ export function SettingsPage() {
             <Section title="Account">
               <div className="set-row set-account">
                 <div className="set-text">
-                  <DisplayName key={m.display_name ?? ''} me={m} />
-                  <div className="set-meta">
-                    {m.email ?? 'no email'} · {PROVIDERS[m.auth_provider] ?? m.auth_provider}
-                  </div>
+                  <div className="set-label">{m.email ?? 'No email'}</div>
+                  <div className="set-meta">signed in with {PROVIDERS[m.auth_provider] ?? m.auth_provider}</div>
                 </div>
               </div>
+              <DisplayName key={m.display_name ?? ''} me={m} />
               {hasPassword ? (
                 <>
                   <Row label="Password">
@@ -376,9 +274,6 @@ export function SettingsPage() {
                   ]}
                 />
               </Row>
-              <Row label="Double-check weigh-ins" caption="When off your 7-day average by" id={checkId}>
-                <Stepper value={m.settings.outlier_pct ?? 5} labelledBy={checkId} onChange={(v) => update.mutate({ outlier_pct: v })} />
-              </Row>
               <Link to="/settings/names" className="set-row set-link">
                 <div className="set-text">
                   <div className="set-label">Exercise names</div>
@@ -388,9 +283,6 @@ export function SettingsPage() {
                 </div>
                 <ChevronRight size={20} strokeWidth={1.8} aria-hidden="true" className="set-chevron" />
               </Link>
-              <Row label="Bar weight" caption="What “bar” means, like 8x bar bench">
-                <BarWeight key={`${m.settings.set_unit}-${m.settings.bar_lb}`} me={m} />
-              </Row>
               {update.error ? (
                 <p className="error-text" role="alert">
                   {errorMessage(update.error)}
@@ -398,19 +290,7 @@ export function SettingsPage() {
               ) : null}
             </Section>
 
-            <Section title="Shorthand">
-              <dl className="shorthand">
-                {SHORTHAND.map(([ex, what]) => (
-                  <div key={ex} className="shorthand-row">
-                    <dt>{ex}</dt>
-                    <dd>{what}</dd>
-                  </div>
-                ))}
-              </dl>
-            </Section>
-
             <Section title="Your data">
-              <ImportRow />
               <ExportRow />
             </Section>
 

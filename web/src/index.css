@@ -1880,8 +1880,7 @@ figure .legend {
 }
 
 /* ---------- settings ----------
-   Sections ruled with --rule, rows with --rule-faint; no cards except the shorthand
-   block. Every control is at least 44px. */
+   Sections ruled with --rule, rows with --rule-faint; no cards. Every control is at least 44px. */
 .settings .page-header {
   margin-bottom: 0;
   border-bottom: none;
@@ -1948,8 +1947,11 @@ figure .legend {
   flex: none;
 }
 
-/* The name: 15px medium, edited in place. */
-.set-name,
+/* The name, edited in its row. */
+.set-name-form {
+  gap: var(--s3);
+}
+
 .set-name-input {
   display: block;
   min-height: var(--touch);
@@ -1965,7 +1967,8 @@ figure .legend {
 }
 
 .set-name-input {
-  width: 100%;
+  flex: 1;
+  min-width: 0;
   border-bottom: 1.5px solid var(--ink);
 }
 
@@ -2027,105 +2030,6 @@ figure .legend {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
   border-radius: 4px;
-}
-
-/* −/+ stepper */
-.stepper {
-  display: inline-flex;
-  align-items: center;
-  border: 1px solid var(--rule);
-  border-radius: var(--radius);
-  background: var(--paper-raised);
-}
-
-.step-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: var(--touch);
-  height: var(--touch);
-  padding: 0;
-  border: none;
-  background: none;
-  color: var(--ink);
-  cursor: pointer;
-}
-
-.step-btn:disabled {
-  color: var(--rule);
-  cursor: default;
-}
-
-.step-btn:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: -2px;
-  border-radius: var(--radius);
-}
-
-.step-value {
-  min-width: 3.2ch;
-  font-family: var(--font-mono);
-  font-size: 15px;
-  font-variant-numeric: tabular-nums;
-  text-align: center;
-}
-
-.set-inline {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--s2);
-}
-
-.set-number {
-  width: 64px;
-  min-height: var(--touch);
-  padding: 0 var(--s2);
-  border: 1px solid var(--rule);
-  border-radius: var(--radius);
-  background: var(--paper-raised);
-  font-family: var(--font-mono);
-  font-size: 15px;
-  text-align: right;
-  color: var(--ink);
-}
-
-.set-number:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 0;
-}
-
-.set-unit {
-  font-family: var(--font-mono);
-  font-size: 13px;
-  color: var(--ink-2);
-}
-
-/* The one card: shorthand examples. */
-.shorthand {
-  display: grid;
-  gap: var(--s2) var(--s4);
-  padding: var(--s4);
-  border-radius: var(--radius);
-  background: var(--paper-sunk);
-}
-
-.shorthand-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
-  gap: var(--s4);
-  align-items: baseline;
-}
-
-.shorthand dt {
-  font-family: var(--font-mono);
-  font-size: 13px;
-  color: var(--ink);
-}
-
-.shorthand dd {
-  margin: 0;
-  font-size: 13px;
-  color: var(--ink-2);
 }
 
 .set-end {

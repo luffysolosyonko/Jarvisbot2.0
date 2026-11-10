@@ -13,7 +13,7 @@ const ME: Me = {
   auth_provider: 'google.com',
   is_demo: false,
   created_at: '2026-01-01T00:00:00Z',
-  settings: { tz_name: 'UTC', set_unit: 'lb', bar_lb: 45, outlier_pct: 5 },
+  settings: { tz_name: 'UTC', set_unit: 'lb' },
 };
 
 const update = vi.fn();
@@ -23,7 +23,6 @@ vi.mock('@/hooks/queries', () => ({
   useUpdateSettings: () => ({ mutate: update, isPending: false, error: null }),
   useAliases: () => ({ data: [{ id: 1, short: 'bench', full: 'bench press' }, { id: 2, short: 'inc', full: 'incline' }] }),
   useDataSummary: () => ({ data: { sets: 613, weigh_ins: 60 } }),
-  useImportJarvis1: () => ({ mutate: vi.fn(), isPending: false, error: null, data: undefined }),
   useDeleteAccount: () => ({ mutate: del, isPending: false, error: null }),
 }));
 vi.mock('@/auth/AuthProvider', () => ({ useAuth: () => ({ signOut: vi.fn(), hasPassword: false }) }));
@@ -42,24 +41,43 @@ function renderPage() {
 }
 
 describe('Settings', () => {
-  it('shows the account, the alias caption, live counts, shorthand and the footer', () => {
+  it('shows the account, the alias caption, live counts and the footer, and nothing removed', () => {
     renderPage();
     expect(screen.getByText('Tom')).toBeInTheDocument();
-    expect(screen.getByText('tom@example.com · Google')).toBeInTheDocument();
+    expect(screen.getByText('tom@example.com')).toBeInTheDocument();
+    expect(screen.getByText('signed in with Google')).toBeInTheDocument();
     expect(screen.getByText('bench → Bench press · 1 more')).toBeInTheDocument();
     expect(screen.getByText('613 sets · 60 weigh-ins')).toBeInTheDocument();
-    expect(screen.getByText('3xf 155lb')).toBeInTheDocument();
-    expect(screen.getByText('last rep failed')).toBeInTheDocument();
     expect(screen.getByText('Jarvis 2.0 · built by Tom')).toBeInTheDocument();
+    for (const gone of [/Double-check/, /Bar weight/, /Shorthand/, /Jarvis 1\.0/])
+      expect(screen.queryByText(gone)).not.toBeInTheDocument();
   });
 
-  it('applies settings immediately: unit and the weigh-in check', async () => {
+  it('applies the unit immediately', async () => {
     renderPage();
     await userEvent.click(screen.getByRole('radio', { name: 'kg' }));
     expect(update).toHaveBeenCalledWith({ set_unit: 'kg' });
-    const check = screen.getByRole('group', { name: 'Double-check weigh-ins' });
-    await userEvent.click(within(check).getByRole('button', { name: 'More' }));
-    expect(update).toHaveBeenCalledWith({ outlier_pct: 6 });
+  });
+
+  it('edits the name: Edit, type, Enter saves; Escape cancels', async () => {
+    renderPage();
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }));
+    const box = screen.getByLabelText('Your name');
+    await userEvent.clear(box);
+    await userEvent.type(box, '  Thomas  {Enter}');
+    expect(update).toHaveBeenCalledWith({ display_name: 'Thomas' });
+    update.mockClear();
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }));
+    await userEvent.type(screen.getByLabelText('Your name'), 'xyz{Escape}');
+    expect(update).not.toHaveBeenCalled();
+    expect(screen.getByText('Tom')).toBeInTheDocument();
+  });
+
+  it('saving the same name sends nothing', async () => {
+    renderPage();
+    await userEvent.click(screen.getByRole('button', { name: 'Edit' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(update).not.toHaveBeenCalled();
   });
 
   it('deletes only after DELETE is typed', async () => {
