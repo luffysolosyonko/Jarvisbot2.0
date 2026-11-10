@@ -13,12 +13,14 @@ import { LiftPage } from '@/pages/LiftPage';
 import { ProgressPage } from '@/pages/ProgressPage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { SignInPage } from '@/pages/SignInPage';
+import { VerifyEmailPage } from '@/pages/VerifyEmailPage';
 
 function RequireUser({ children }: { children: ReactNode }) {
-  const { user, initializing } = useAuth();
+  const { user, initializing, needsVerification } = useAuth();
   const location = useLocation();
   if (initializing) return <Splash />;
   if (!user) return <Navigate to="/sign-in" replace state={{ from: location.pathname + location.search }} />;
+  if (needsVerification) return <VerifyEmailPage />;
   return <>{children}</>;
 }
 

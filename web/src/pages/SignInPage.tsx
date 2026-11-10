@@ -3,7 +3,8 @@ import { useState, type FormEvent } from 'react';
 import { useAuth } from '@/auth/AuthProvider';
 import { useTitle } from '@/hooks/useTitle';
 import { errorMessage } from '@/lib/api';
-import { passwordOk, passwordRules } from '@/lib/password';
+import { PasswordRules } from '@/components/PasswordRules';
+import { passwordOk } from '@/lib/password';
 
 type View = 'sign-in' | 'sign-up' | 'reset';
 type Busy = 'email' | 'google' | null;
@@ -132,16 +133,7 @@ export function SignInPage() {
                 aria-describedby={view === 'sign-up' ? 'password-rules' : undefined}
                 required
               />
-              {view === 'sign-up' ? (
-                <ul id="password-rules" className="password-rules" aria-label="Password needs">
-                  {passwordRules(password).map((r) => (
-                    <li key={r.id} className={r.ok ? 'ok' : undefined}>
-                      <span aria-hidden="true">{r.ok ? '✓' : '·'}</span> {r.label}
-                      <span className="visually-hidden">{r.ok ? ' (done)' : ' (needed)'}</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : null}
+              {view === 'sign-up' ? <PasswordRules id="password-rules" password={password} /> : null}
             </div>
           ) : null}
 

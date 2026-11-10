@@ -8,6 +8,7 @@ const MESSAGES: Record<string, string> = {
   'auth/email-already-in-use': 'An account with that email already exists. Sign in instead.',
   'auth/weak-password': 'Use a password with at least 6 characters.',
   'auth/too-many-requests': 'Too many attempts. Wait a minute and try again.',
+  'auth/requires-recent-login': 'For your security, sign out and back in, then change your password.',
   'auth/network-request-failed': 'Can’t reach the sign-in service. Check your connection.',
   'auth/user-disabled': 'This account has been disabled.',
   'auth/popup-blocked': 'Your browser blocked the Google sign-in window. Allow pop-ups for this site and try again.',

@@ -1,12 +1,16 @@
 import { useQueryClient } from '@tanstack/react-query';
 import {
   createUserWithEmailAndPassword,
+  EmailAuthProvider,
   GoogleAuthProvider,
   onAuthStateChanged,
+  reauthenticateWithCredential,
+  sendEmailVerification,
   sendPasswordResetEmail,
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut as fbSignOut,
+  updatePassword,
   type User,
 } from 'firebase/auth';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
@@ -25,7 +29,17 @@ type AuthState = {
   resetPassword: (email: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
+  /** A new email/password account that hasn't opened its verification link yet. */
+  needsVerification: boolean;
+  /** Email/password accounts can change their password; Google accounts can't here. */
+  hasPassword: boolean;
+  resendVerification: () => Promise<void>;
+  /** Re-read the user from Firebase; true once the email is verified. */
+  refreshUser: () => Promise<boolean>;
+  changePassword: (current: string, next: string) => Promise<void>;
 };
+
+const isPasswordUser = (u: User | null) => !!u && u.providerData.some((p) => p.providerId === 'password');
 
 const AuthContext = createContext<AuthState | null>(null);
 
@@ -53,6 +67,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
   const [initializing, setInitializing] = useState(firebaseConfigured);
+  // Firebase updates the same User object in place (reload): bump this to re-render.
+  const [version, setVersion] = useState(0);
 
   useEffect(() => {
     const auth = getFirebaseAuth();
@@ -75,7 +91,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signUp = useCallback(
     (email: string, password: string) =>
       wrap(async () => {
-        await createUserWithEmailAndPassword(requireAuth(), email.trim(), password);
+        const cred = await createUserWithEmailAndPassword(requireAuth(), email.trim(), password);
+        // Step 2: confirm the address before the account can be used.
+        await sendEmailVerification(cred.user);
       }),
     [],
   );
@@ -99,15 +117,73 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [],
   );
 
+  const resendVerification = useCallback(
+    () =>
+      wrap(async () => {
+        const current = requireAuth().currentUser;
+        if (current) await sendEmailVerification(current);
+      }),
+    [],
+  );
+
+  const refreshUser = useCallback(
+    () =>
+      wrap(async () => {
+        const current = requireAuth().currentUser;
+        if (!current) return false;
+        await current.reload();
+        if (current.emailVerified) await current.getIdToken(true); // a token that says so
+        setVersion((v) => v + 1);
+        return current.emailVerified;
+      }),
+    [],
+  );
+
+  const changePassword = useCallback(
+    (currentPassword: string, next: string) =>
+      wrap(async () => {
+        const current = requireAuth().currentUser;
+        if (!current?.email) throw new ApiError(0, 'auth', 'Sign in again to change your password.');
+        try {
+          await reauthenticateWithCredential(current, EmailAuthProvider.credential(current.email, currentPassword));
+        } catch (e) {
+          const code = (e as { code?: unknown } | null)?.code;
+          if (code === 'auth/invalid-credential' || code === 'auth/wrong-password') {
+            throw new ApiError(0, 'auth', 'That current password isn’t right.');
+          }
+          throw e;
+        }
+        await updatePassword(current, next);
+      }),
+    [],
+  );
+
   const signOut = useCallback(async () => {
     const auth = getFirebaseAuth();
     if (auth) await fbSignOut(auth);
     queryClient.clear();
   }, [queryClient]);
 
+  const needsVerification = isPasswordUser(user) && !user?.emailVerified;
+  const hasPassword = isPasswordUser(user);
   const value = useMemo(
-    () => ({ user, initializing, signIn, signUp, resetPassword, signInWithGoogle, signOut }),
-    [user, initializing, signIn, signUp, resetPassword, signInWithGoogle, signOut],
+    () => ({
+      user,
+      initializing,
+      signIn,
+      signUp,
+      resetPassword,
+      signInWithGoogle,
+      signOut,
+      needsVerification,
+      hasPassword,
+      resendVerification,
+      refreshUser,
+      changePassword,
+    }),
+    // `version` re-creates the value after a reload changes the user in place.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [user, version, initializing, signIn, signUp, resetPassword, signInWithGoogle, signOut, needsVerification, hasPassword, resendVerification, refreshUser, changePassword],
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

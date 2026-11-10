@@ -12,6 +12,8 @@ import { deviceTimeZone, fromLb, num, toLb } from '@/lib/format';
 import type { Me, Unit } from '@/lib/types';
 import { AliasesTool, ExportTool } from '@/tools/ToolViews';
 
+import { ChangePassword } from './ChangePassword';
+
 
 function BarWeight({ me }: { me: Me }) {
   const unit = me.settings.set_unit;
@@ -94,6 +96,9 @@ export function SettingsPage() {
             </Section>
             <Section title="Export">
               <ExportTool />
+            </Section>
+            <Section title="Password">
+              <ChangePassword isDemo={m.is_demo} />
             </Section>
             <Section title="Account">
               <div className="stack-3">
