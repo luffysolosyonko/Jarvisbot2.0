@@ -67,6 +67,17 @@ async function wrap<T>(fn: () => Promise<T>): Promise<T> {
   }
 }
 
+// Installed when this module loads, not in an effect: React runs child effects first,
+// so a page restored from the session cache would otherwise send its first requests
+// before the getter existed and fail with "Sign in to continue". Requests made while
+// Firebase restores the sign-in wait for it, then carry the token.
+setTokenGetter(async () => {
+  const auth = getFirebaseAuth();
+  if (!auth) return null;
+  await auth.authStateReady();
+  return auth.currentUser ? auth.currentUser.getIdToken() : null;
+});
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
@@ -78,11 +89,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const auth = getFirebaseAuth();
     if (!auth) return;
-    // Requests made while Firebase restores the sign-in wait for it, then carry the token.
-    setTokenGetter(async () => {
-      await auth.authStateReady();
-      return auth.currentUser ? auth.currentUser.getIdToken() : null;
-    });
     return onAuthStateChanged(auth, (u) => {
       // Someone else (or nobody) than last time: drop the cached data.
       if (u?.uid !== sessionHint()) {
