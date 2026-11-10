@@ -92,6 +92,10 @@ export function useParse(text: string, mode: LogMode) {
  * Save a log, showing it in the feed right away. If the save fails, the feed is
  * rolled back (the caller puts the text back in the input).
  */
+// Optimistic entries need ids no real log has (negative) and no other pending entry
+// has: two saves in the same millisecond must not share one (React keys).
+let tempIds = 0;
+
 export function useSaveLog(today: string) {
   const qc = useQueryClient();
   return useMutation({
@@ -101,7 +105,7 @@ export function useSaveLog(today: string) {
       const snapshot = qc.getQueriesData<Log[]>({ queryKey: keys.allLogs });
       const preview = qc.getQueryData<ParseResult>(['parse', body.mode, body.text.trim()]);
       const temp: Log = {
-        id: -Date.now(),
+        id: --tempIds,
         kind: body.mode,
         raw_text: body.text,
         logged_at: new Date().toISOString(),

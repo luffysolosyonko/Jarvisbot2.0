@@ -134,7 +134,7 @@ describe('optimistic entries', () => {
     const onRetry = vi.fn();
     wrap(<Entry log={{ ...LOG, sets: [], failed: 'Can’t reach the server.' }} unit="lb" onRetry={onRetry} onDiscard={vi.fn()} />);
     expect(screen.getByText('5x 155lb bench')).toBeInTheDocument();
-    expect(screen.getByRole('alert')).toHaveTextContent('✗ not saved · retry');
+    expect(screen.getByRole('alert')).toHaveTextContent('✗ not saved: Can’t reach the server · retry · discard');
     await userEvent.click(screen.getByRole('button', { name: 'retry' }));
     expect(onRetry).toHaveBeenCalled();
   });

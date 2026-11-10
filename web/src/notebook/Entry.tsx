@@ -247,7 +247,7 @@ export function Entry({
 
         {editing ? null : log.failed ? (
           <p className="note failed" role="alert">
-            <span title={log.failed}>✗ not saved</span>
+            ✗ not saved: {log.failed.replace(/\.$/, '')}
             {' · '}
             <button type="button" className="note-btn" onClick={onRetry}>
               retry

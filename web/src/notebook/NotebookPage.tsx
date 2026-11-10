@@ -383,9 +383,16 @@ export function NotebookPage() {
     );
   }
 
+  // A double tap (or a click and Enter together) sends the same text twice before
+  // the cleared box re-renders: drop a repeat of the same text within a second.
+  const lastSend = useRef<{ text: string; at: number } | null>(null);
+
   function send() {
     const t = text.trim();
     if (!t) return;
+    const now = Date.now();
+    if (lastSend.current && lastSend.current.text === t && now - lastSend.current.at < 1000) return;
+    lastSend.current = { text: t, at: now };
     setSendError(null);
     if (mode === 'ask') {
       runAsk(t);
@@ -456,7 +463,7 @@ export function NotebookPage() {
                 ) : null;
               lastDay = f.day;
               return (
-                <div key={f.kind === 'log' ? `l${f.log.id}` : f.item.key}>
+                <div key={f.kind === 'log' ? (f.log.retryKey ? `u${f.log.retryKey}` : `l${f.log.id}`) : f.item.key}>
                   {header}
                   {f.kind === 'log' ? (
                     <Entry

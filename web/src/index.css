@@ -1061,6 +1061,7 @@ input[type='number']::-webkit-outer-spin-button {
   font-variant-numeric: tabular-nums;
   color: var(--accent);
   cursor: pointer;
+  overflow-wrap: anywhere; /* a very long exercise name wraps instead of running off */
 }
 
 .note-line .fail {
