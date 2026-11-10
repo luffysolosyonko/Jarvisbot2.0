@@ -1569,6 +1569,18 @@ figure .legend {
   caret-color: var(--ink);
 }
 
+.password-rules {
+  margin-top: var(--s2);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.7;
+  color: var(--ink-2);
+}
+
+.password-rules li.ok {
+  color: var(--accent);
+}
+
 .auth-buttons {
   display: flex;
   flex-direction: column;

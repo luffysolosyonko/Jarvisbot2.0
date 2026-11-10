@@ -3,6 +3,7 @@ import { useState, type FormEvent } from 'react';
 import { useAuth } from '@/auth/AuthProvider';
 import { useTitle } from '@/hooks/useTitle';
 import { errorMessage } from '@/lib/api';
+import { passwordOk, passwordRules } from '@/lib/password';
 
 type View = 'sign-in' | 'sign-up' | 'reset';
 type Busy = 'email' | 'google' | null;
@@ -72,6 +73,9 @@ export function SignInPage() {
         await resetPassword(email);
         setNotice('If that address has an account, a reset link is on its way.');
       });
+    } else if (view === 'sign-up' && !passwordOk(password)) {
+      setNotice(null);
+      setError('Choose a stronger password: it needs everything on the list below.');
     } else {
       void run('email', () => (view === 'sign-in' ? signIn(email, password) : signUp(email, password)));
     }
@@ -125,8 +129,19 @@ export function SignInPage() {
                 autoComplete={view === 'sign-in' ? 'current-password' : 'new-password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                aria-describedby={view === 'sign-up' ? 'password-rules' : undefined}
                 required
               />
+              {view === 'sign-up' ? (
+                <ul id="password-rules" className="password-rules" aria-label="Password needs">
+                  {passwordRules(password).map((r) => (
+                    <li key={r.id} className={r.ok ? 'ok' : undefined}>
+                      <span aria-hidden="true">{r.ok ? '✓' : '·'}</span> {r.label}
+                      <span className="visually-hidden">{r.ok ? ' (done)' : ' (needed)'}</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
             </div>
           ) : null}
 
