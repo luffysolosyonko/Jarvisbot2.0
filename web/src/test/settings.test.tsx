@@ -25,11 +25,14 @@ vi.mock('@/hooks/queries', () => ({
   useDataSummary: () => ({ data: { sets: 613, weigh_ins: 60 } }),
   useDeleteAccount: () => ({ mutate: del, isPending: false, error: null }),
 }));
-vi.mock('@/auth/AuthProvider', () => ({ useAuth: () => ({ signOut: vi.fn(), hasPassword: false }) }));
+const auth = { signOut: vi.fn(), hasPassword: false };
+vi.mock('@/auth/AuthProvider', () => ({ useAuth: () => auth }));
 
 beforeEach(() => {
   update.mockClear();
   del.mockClear();
+  ME.is_demo = false;
+  auth.hasPassword = false;
 });
 
 function renderPage() {
@@ -93,5 +96,16 @@ describe('Settings', () => {
     expect(go).toBeEnabled();
     await userEvent.click(go);
     expect(del).toHaveBeenCalled();
+  });
+
+  it('offers a password change to email accounts, but not to the shared demo account', () => {
+    auth.hasPassword = true;
+    const { unmount } = renderPage();
+    expect(screen.getByRole('button', { name: 'Change' })).toBeInTheDocument();
+    unmount();
+    ME.is_demo = true;
+    renderPage();
+    expect(screen.queryByRole('button', { name: 'Change' })).not.toBeInTheDocument();
+    expect(screen.getByText(/demo account’s password can’t be changed/)).toBeInTheDocument();
   });
 });

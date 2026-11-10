@@ -18,7 +18,6 @@ import {
   SearchTool,
   StatsTool,
   TodayTool,
-  VolumeTool,
 } from './ToolViews';
 
 function Body({ id, onJump }: { id: ToolId; onJump: (log: Log) => void }) {
@@ -36,8 +35,6 @@ function Body({ id, onJump }: { id: ToolId; onJump: (log: Log) => void }) {
       return <PredictWeightTool unit={unit} />;
     case 'predict-lift':
       return <PredictLiftTool unit={unit} />;
-    case 'volume':
-      return <VolumeTool unit={unit} />;
     case 'charts':
       return <ChartsTool unit={unit} />;
     case 'search':

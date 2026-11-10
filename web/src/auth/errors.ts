@@ -7,8 +7,9 @@ const MESSAGES: Record<string, string> = {
   'auth/wrong-password': 'Wrong email or password.',
   'auth/user-not-found': 'No account with this email yet. Create an account first.',
   'auth/email-already-in-use': 'An account with that email already exists. Sign in instead.',
-  'auth/weak-password': 'Use a password with at least 12 characters.',
-  'auth/password-does-not-meet-requirements': 'Use a password with at least 12 characters.',
+  'auth/weak-password': 'Use 12+ characters with an uppercase letter, a lowercase letter, a number and a symbol.',
+  'auth/password-does-not-meet-requirements':
+    'Use 12+ characters with an uppercase letter, a lowercase letter, a number and a symbol.',
   'auth/too-many-requests': 'Too many attempts. Wait a minute and try again.',
   'auth/requires-recent-login': 'For your security, sign out and back in, then change your password.',
   'auth/network-request-failed': 'Can’t reach the sign-in service. Check your connection.',

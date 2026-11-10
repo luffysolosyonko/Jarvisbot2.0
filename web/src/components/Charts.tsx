@@ -13,8 +13,8 @@ import {
 } from 'recharts';
 
 import { buildRows, dateAt } from '@/lib/chartRows';
-import { exerciseName, fromLb, num, shortDate } from '@/lib/format';
-import type { ExerciseVolume, Point, Projection, Unit, Window } from '@/lib/types';
+import { num, shortDate } from '@/lib/format';
+import type { Point, Projection, Unit, Window } from '@/lib/types';
 import { colors, fonts, fontSize } from '@/theme/tokens';
 
 function useAxis() {
@@ -136,31 +136,6 @@ export function WeeklyBars({ weeks }: { weeks: Window[] }) {
                 <Cell key={i} fill={colors.accent} fillOpacity={i === data.length - 1 ? 1 : 0.4} />
               ))}
             </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-    </figure>
-  );
-}
-
-/** Volume per exercise, largest first. */
-export function VolumeBars({ exercises, unit }: { exercises: ExerciseVolume[]; unit: Unit }) {
-  const { colors, tick } = useAxis();
-  const data = exercises
-    .filter((e) => e.volume_lb > 0)
-    .slice(0, 8)
-    .map((e) => ({ name: exerciseName(e.exercise), volume: Math.round(fromLb(e.volume_lb, unit)) }));
-  if (!data.length) return null;
-  const label = `Volume by exercise: ${data.map((d) => `${d.name} ${d.volume} ${unit}`).join(', ')}.`;
-  return (
-    <figure role="img" aria-label={label}>
-      <div style={{ width: '100%', height: data.length * 40 + 24 }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data} layout="vertical" margin={{ top: 0, right: 8, bottom: 0, left: 0 }}>
-            <CartesianGrid horizontal={false} stroke={colors.grid} />
-            <XAxis type="number" tick={tick} stroke={colors.border} tickLine={false} tickFormatter={(v: number) => (v >= 1000 ? `${num(v / 1000, 1)}k` : num(v, 0))} />
-            <YAxis type="category" dataKey="name" width={120} tick={tick} axisLine={false} tickLine={false} />
-            <Bar dataKey="volume" fill={colors.accent} radius={0} maxBarSize={20} isAnimationActive={false} />
           </BarChart>
         </ResponsiveContainer>
       </div>

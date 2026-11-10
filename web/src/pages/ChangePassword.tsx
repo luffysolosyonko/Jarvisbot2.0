@@ -4,13 +4,12 @@ import { useAuth } from '@/auth/AuthProvider';
 import { Button } from '@/components/Button';
 import { PasswordRules } from '@/components/PasswordRules';
 import { errorMessage } from '@/lib/api';
-import { passwordOk, useCommonPasswords } from '@/lib/password';
+import { passwordOk } from '@/lib/password';
 
 /**
  * Change the password: the current one (Firebase asks for it again before a
  * password change), then the new one twice, with the same rules as sign-up.
- * The demo account can change its password too; `python -m jarvis_api.demo_login`
- * resets it.
+ * Not offered to the shared demo account (Settings hides it).
  */
 export function ChangePassword() {
   const { hasPassword, changePassword } = useAuth();
@@ -22,7 +21,6 @@ export function ChangePassword() {
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
   const [flagRules, setFlagRules] = useState(false);
-  const common = useCommonPasswords(hasPassword);
 
   if (!hasPassword) return <p className="help">You sign in with Google, so there’s no password to change here.</p>;
 
@@ -30,7 +28,7 @@ export function ChangePassword() {
     e.preventDefault();
     setDone(false);
     if (!current) return setError('Enter your current password.');
-    if (!passwordOk(next, common)) {
+    if (!passwordOk(next)) {
       setFlagRules(true);
       return setError('Choose a stronger password: see the list under New password.');
     }
@@ -75,7 +73,7 @@ export function ChangePassword() {
           aria-describedby={`${id}-rules`}
           onChange={(e) => setNext(e.target.value)}
         />
-        <PasswordRules id={`${id}-rules`} password={next} common={common} flag={flagRules} />
+        <PasswordRules id={`${id}-rules`} password={next} flag={flagRules} />
       </div>
       <div className="field">
         <label htmlFor={`${id}-confirm`}>Confirm new password</label>

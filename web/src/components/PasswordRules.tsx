@@ -9,15 +9,13 @@ import { passwordRules } from '@/lib/password';
 export function PasswordRules({
   id,
   password,
-  common,
   flag = false,
 }: {
   id: string;
   password: string;
-  common: Set<string> | null;
   flag?: boolean;
 }) {
-  const rules = passwordRules(password, common);
+  const rules = passwordRules(password);
   const strong = rules.every((r) => r.ok);
   return (
     <div id={id} className="pw-rules">

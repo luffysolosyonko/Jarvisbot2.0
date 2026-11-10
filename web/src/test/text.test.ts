@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { buildRows } from '@/lib/chartRows';
 import { reachText, setRefText } from '@/lib/describe';
-import { dividerDate, messageTime } from '@/lib/format';
+import { dividerDate, messageTime, signedWeight } from '@/lib/format';
 import { monthLabel, shiftMonth } from '@/lib/month';
 import { applyFix, replaceLine } from '@/lib/text';
 import type { Fix } from '@/lib/types';
@@ -70,5 +70,14 @@ describe('charts and dates', () => {
     expect(reachText({ ...base, reach: 'flat', reach_date: null }, 'lb')).toMatch(/Not trending up/);
     expect(reachText({ ...base, reach: 'already', reach_date: null }, 'lb')).toMatch(/already hit 225 lb/);
     expect(reachText({ ...base, reach: 'date', reach_date: '2099-04-06' }, 'lb')).toBe('About Mon, Apr 6, 2099 at this pace.');
+  });
+});
+
+describe('signedWeight', () => {
+  it('signs a real change and leaves a change that rounds to zero unsigned', () => {
+    expect(signedWeight(1.5, 'lb')).toBe('+1.5 lb');
+    expect(signedWeight(-2, 'lb')).toBe('−2 lb');
+    expect(signedWeight(-0.04, 'kg')).toBe('0 kg');
+    expect(signedWeight(0, 'lb')).toBe('0 lb');
   });
 });

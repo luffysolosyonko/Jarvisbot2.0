@@ -211,8 +211,6 @@ export type Stats = {
   weight_change_lb: number | null;
 };
 
-export type ExerciseVolume = { exercise: string; sets: number; good_reps: number; volume_lb: number };
-export type Volume = { days: number; start: string; end: string; exercises: ExerciseVolume[] };
 
 export type CalendarDay = {
   date: string;

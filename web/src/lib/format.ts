@@ -22,14 +22,10 @@ export function weight(lb: number | null | undefined, unit: Unit, digits = 1): s
 }
 
 export function signedWeight(lb: number, unit: Unit, digits = 1): string {
-  const v = fromLb(lb, unit);
-  const sign = v > 0 ? '+' : v < 0 ? '−' : '';
-  return `${sign}${num(Math.abs(v), digits)} ${unit}`;
-}
-
-/** Big totals: 12,340 lb */
-export function volume(lb: number, unit: Unit): string {
-  return `${Math.round(fromLb(lb, unit)).toLocaleString('en-US')} ${unit}`;
+  const shown = num(Math.abs(fromLb(lb, unit)), digits);
+  // A change that rounds to nothing has no sign ("0 kg", not "−0 kg").
+  const sign = Number(shown) === 0 ? '' : lb > 0 ? '+' : '−';
+  return `${sign}${shown} ${unit}`;
 }
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];

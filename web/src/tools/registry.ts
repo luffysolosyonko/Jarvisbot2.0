@@ -6,7 +6,6 @@ export type ToolId =
   | 'estimate'
   | 'predict-weight'
   | 'predict-lift'
-  | 'volume'
   | 'charts'
   | 'search'
   | 'export'
@@ -19,7 +18,6 @@ export const TOOLS: { id: ToolId; label: string; command: string }[] = [
   { id: 'estimate', label: 'Estimate', command: '/estimate' },
   { id: 'predict-weight', label: 'Predict weight', command: '/predict' },
   { id: 'predict-lift', label: 'Predict lift', command: '/predict lift' },
-  { id: 'volume', label: 'Volume', command: '/volume' },
   { id: 'charts', label: 'Charts', command: '/chart' },
   { id: 'search', label: 'Search', command: '/search' },
   { id: 'export', label: 'Export', command: '/export' },

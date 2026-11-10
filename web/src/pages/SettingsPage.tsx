@@ -242,7 +242,9 @@ export function SettingsPage() {
                 </div>
               </div>
               <DisplayName key={m.display_name ?? ''} me={m} />
-              {hasPassword ? (
+              {m.is_demo ? (
+                <Row label="Password" caption="The shared demo account’s password can’t be changed." />
+              ) : hasPassword ? (
                 <>
                   <Row label="Password">
                     <button

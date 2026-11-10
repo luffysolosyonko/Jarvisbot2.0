@@ -43,12 +43,12 @@ describe('ChangePassword', () => {
 
   it('refuses mismatched passwords, then changes it', async () => {
     render(<ChangePassword />);
-    await fill('old-Pass1!', 'quiet barbell morning', 'quiet barbell mornin');
+    await fill('old-Pass1!', 'Quiet?Barbell7!', 'Quiet?Barbell7');
     expect(screen.getByRole('alert')).toHaveTextContent(/don’t match/);
     await userEvent.clear(screen.getByLabelText('Confirm new password'));
-    await userEvent.type(screen.getByLabelText('Confirm new password'), 'quiet barbell morning');
+    await userEvent.type(screen.getByLabelText('Confirm new password'), 'Quiet?Barbell7!');
     await userEvent.click(screen.getByRole('button', { name: 'Change password' }));
-    await waitFor(() => expect(auth.changePassword).toHaveBeenCalledWith('old-Pass1!', 'quiet barbell morning'));
+    await waitFor(() => expect(auth.changePassword).toHaveBeenCalledWith('old-Pass1!', 'Quiet?Barbell7!'));
     expect(await screen.findByText('Password changed.')).toBeInTheDocument();
   });
 
@@ -93,9 +93,9 @@ describe('Sign-up password field', () => {
     expect(screen.getByText(/12\+ characters/)).toHaveClass('flagged');
 
     await userEvent.clear(pw);
-    await userEvent.type(pw, 'quiet barbell morning');
+    await userEvent.type(pw, 'Quiet?Barbell7!');
     expect(await screen.findByText(/strong password/)).toBeInTheDocument();
     await userEvent.click(submit);
-    expect(auth.signUp).toHaveBeenCalledWith('new@example.com', 'quiet barbell morning');
+    expect(auth.signUp).toHaveBeenCalledWith('new@example.com', 'Quiet?Barbell7!');
   });
 });

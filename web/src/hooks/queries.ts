@@ -20,7 +20,6 @@ import type {
   Stats,
   TodayLogs,
   Unit,
-  Volume,
   WeightForecast,
 } from '@/lib/types';
 
@@ -36,7 +35,7 @@ export const keys = {
 
 /** Anything derived from logs: refresh it all after a log changes. */
 function invalidateLogData(qc: ReturnType<typeof useQueryClient>) {
-  for (const key of [['logs'], ['data-summary'], ['dashboard'], ['exercises'], ['exercise'], ['calendar'], ['today'], ['stats'], ['volume'], ['search'], ['forecast'], ['weight-forecast']]) {
+  for (const key of [['logs'], ['data-summary'], ['dashboard'], ['exercises'], ['exercise'], ['calendar'], ['today'], ['stats'], ['search'], ['forecast'], ['weight-forecast']]) {
     void qc.invalidateQueries({ queryKey: key });
   }
 }
@@ -249,14 +248,6 @@ export function useStats(days: number) {
   return useQuery({
     queryKey: ['stats', days],
     queryFn: () => api<Stats>('/stats', { query: { days } }),
-    placeholderData: keepPreviousData,
-  });
-}
-
-export function useVolume(days: number) {
-  return useQuery({
-    queryKey: ['volume', days],
-    queryFn: () => api<Volume>('/volume', { query: { days } }),
     placeholderData: keepPreviousData,
   });
 }

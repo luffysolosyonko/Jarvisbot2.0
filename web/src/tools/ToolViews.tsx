@@ -2,7 +2,7 @@ import { Trash2 } from 'lucide-react';
 import { useId, useState, type FormEvent } from 'react';
 
 import { Button, IconButton } from '@/components/Button';
-import { TrendChart, VolumeBars, WeeklyBars } from '@/components/Charts';
+import { TrendChart, WeeklyBars } from '@/components/Charts';
 import { ExerciseSelect } from '@/components/ExerciseSelect';
 import { ICON } from '@/components/icons';
 import { Segmented } from '@/components/Segmented';
@@ -20,12 +20,11 @@ import {
   useSearch,
   useStats,
   useToday,
-  useVolume,
   useWeightForecast,
 } from '@/hooks/queries';
 import { useDebounced } from '@/hooks/useDebounced';
 import { downloadFile, errorMessage } from '@/lib/api';
-import { exerciseName, longDate, num, signedWeight, toLb, volume, weight } from '@/lib/format';
+import { exerciseName, longDate, num, signedWeight, toLb, weight } from '@/lib/format';
 import { reachText, setRefText } from '@/lib/describe';
 import type { ExerciseDetail, Log, Unit } from '@/lib/types';
 
@@ -51,7 +50,6 @@ export function TodayTool({ unit }: { unit: Unit }) {
           <div className="stack-4">
             <div className="stats">
               <Stat label="Sets" value={`${t.sets} sets`} />
-              <Stat label="Volume" value={volume(t.volume_lb, unit)} />
               <Stat label="Weigh-in" value={t.weight_lb === null ? '–' : weight(t.weight_lb, unit)} />
             </div>
             <ul className="stack-3">
@@ -80,7 +78,6 @@ export function StatsTool({ unit }: { unit: Unit }) {
           <div className="stats">
             <Stat label="Gym days" value={`${s.gym_days} days`} note={`${num(s.gym_days_per_week)} a week`} />
             <Stat label="Sets" value={`${s.sets} sets`} note={`${s.good_reps} good reps · ${s.failed_reps} failed`} />
-            <Stat label="Volume" value={volume(s.volume_lb, unit)} />
             <Stat
               label="Weight change"
               value={s.weight_change_lb === null ? '–' : signedWeight(s.weight_change_lb, unit)}
@@ -254,53 +251,13 @@ export function PredictLiftTool({ unit }: { unit: Unit }) {
   );
 }
 
-export function VolumeTool({ unit }: { unit: Unit }) {
-  const [days, setDays] = useState(7);
-  const q = useVolume(days);
-  return (
-    <div className="stack-4">
-      <DaysToggle value={days} onChange={setDays} />
-      <QueryView query={q}>
-        {(v) =>
-          !v.exercises.length ? (
-            <EmptyState message={`No sets in the last ${days} days. Type a set like 8x 160lb bench in the Notebook.`} />
-          ) : (
-            <table className="table">
-              <caption className="visually-hidden">Volume per exercise</caption>
-              <thead>
-                <tr>
-                  <th scope="col">Exercise</th>
-                  <th scope="col" className="num">Sets</th>
-                  <th scope="col" className="num">Reps</th>
-                  <th scope="col" className="num">Load</th>
-                </tr>
-              </thead>
-              <tbody>
-                {v.exercises.map((e) => (
-                  <tr key={e.exercise}>
-                    <td>{exerciseName(e.exercise)}</td>
-                    <td className="num">{e.sets}</td>
-                    <td className="num">{e.good_reps}</td>
-                    <td className="num">{volume(e.volume_lb, unit)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )
-        }
-      </QueryView>
-    </div>
-  );
-}
-
-type ChartKind = 'overview' | 'weight' | 'lift' | 'volume';
+type ChartKind = 'overview' | 'weight' | 'lift';
 
 export function ChartsTool({ unit }: { unit: Unit }) {
   const [kind, setKind] = useState<ChartKind>('overview');
   const [lift, setLift] = useState('');
   const dash = useDashboard();
   const ex = useExercise(kind === 'lift' && lift ? lift : null);
-  const vol = useVolume(30);
   return (
     <div className="stack-4">
       <Segmented<ChartKind>
@@ -311,7 +268,6 @@ export function ChartsTool({ unit }: { unit: Unit }) {
           { value: 'overview', label: 'Overview' },
           { value: 'weight', label: 'Weight' },
           { value: 'lift', label: 'Lift' },
-          { value: 'volume', label: 'Volume' },
         ]}
       />
       {kind === 'overview' ? <QueryView query={dash}>{(d) => <div className="stack-2"><p className="t-label secondary">Sets per week</p><WeeklyBars weeks={d.weekly} /></div>}</QueryView> : null}
@@ -349,7 +305,6 @@ export function ChartsTool({ unit }: { unit: Unit }) {
           ) : null}
         </>
       ) : null}
-      {kind === 'volume' ? <QueryView query={vol}>{(v) => <div className="stack-2"><p className="t-label secondary">Last 30 days</p><VolumeBars exercises={v.exercises} unit={unit} /></div>}</QueryView> : null}
     </div>
   );
 }

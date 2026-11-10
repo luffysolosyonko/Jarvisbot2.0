@@ -7,7 +7,7 @@ import { errorMessage } from '@/lib/api';
 import { Dots } from '@/components/Loading';
 import { PasswordRules } from '@/components/PasswordRules';
 import { useDelayedFlag } from '@/hooks/useDelayedFlag';
-import { passwordOk, useCommonPasswords } from '@/lib/password';
+import { passwordOk } from '@/lib/password';
 
 type View = 'sign-in' | 'sign-up' | 'reset';
 type Busy = 'email' | 'google' | null;
@@ -64,7 +64,6 @@ export function SignInPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [flagRules, setFlagRules] = useState(false); // after a refused submit
   const passwordRef = useRef<HTMLInputElement>(null);
-  const common = useCommonPasswords(view === 'sign-up');
   const [busy, setBusy] = useState<Busy>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -96,7 +95,7 @@ export function SignInPage() {
         await resetPassword(email);
         setNotice('If that address has an account, a reset link is on its way.');
       });
-    } else if (view === 'sign-up' && !passwordOk(password, common)) {
+    } else if (view === 'sign-up' && !passwordOk(password)) {
       // The button stays enabled: point at what's missing instead.
       setError(null);
       setNotice(null);
@@ -158,7 +157,7 @@ export function SignInPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   aria-describedby={view === 'sign-up' ? 'password-rules' : undefined}
-                  aria-invalid={view === 'sign-up' && flagRules && !passwordOk(password, common) ? true : undefined}
+                  aria-invalid={view === 'sign-up' && flagRules && !passwordOk(password) ? true : undefined}
                   spellCheck={false}
                   required
                 />
@@ -171,7 +170,7 @@ export function SignInPage() {
                 </button>
               </div>
               {view === 'sign-up' ? (
-                <PasswordRules id="password-rules" password={password} common={common} flag={flagRules} />
+                <PasswordRules id="password-rules" password={password} flag={flagRules} />
               ) : null}
             </div>
           ) : null}
