@@ -140,13 +140,19 @@ def search(
     user: CurrentUser, db: DB, q: Annotated[str, Query(min_length=1, max_length=80)]
 ) -> schemas.SearchOut:
     """Logs whose text or exercise names contain `q`, newest first."""
-    term = f"%{q.strip().lower()}%"
+    text = q.strip().lower()
+    if not text:
+        raise ApiError(422, "invalid_request", "Type something to search for.")
+    # % and _ are LIKE wildcards: escape them so "%" finds a literal "%".
+    esc = text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    term = f"%{esc}%"
     named = select(LoggedSet.log_id).where(
-        LoggedSet.user_id == user.id, func.lower(LoggedSet.exercise).like(term)
+        LoggedSet.user_id == user.id, func.lower(LoggedSet.exercise).like(term, escape="\\")
     )
+    in_text = func.lower(Log.raw_text).like(term, escape="\\")
     found = db.scalars(
         select(Log)
-        .where(Log.user_id == user.id, or_(func.lower(Log.raw_text).like(term), Log.id.in_(named)))
+        .where(Log.user_id == user.id, or_(in_text, Log.id.in_(named)))
         .options(selectinload(Log.sets), selectinload(Log.weigh_in))
         .order_by(Log.logged_at.desc(), Log.id.desc())
         .limit(SEARCH_LIMIT + 1)
@@ -188,11 +194,23 @@ def usage(user: CurrentUser, db: DB, settings: AppSettings) -> schemas.UsageOut:
     )
 
 
+_NUMBER_RE = re.compile(r"[+-]?\d+(\.\d+)?")
+
+
+def _cell(v: object) -> object:
+    """Text a spreadsheet would run as a formula (=, +, -, @ first) gets a leading
+    apostrophe, so an exported note like "=HYPERLINK(...)" stays text."""
+    formula = isinstance(v, str) and v[:1] in ("=", "+", "-", "@", "\t", "\r")
+    if formula and not _NUMBER_RE.fullmatch(str(v)):
+        return "'" + str(v)
+    return v
+
+
 def _csv(name: str, header: list[str], rows: list[list[object]]) -> Response:
     buf = io.StringIO()
     writer = csv.writer(buf, lineterminator="\n")
     writer.writerow(header)
-    writer.writerows(rows)
+    writer.writerows([_cell(v) for v in row] for row in rows)
     return Response(
         buf.getvalue(),
         media_type="text/csv; charset=utf-8",

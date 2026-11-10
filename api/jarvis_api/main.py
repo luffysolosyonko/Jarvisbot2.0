@@ -59,7 +59,13 @@ def create_app(
             return JSONResponse(
                 errors.error_body("payload_too_large", "The request is too large."), 413
             )
-        return await call_next(request)
+        try:
+            return await call_next(request)
+        except Exception:
+            # Answered here, inside CORS, so the browser sees a 500 with its JSON
+            # error instead of a bare network failure ("can't reach the server").
+            logging.getLogger("jarvis.api").exception("unhandled error")
+            return JSONResponse(errors.error_body("internal", "Something went wrong."), 500)
 
     if settings.cors_origin_list:
         app.add_middleware(

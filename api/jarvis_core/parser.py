@@ -26,12 +26,16 @@ import re
 from dataclasses import dataclass, field, replace
 from typing import Literal
 
-PARSER_VERSION = 3
+PARSER_VERSION = 4
 """Bump when parsing rules change; a rebuild job re-parses every stored log."""
 
 KG_TO_LB = 2.20462
 MAX_LINES = 60
 MAX_CHARS = 2000
+# Heavier than any real set (a loaded leg press sled included): a typo, not a lift.
+MAX_SET_LB = 1500.0
+MAX_NAME_CHARS = 120  # an exercise name, as stored
+MAX_WEIGHT_TEXT_CHARS = 60  # the weight as written, as stored
 
 NUM = r"(\d+(?:\.\d+)?)"
 URL_RE = re.compile(r"https?://[^\s<>]+")
@@ -211,7 +215,12 @@ def parse_set_line(line: str, default_unit: str = "lb", bar_lb: float = 45.0) ->
         s.estimated = True
         rest = ALT_WEIGHT_RE.sub(" ", rest)
     rest = STRAY_REPS_RE.sub(" ", rest)
-    s.exercise = normalize_exercise(rest) or None
+    # Capped to what the database stores, so the preview and the saved set agree.
+    s.exercise = normalize_exercise(rest)[:MAX_NAME_CHARS].strip() or None
+    if s.weight_text:
+        s.weight_text = s.weight_text[:MAX_WEIGHT_TEXT_CHARS]
+    if s.weight_lb is not None and s.weight_lb > MAX_SET_LB:
+        return None
     return s
 
 
