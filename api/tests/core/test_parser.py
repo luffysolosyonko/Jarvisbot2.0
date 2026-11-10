@@ -248,3 +248,34 @@ def test_weigh_in_range_is_1_to_1000_lb(text: str, lb: float) -> None:
 def test_mode_guess_only_counts_plausible_body_weights(text: str) -> None:
     assert not looks_like_weigh_in(text)
     assert looks_like_weigh_in("182.4")
+
+
+def test_bare_reps_repeat_the_set_above_at_its_weight() -> None:
+    assert sets("8x 135lb bench\n8x\n6x") == [
+        (8, 0, 135.0, "bench"),
+        (8, 0, 135.0, "bench"),
+        (6, 0, 135.0, "bench"),
+    ]
+    assert sets("8x 135lb bench\n5x2f") == [(8, 0, 135.0, "bench"), (5, 2, 135.0, "bench")]
+    assert sets("8x uw dips\n10x") == [(8, 0, None, "dips"), (10, 0, None, "dips")]
+    # A name line in between starts a new exercise: no weight is carried over.
+    assert sets("8x 135lb bench\nsquat\n5x") == [(8, 0, 135.0, "bench"), (5, 0, None, "squat")]
+    # From an earlier log that day too.
+    earlier = parse_log("8x 135lb bench", kind="workout").context
+    assert sets("8x", context=earlier) == [(8, 0, 135.0, "bench")]
+    # Nothing above: not a set.
+    log = parse_log("8x", kind="workout")
+    assert log.sets == [] and [w.code for w in log.warnings] == ["nothing_to_repeat"]
+
+
+@pytest.mark.parametrize("text", ["8x -5lb bench", "8x 135lb bench -5", "-3x 135lb bench"])
+def test_negative_numbers_are_not_sets(text: str) -> None:
+    assert sets(text) == []
+
+
+def test_negative_numbers_are_not_weigh_ins_but_ranges_and_bullets_are_fine() -> None:
+    assert parse_weigh_in("-180") is None
+    assert parse_weigh_in("180 -2") is None
+    w = parse_weigh_in("- 180")
+    assert w is not None and w.weight_lb == 180
+    assert sets("5x 20-25lb curl") == [(5, 0, 22.5, "curl")]

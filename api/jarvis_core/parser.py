@@ -26,7 +26,7 @@ import re
 from dataclasses import dataclass, field, replace
 from typing import Literal
 
-PARSER_VERSION = 4
+PARSER_VERSION = 5
 """Bump when parsing rules change; a rebuild job re-parses every stored log."""
 
 KG_TO_LB = 2.20462
@@ -67,6 +67,9 @@ class SetLine:
 
 
 # "8x 160lb", "12x1f 25kg rear delt fly", "7xf dips", "30x ^"
+# A minus sign right before a number ("-5lb", "-180"). Weights and reps can't be
+# negative, so such a line isn't read. Ranges ("20-25lb") and bullets ("- 180") are fine.
+NEGATIVE_RE = re.compile(r"(?<![\w.])-\d")
 SET_HEAD_RE = re.compile(r"^\s*(\d{1,3})\s*x\s*(\d*f\b)?\s*(.*)$", re.I)
 # "160lb", "25kg", "70/80kg", "20-25lb", "70/80kg?"
 WEIGHT_PART_RE = re.compile(rf"^{NUM}(?:\s*[-/]\s*{NUM})?\s*(kgs?|lbs?)?(?![\w.])\s*(\?)?", re.I)
@@ -273,7 +276,7 @@ def parse_workout_lines(
         line = raw.strip()
         if not line:
             continue
-        if URL_RE.search(line):
+        if URL_RE.search(line) or NEGATIVE_RE.search(line):
             unknown.append(n)
             continue
         multi = parse_multi_set_line(line, default_unit, bar_lb)
@@ -382,6 +385,20 @@ def resolve_sets(
             if weight is None and prev and weight_text is None and not bodyweight:
                 weight, weight_text = prev.weight_lb, prev.weight_text
                 per_hand, estimated, bodyweight = prev.per_hand, prev.estimated, prev.bodyweight
+        elif not exercise and weight_text is None and not bodyweight:
+            # A bare "8x" (no name, no weight): more reps of the set above, at its
+            # weight, like "8x ^". A name line in between ("Squat") starts fresh.
+            if prev is not None and prev.exercise == current:
+                inferred = True
+                exercise, weight, weight_text = prev.exercise, prev.weight_lb, prev.weight_text
+                per_hand, estimated, bodyweight = prev.per_hand, prev.estimated, prev.bodyweight
+            elif current is not None:
+                exercise, inferred = current, True
+            else:
+                warnings.append(
+                    ParseWarning(s.line, "Nothing above to repeat.", "nothing_to_repeat")
+                )
+                continue
         elif not exercise:
             if not (bodyweight and current_weighted):
                 exercise, inferred = current, current is not None
@@ -463,6 +480,8 @@ def parse_weigh_in(text: str) -> WeighIn | None:
     a missed decimal point ("182 4" -> 182.4). Other words are kept as a note.
     Accepts 1 to 1000 lb."""
     text = URL_RE.sub(" ", text or "")
+    if NEGATIVE_RE.search(text):
+        return None  # a body weight can't be negative
     if any(SET_HEAD_RE.match(line) for line in text.splitlines()):
         return None  # "8x 25lb curl" is not a weigh-in
     day_offset = 0
