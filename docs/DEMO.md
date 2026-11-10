@@ -74,7 +74,7 @@ B's data, and the design-token contrast test.
 | Charts or the calendar are empty | Re-run the seed command (step 3) and reload the page. |
 | Port 15432 or 8000 already in use | Stop whatever holds it, or set `JARVIS_DB_PORT` to another port. Then `docker compose down` and up again. |
 | Port 5173 already in use | Close the other `npm run dev` window (the port is fixed because the API's CORS allows only it). |
-| The demo password doesn't work | Someone changed it in Settings. Set it back: `docker compose exec api python -m jarvis_api.demo_login --email demo@example.com --password <password>`. |
+| The demo password doesn't work | It was changed outside the app (Settings doesn't offer it for the demo account). Set it back: `docker compose exec api python -m jarvis_api.demo_login --email demo@example.com --password <password>`. |
 | "Continue with Google" fails | Use the demo email and password. See SETUP.md section 3 for enabling Google. |
 
 ## After the demo

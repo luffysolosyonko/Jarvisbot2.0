@@ -11,9 +11,11 @@ is now a button.
 
 ## Screenshots
 
-| Notebook | Fixes | History | Progress | Ask mode |
-|---|---|---|---|---|
-| _screenshot_ | _screenshot_ | _screenshot_ | _screenshot_ | _screenshot_ |
+| Notebook | History | Progress | Ask mode |
+|---|---|---|---|
+| <img src="docs/screenshots/notebook.png" alt="The notebook: typed sets with the parsed note under them" width="200"> | <img src="docs/screenshots/history.png" alt="History: a month calendar shaded by sets, with weigh-in dots" width="200"> | <img src="docs/screenshots/progress.png" alt="Progress: body weight with a 7-day average and a forecast" width="200"> | <img src="docs/screenshots/ask.png" alt="Ask mode: a question about bench progress and Jarvis's answer" width="200"> |
+
+The demo account's made-up data.
 
 ## What it does
 
@@ -43,7 +45,7 @@ is now a button.
   hollow orange circle.
 - **Every bot command is a button.** The Tools menu (wrench): Today, Stats (7/30/90 days), Lift,
   Estimate (maxes for 3–12 reps), Predict weight, Predict lift (the date
-  you'll hit a target), Volume, Charts, Search and Export (CSV), plus the
+  you'll hit a target), Charts, Search and Export (CSV), plus the
   Syntax cheat sheet. Exercise-name shortcuts are under Settings.
 - **History and Progress.** A month heatmap shades each day by sets logged and
   dots weigh-in days; click a day for one table of its sets ("3 ✓ · 1 ✗") and
@@ -212,12 +214,11 @@ Highlights:
 - New email/password accounts must open the verification link Firebase emails
   them before they can use the app; the API refuses unverified accounts too
   (`403 email_unverified`), so scripted sign-ups get nowhere. New passwords need
-  12+ characters and can't be one of the ~10,000 most common breached
-  passwords (a bundled list, checked in the browser with no network call).
-  Firebase's own password policy enforces the 12-character minimum too
-  (`python -m jarvis_api.password_policy --apply`); the common-password list is
-  checked in the app only, since Firebase can't check a list without a paid
-  blocking function.
+  12+ characters with an uppercase letter, a lowercase letter, a number and a
+  symbol; the sign-up page ticks each one off as you type. Firebase's own
+  password policy enforces the same rules
+  (`python -m jarvis_api.password_policy --apply`), so they hold even for
+  someone calling Firebase directly.
 - The demo account is one fixed Firebase UID from server config that signs in
   with an ordinary email and password, set with `python -m jarvis_api.demo_login`.
   The password is never in the repo.
@@ -241,7 +242,3 @@ Highlights:
 ## License
 
 MIT. See [LICENSE](LICENSE).
-
-`web/src/lib/common-passwords.txt` is the 10k most common passwords list from
-[SecLists](https://github.com/danielmiessler/SecLists) (MIT, Daniel Miessler
-and contributors), lowercased.

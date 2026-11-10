@@ -88,7 +88,8 @@ docker compose up -d --build
 docker compose exec api python -m jarvis_api.seed
 ```
 
-Turn on Firebase's password policy (new passwords need 12+ characters; existing
+Turn on Firebase's password policy (new passwords need 12+ characters with an uppercase
+letter, a lowercase letter, a number and a symbol; existing
 ones keep working). Run it once per Firebase project; without `--apply` it
 shows the current policy:
 
