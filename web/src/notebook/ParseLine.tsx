@@ -1,7 +1,7 @@
 import { useParse } from '@/hooks/queries';
 import { useDebounced } from '@/hooks/useDebounced';
 import { errorMessage } from '@/lib/api';
-import { outlierReason, outlierTitle, setNotes, weighInNote } from '@/lib/notes';
+import { setNotes, weighInNote } from '@/lib/notes';
 import type { LogMode, Unit } from '@/lib/types';
 
 import { Notes } from './Entry';
@@ -9,8 +9,8 @@ import { Notes } from './Entry';
 /**
  * Under the box: the live "↳" read of the input, as the note it will get once saved.
  * Quiet while you type: half-typed lines ("12x") get no warnings here, just the
- * example until something reads as a set. A weigh-in that will be flagged says so.
- * (Lines that still don't log once saved get their fixes on the entry.)
+ * example until something reads as a set. (Lines that still don't log once saved get
+ * their fixes on the entry, and an outlying weigh-in its check box.)
  */
 export function ParseLine({
   text,
@@ -41,11 +41,7 @@ export function ParseLine({
   if (!w && !notes.length) return exampleLine;
   return (
     <div className="preview" aria-live="polite">
-      {w?.flagged ? (
-        <p className="note warn-text">
-          ↳ {outlierTitle(w)} {outlierReason(w)}
-        </p>
-      ) : notes.length ? (
+      {notes.length ? (
         <p className="note" key={notes.map((n) => n.text).join('|')}>
           <Notes lines={notes} />
         </p>

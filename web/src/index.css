@@ -1024,11 +1024,6 @@ input[type='number']::-webkit-outer-spin-button {
   font-weight: 700;
 }
 
-.note.warn-text {
-  color: var(--warn-text);
-  cursor: default;
-}
-
 .note.pending {
   color: var(--ink-3);
   cursor: default;
