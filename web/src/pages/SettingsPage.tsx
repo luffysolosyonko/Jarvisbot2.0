@@ -307,7 +307,7 @@ export function SettingsPage() {
               )}
             </section>
 
-            <footer className="set-footer">Jarvis 2.0 · built by Tom</footer>
+            <footer className="set-footer">Jarvis 2.0</footer>
             {deleting ? <DeleteDialog onClose={() => setDeleting(false)} /> : null}
           </>
         )}

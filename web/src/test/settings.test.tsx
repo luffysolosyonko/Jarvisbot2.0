@@ -48,7 +48,8 @@ describe('Settings', () => {
     expect(screen.getByText('signed in with Google')).toBeInTheDocument();
     expect(screen.getByText('bench → Bench press · 1 more')).toBeInTheDocument();
     expect(screen.getByText('613 sets · 60 weigh-ins')).toBeInTheDocument();
-    expect(screen.getByText('Jarvis 2.0 · built by Tom')).toBeInTheDocument();
+    expect(screen.getByText('Jarvis 2.0')).toBeInTheDocument();
+    expect(screen.queryByText(/built by/)).not.toBeInTheDocument();
     for (const gone of [/Double-check/, /Bar weight/, /Shorthand/, /Jarvis 1\.0/])
       expect(screen.queryByText(gone)).not.toBeInTheDocument();
   });
