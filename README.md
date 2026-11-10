@@ -43,8 +43,8 @@ is now a button.
   hollow orange circle.
 - **Every bot command is a button.** The Tools menu (wrench): Today, Stats (7/30/90 days), Lift,
   Estimate (maxes for 3–12 reps), Predict weight, Predict lift (the date
-  you'll hit a target), Volume, Charts, Search, Aliases and Export (CSV), plus
-  the Syntax help cheat sheet.
+  you'll hit a target), Volume, Charts, Search and Export (CSV), plus the
+  Syntax cheat sheet. Exercise-name shortcuts are under Settings.
 - **History and Progress.** A month heatmap shades each day by sets logged and
   dots weigh-in days; click a day for one table of its sets ("3 ✓ · 1 ✗") and
   its weigh-in. Progress leads with your latest confirmed weigh-in, then body
@@ -146,7 +146,7 @@ A lifter's paper training logbook.
   JetBrains Mono with tabular figures for anything logged or counted (entries,
   notes, times, stats), IBM Plex Sans for everything else.
 - **Layout.** One column, about 480px wide, centered on a desktop, with the
-  nav along the bottom (four icons with labels). Things sit directly on the
+  nav along the bottom (four icons). Things sit directly on the
   page; rules, not cards, separate them. One 10px radius for controls and
   boxes, 6px for calendar cells; touch targets at least 44px.
 - **Charts.** Ink dots for weigh-ins, the 7-day average as a solid green line,
@@ -223,7 +223,7 @@ Highlights:
   The password is never in the repo.
 - Input limits (2,000-character logs, 500-character questions, 32 KB bodies),
   per-user rate limits on `/parse` and `/ask`, and a per-user daily token cap
-  on Ask (lower for the demo account).
+  on Ask (the demo account has its own cap setting).
 - Rate limits are in memory, which fits a single API instance. More instances
   would need a shared store.
 
