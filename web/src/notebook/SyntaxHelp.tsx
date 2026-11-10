@@ -9,7 +9,7 @@ const WORKOUT: [string, string][] = [
   ['8x bar bench', 'just the bar (45 lb, set in Settings)'],
   ['8x 20-25lb curl', 'a range is an estimate: midpoint used'],
   ['12x 60 or 50kg bench', 'unsure which: the midpoint, marked estimated'],
-  ['30x ^', '30 reps at the same weight and exercise as the set above'],
+  ['30x ^', 'any number of reps, at the same weight and exercise as the set above'],
   ['2x1x1x1xf 85kg bench', 'several sets on one line; each f is one failed attempt'],
   ['5x 155lb 2x1x1xf bench', 'a first set, then more at the same weight'],
   ['2', 'a bare number: the same set again'],
