@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import Depends, Request
+from fastapi import Depends, Path, Request
 from sqlalchemy.orm import Session
 
 from jarvis_api.config import Settings
@@ -14,6 +14,8 @@ from jarvis_api.ratelimit import RateLimiter
 from jarvis_api.services.users import get_or_create_user
 
 DB = Annotated[Session, Depends(get_db)]
+# A row id in the URL. Postgres integers are 32-bit: a bigger number can't be a row.
+RowId = Annotated[int, Path(ge=1, le=2_147_483_647)]
 
 
 def get_settings_dep(request: Request) -> Settings:

@@ -69,3 +69,41 @@ def test_an_unexpected_error_is_json_the_browser_can_read(client: TestClient) ->
     r = client.get("/api/v1/boom", headers={"Origin": "http://localhost:5173"})
     assert r.status_code == 500 and r.json()["error"]["code"] == "internal"
     assert r.headers.get("access-control-allow-origin") == "http://localhost:5173"
+
+
+def test_a_set_cannot_have_more_than_200_failed_reps(client: TestClient) -> None:
+    assert_error(post(client, "8x99999999f 100lb bench"), 422, "nothing_parsed")
+    assert post(client, "8x200f 100lb bench").json()["sets"][0]["failed_reps"] == 200
+
+
+def test_nul_characters_are_dropped_from_typed_text(client: TestClient) -> None:
+    # Postgres refuses NUL in text (SQLite doesn't): it's removed before anything is stored.
+    r = post(client, "8x 100lb ben\x00ch")
+    assert r.status_code == 201 and r.json()["raw_text"] == "8x 100lb bench"
+    assert_error(post(client, "\x00"), 422, "invalid_request")
+    h = auth("alice")
+    r = client.patch("/api/v1/me/settings", headers=h, json={"display_name": "To\x00m"})
+    assert r.json()["display_name"] == "Tom"
+    assert client.get("/api/v1/search", headers=h, params={"q": "ben\x00ch"}).status_code == 200
+
+
+def test_ids_and_dates_outside_any_real_range_are_refused_not_crashes(client: TestClient) -> None:
+    h = auth("alice")
+    big = 9223372036854775807
+    assert_error(client.delete(f"/api/v1/logs/{big}", headers=h), 422, "invalid_request")
+    assert_error(client.post(f"/api/v1/logs/{big}/confirm", headers=h), 422, "invalid_request")
+    assert_error(
+        client.patch(f"/api/v1/logs/{big}", headers=h, json={"text": "8x 1lb a"}),
+        422,
+        "invalid_request",
+    )
+    assert_error(client.delete(f"/api/v1/aliases/{big}", headers=h), 422, "invalid_request")
+    assert_error(client.delete("/api/v1/logs/0", headers=h), 422, "invalid_request")
+    for month in ("0000-01", "9999-12"):
+        assert_error(
+            client.get("/api/v1/calendar", headers=h, params={"month": month}),
+            422,
+            "invalid_request",
+        )
+    for q in ({"to": "0001-01-01"}, {"from": "9999-12-01", "to": "9999-12-31"}):
+        assert_error(client.get("/api/v1/logs", headers=h, params=q), 422, "invalid_request")

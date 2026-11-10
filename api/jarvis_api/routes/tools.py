@@ -110,6 +110,8 @@ def calendar(
     if not m:
         raise ApiError(422, "invalid_request", "Use a month like 2026-11.")
     year, mon = int(m.group(1)), int(m.group(2))
+    if not 2000 <= year <= 2100:
+        raise ApiError(422, "invalid_request", "Use a month like 2026-11.")
     start = date(year, mon, 1)
     end = date(year, mon, monthrange(year, mon)[1])
     data = load_user_data(db, user)
@@ -140,7 +142,7 @@ def search(
     user: CurrentUser, db: DB, q: Annotated[str, Query(min_length=1, max_length=80)]
 ) -> schemas.SearchOut:
     """Logs whose text or exercise names contain `q`, newest first."""
-    text = q.strip().lower()
+    text = q.replace("\x00", "").strip().lower()
     if not text:
         raise ApiError(422, "invalid_request", "Type something to search for.")
     # % and _ are LIKE wildcards: escape them so "%" finds a literal "%".

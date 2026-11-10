@@ -26,7 +26,7 @@ import re
 from dataclasses import dataclass, field, replace
 from typing import Literal
 
-PARSER_VERSION = 5
+PARSER_VERSION = 6
 """Bump when parsing rules change; a rebuild job re-parses every stored log."""
 
 KG_TO_LB = 2.20462
@@ -66,10 +66,10 @@ class SetLine:
     extra: list[tuple[int, int, int, str | None]] = field(default_factory=list)
 
 
-# "8x 160lb", "12x1f 25kg rear delt fly", "7xf dips", "30x ^"
 # A minus sign right before a number ("-5lb", "-180"). Weights and reps can't be
 # negative, so such a line isn't read. Ranges ("20-25lb") and bullets ("- 180") are fine.
 NEGATIVE_RE = re.compile(r"(?<![\w.])-\d")
+# "8x 160lb", "12x1f 25kg rear delt fly", "7xf dips", "30x ^"
 SET_HEAD_RE = re.compile(r"^\s*(\d{1,3})\s*x\s*(\d*f\b)?\s*(.*)$", re.I)
 # "160lb", "25kg", "70/80kg", "20-25lb", "70/80kg?"
 WEIGHT_PART_RE = re.compile(rf"^{NUM}(?:\s*[-/]\s*{NUM})?\s*(kgs?|lbs?)?(?![\w.])\s*(\?)?", re.I)
@@ -181,6 +181,8 @@ def parse_set_line(line: str, default_unit: str = "lb", bar_lb: float = 45.0) ->
         good, fails = reps - 1, 1
     else:
         good, fails = reps, 0
+    if fails > 200:  # "8x99999f": a typo, like 201+ reps
+        return None
     s = SetLine("set", reps=reps, flag=flag, failed_reps=fails, good_reps=good)
     rest = PAREN_RE.sub(" ", m.group(3)).strip()
 

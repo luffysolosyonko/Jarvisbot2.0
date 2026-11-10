@@ -8,7 +8,7 @@ from fastapi import APIRouter, Query, Response
 from sqlalchemy.orm import Session
 
 from jarvis_api import schemas
-from jarvis_api.deps import DB, AppSettings, CurrentUser, Limiter
+from jarvis_api.deps import DB, AppSettings, CurrentUser, Limiter, RowId
 from jarvis_api.errors import ApiError
 from jarvis_api.models import Log, User
 from jarvis_api.serializers import log_out, parse_out, recent_exercises, warnings_out
@@ -28,6 +28,8 @@ from jarvis_api.services.users import local_now
 router = APIRouter(tags=["logs"])
 
 MAX_RANGE_DAYS = 366
+# Dates outside these overflow date arithmetic (year 1, year 9999).
+MIN_DAY, MAX_DAY = date(2000, 1, 1), date(2100, 12, 31)
 NOTHING_PARSED = "Nothing to save: no sets or weigh-in found."
 
 
@@ -72,7 +74,7 @@ def create_log(body: schemas.LogIn, user: CurrentUser, db: DB) -> schemas.SavedL
 
 @router.patch("/logs/{log_id}")
 def update_log(
-    log_id: int, body: schemas.LogEditIn, user: CurrentUser, db: DB
+    log_id: RowId, body: schemas.LogEditIn, user: CurrentUser, db: DB
 ) -> schemas.SavedLogOut:
     """Edit a log's text; it's re-parsed, along with later logs that day."""
     log = get_log(db, user, log_id)
@@ -88,7 +90,7 @@ def update_log(
 
 
 @router.post("/logs/{log_id}/confirm")
-def confirm_weight(log_id: int, user: CurrentUser, db: DB) -> schemas.SavedLogOut:
+def confirm_weight(log_id: RowId, user: CurrentUser, db: DB) -> schemas.SavedLogOut:
     """Keep an outlying weigh-in as written ("Keep 176.4"): it counts in the stats again."""
     log = get_log(db, user, log_id)
     if log is None or log.weigh_in is None:
@@ -101,7 +103,7 @@ def confirm_weight(log_id: int, user: CurrentUser, db: DB) -> schemas.SavedLogOu
 
 
 @router.delete("/logs/{log_id}", status_code=204)
-def remove_log(log_id: int, user: CurrentUser, db: DB) -> Response:
+def remove_log(log_id: RowId, user: CurrentUser, db: DB) -> Response:
     log = get_log(db, user, log_id)
     if log is None:
         raise ApiError(404, "not_found", "Log not found.")
@@ -117,6 +119,8 @@ def list_logs(
     to: date | None = None,
 ) -> schemas.LogsOut:
     """Logs in a date range (default: the last 14 days), newest first."""
+    if any(d is not None and not MIN_DAY <= d <= MAX_DAY for d in (from_, to)):
+        raise ApiError(422, "invalid_request", "Use dates between 2000 and 2100.")
     end = to or local_now(user, datetime.now(UTC)).date()
     start = from_ or end - timedelta(days=13)
     if start > end:

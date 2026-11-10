@@ -5,7 +5,7 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 
 from jarvis_api import schemas
-from jarvis_api.deps import DB, CurrentUser
+from jarvis_api.deps import DB, CurrentUser, RowId
 from jarvis_api.errors import ApiError
 from jarvis_api.models import Alias
 from jarvis_api.services.logs import load_user_data
@@ -56,7 +56,7 @@ def create_alias(body: schemas.AliasIn, user: CurrentUser, db: DB) -> schemas.Al
 
 
 @router.delete("/aliases/{alias_id}", status_code=204)
-def delete_alias(alias_id: int, user: CurrentUser, db: DB) -> Response:
+def delete_alias(alias_id: RowId, user: CurrentUser, db: DB) -> Response:
     alias = db.scalar(select(Alias).where(Alias.id == alias_id, Alias.user_id == user.id))
     if alias is None:
         raise ApiError(404, "not_found", "Shortcut not found.")

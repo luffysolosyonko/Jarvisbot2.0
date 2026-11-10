@@ -5,13 +5,19 @@ from __future__ import annotations
 from datetime import date, datetime
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 MAX_LOG_CHARS = 2000
 
 
 class Strict(BaseModel):
     model_config = ConfigDict(extra="forbid")
+
+    @field_validator("*", mode="before")
+    @classmethod
+    def _no_nul(cls, v: object) -> object:
+        """Postgres can't store a NUL character in text: drop it from anything typed."""
+        return v.replace("\x00", "") if isinstance(v, str) else v
 
 
 # --- me --------------------------------------------------------------------
@@ -44,13 +50,6 @@ class DataSummaryOut(BaseModel):
 
 class DeleteAccountIn(Strict):
     confirm: Literal["DELETE"]
-
-
-class ImportOut(BaseModel):
-    imported: int
-    duplicates: int
-    unreadable: int
-    aliases_added: int
 
 
 # --- parse / logs ----------------------------------------------------------
