@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import json
+from collections.abc import Iterator
 from types import SimpleNamespace
 from typing import Any
 
@@ -13,7 +15,7 @@ from sqlalchemy import Engine, select
 from sqlalchemy.orm import Session
 
 from jarvis_api.config import Settings
-from jarvis_api.llm import AnthropicProvider, LLMError, LLMReply, make_provider
+from jarvis_api.llm import AnthropicProvider, LLMError, LLMReply, StreamEvent, make_provider
 from jarvis_api.main import create_app
 from jarvis_api.models import AiUsage, AskMessage
 from jarvis_api.ratelimit import RateLimiter
@@ -35,6 +37,17 @@ class FakeProvider:
         if self.error:
             raise self.error
         return LLMReply(self.reply, Usage(1200, 80), self.model)
+
+    def stream(self, system: str, user: str, max_tokens: int) -> Iterator[StreamEvent]:
+        self.calls.append({"system": system, "user": user, "max_tokens": max_tokens})
+        words = self.reply.split(" ")
+        for i, w in enumerate(words):
+            if self.error and i == 2:  # fail partway through
+                raise self.error
+            yield ("delta", w if i == 0 else " " + w)
+        if self.error:
+            raise self.error
+        yield ("done", LLMReply(self.reply, Usage(1200, 80), self.model))
 
 
 def make_client(
@@ -282,3 +295,94 @@ def test_failed_questions_are_not_saved(settings: Settings, engine: Engine, db: 
     )
     assert r.status_code == 504
     assert db.scalars(select(AskMessage)).all() == []
+
+
+def sse_events(text: str) -> list[tuple[str, object]]:
+    out = []
+    for block in text.strip().split("\n\n"):
+        lines = dict(line.split(": ", 1) for line in block.splitlines())
+        out.append((lines["event"], json.loads(lines["data"])))
+    return out
+
+
+def test_stream_sends_the_answer_in_pieces_then_saves_it(
+    settings: Settings, engine: Engine, db: Session
+) -> None:
+    client = make_client(settings, engine, FakeProvider("Bench is up 10 lb this month."))
+    h = auth("alice")
+    r = client.post("/api/v1/ask/stream", headers=h, json={"question": "Is my bench going up?"})
+    assert r.status_code == 200 and r.headers["content-type"].startswith("text/event-stream")
+    events = sse_events(r.text)
+    deltas = [v for k, v in events if k == "delta"]
+    assert len(deltas) > 3 and "".join(str(d) for d in deltas) == "Bench is up 10 lb this month."
+    kind, done = events[-1]
+    assert kind == "done" and isinstance(done, dict)
+    assert done["answer"] == "Bench is up 10 lb this month." and done["id"] > 0
+    history = client.get("/api/v1/ask/history", headers=h).json()["messages"]
+    assert [m["answer"] for m in history] == ["Bench is up 10 lb this month."]
+    assert db.scalar(select(AiUsage).where(AiUsage.input_tokens == 1200)) is not None
+
+
+def test_stream_failure_partway_is_a_clear_error_and_saves_nothing(
+    settings: Settings, engine: Engine
+) -> None:
+    client = make_client(settings, engine, FakeProvider(error=LLMError("timeout")))
+    h = auth("alice")
+    r = client.post("/api/v1/ask/stream", headers=h, json={"question": "Is my bench going up?"})
+    events = sse_events(r.text)
+    assert [k for k, _ in events[:2]] == ["delta", "delta"]
+    assert events[-1] == ("error", {"code": "ai_timeout", "message": ERRORS_TIMEOUT})
+    assert client.get("/api/v1/ask/history", headers=h).json()["messages"] == []
+
+
+def test_stream_refusals_before_any_text_are_json_errors(
+    settings: Settings, engine: Engine
+) -> None:
+    r = make_client(settings, engine, None).post(
+        "/api/v1/ask/stream", headers=auth("alice"), json={"question": "how am I doing?"}
+    )
+    assert_error(r, 503, "ai_not_configured")
+
+
+ERRORS_TIMEOUT = "Jarvis took too long to answer. Try again."
+
+
+def test_claude_provider_streams_text_then_the_reply(monkeypatch: pytest.MonkeyPatch) -> None:
+    p = AnthropicProvider("sk-test", "claude-haiku-5-5", timeout_s=15)
+    calls: dict[str, Any] = {}
+
+    class FakeStream:
+        text_stream = iter(["Up ", "6 ", "lb."])
+
+        def __enter__(self) -> FakeStream:
+            return self
+
+        def __exit__(self, *exc: object) -> None:
+            return None
+
+        def get_final_message(self) -> Any:
+            return response("Up 6 lb.")
+
+    def stream(**kwargs: Any) -> FakeStream:
+        calls.update(kwargs)
+        return FakeStream()
+
+    monkeypatch.setattr(p._client.messages, "stream", stream)
+    events = list(p.stream("sys", "question", 4000))
+    assert events[:3] == [("delta", "Up "), ("delta", "6 "), ("delta", "lb.")]
+    kind, reply = events[-1]
+    assert kind == "done" and isinstance(reply, LLMReply) and reply.text == "Up 6 lb."
+    assert calls["model"] == "claude-haiku-5-5" and calls["max_tokens"] == 4000
+
+
+def test_claude_provider_stream_errors_are_clear(monkeypatch: pytest.MonkeyPatch) -> None:
+    p = AnthropicProvider("sk-test", "claude-haiku-5-5", timeout_s=15)
+    req = httpx2.Request("POST", "https://api.anthropic.com/v1/messages")
+
+    def stream(**kwargs: Any) -> Any:
+        raise anthropic.APITimeoutError(request=req)
+
+    monkeypatch.setattr(p._client.messages, "stream", stream)
+    with pytest.raises(LLMError) as err:
+        list(p.stream("sys", "q", 10))
+    assert err.value.code == "timeout"

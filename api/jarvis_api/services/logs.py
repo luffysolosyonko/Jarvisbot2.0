@@ -148,13 +148,17 @@ class UserData:
     name_counts: dict[str, int]  # raw normalized name -> sets (for matching new names)
     weigh_flags: dict[int, WeighFlag] = field(default_factory=dict)  # by log id
     flagged: list[analysis.WeightPoint] = field(default_factory=list)  # for the chart
+    # canonical() answers, per name, for the life of this object (one request).
+    _canon_memo: dict[str, str] = field(default_factory=dict, repr=False, compare=False)
 
     def canonical(self, name: str | None) -> str | None:
         if not name:
             return None
-        counts = dict(self.name_counts)
-        counts[name] = counts.get(name, 0) + 1
-        return canonical_names(counts, self.aliases)[name]
+        if name not in self._canon_memo:  # the same answer every time: work it out once
+            counts = dict(self.name_counts)
+            counts[name] = counts.get(name, 0) + 1
+            self._canon_memo[name] = canonical_names(counts, self.aliases)[name]
+        return self._canon_memo[name]
 
 
 def load_user_data(db: Session, user: User) -> UserData:

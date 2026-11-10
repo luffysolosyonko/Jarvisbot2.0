@@ -15,7 +15,7 @@ with more sets.
 from __future__ import annotations
 
 from collections.abc import Mapping
-from functools import cache
+from functools import lru_cache
 
 
 def expands_to(short: list[str], full: list[str]) -> bool | None:
@@ -23,10 +23,22 @@ def expands_to(short: list[str], full: list[str]) -> bool | None:
     must be the same word, a plural of it, the start of a word ("inc" -> incline, 2-4
     letters), or the initials of 2+ consecutive words ("oa" -> one arm).
     Returns None if not, True if an abbreviation was used, False if identical."""
-    short_t, full_t = tuple(short), tuple(full)
+    return _expands(tuple(short), tuple(full))
 
-    @cache
+
+@lru_cache(maxsize=65536)
+def _expands(short_t: tuple[str, ...], full_t: tuple[str, ...]) -> bool | None:
+    """expands_to on tuples: pure, so results are shared across calls (it runs for
+    every pair of exercise names, many times per request)."""
+    memo: dict[tuple[int, int], bool | None] = {}
+
     def go(i: int, j: int) -> bool | None:
+        if (i, j) in memo:
+            return memo[(i, j)]
+        memo[(i, j)] = result = step(i, j)
+        return result
+
+    def step(i: int, j: int) -> bool | None:
         if i == len(short_t):
             return False if j == len(full_t) else None
         if j >= len(full_t):
@@ -41,8 +53,8 @@ def expands_to(short: list[str], full: list[str]) -> bool | None:
         n = len(t)
         if n >= 2 and j + n <= len(full_t) and t == "".join(w[0] for w in full_t[j : j + n]):
             options.append((n, True))
-        for step, abbreviated in options:
-            rest = go(i + 1, j + step)
+        for width, abbreviated in options:
+            rest = go(i + 1, j + width)
             if rest is not None:
                 return rest or abbreviated
         return None

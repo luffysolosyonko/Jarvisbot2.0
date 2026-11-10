@@ -8,6 +8,7 @@ clear error instead of hanging or leaking provider details.
 from __future__ import annotations
 
 import logging
+from collections.abc import Iterator
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Literal, Protocol
 
@@ -36,10 +37,16 @@ class LLMReply:
     model: str
 
 
+# A streamed answer: text pieces as they arrive, then the finished reply.
+StreamEvent = tuple[Literal["delta"], str] | tuple[Literal["done"], LLMReply]
+
+
 class LLMProvider(Protocol):
     model: str
 
     def complete(self, system: str, user: str, max_tokens: int) -> LLMReply: ...
+
+    def stream(self, system: str, user: str, max_tokens: int) -> Iterator[StreamEvent]: ...
 
 
 class AnthropicProvider:
@@ -55,28 +62,49 @@ class AnthropicProvider:
             api_key=api_key, timeout=timeout_s, max_retries=0
         )
 
-    def complete(self, system: str, user: str, max_tokens: int) -> LLMReply:
-        a = self._anthropic
-        try:
-            resp: Any = self._client.messages.create(
-                model=self.model,
-                max_tokens=max_tokens,
-                system=system,
-                messages=[{"role": "user", "content": user}],
-                output_config={"effort": "low"},  # short factual answers over small context
-            )
-        except a.APITimeoutError as exc:  # subclass of APIConnectionError: catch first
-            raise LLMError("timeout") from exc
-        except a.RateLimitError as exc:
-            raise LLMError("rate_limited") from exc
-        except (a.AuthenticationError, a.PermissionDeniedError, a.NotFoundError) as exc:
-            log.error("LLM misconfigured: %s", type(exc).__name__)
-            raise LLMError("misconfigured", type(exc).__name__) from exc
-        except a.APIStatusError as exc:
-            raise LLMError("unavailable", f"status {exc.status_code}") from exc
-        except a.APIConnectionError as exc:
-            raise LLMError("unavailable", "connection") from exc
+    def _request(self, system: str, user: str, max_tokens: int) -> dict[str, Any]:
+        return {
+            "model": self.model,
+            "max_tokens": max_tokens,
+            "system": system,
+            "messages": [{"role": "user", "content": user}],
+            "output_config": {"effort": "low"},  # short factual answers over small context
+        }
 
+    def _error(self, exc: Exception) -> LLMError:
+        a = self._anthropic
+        if isinstance(exc, a.APITimeoutError):  # subclass of APIConnectionError: check first
+            return LLMError("timeout")
+        if isinstance(exc, a.RateLimitError):
+            return LLMError("rate_limited")
+        if isinstance(exc, (a.AuthenticationError, a.PermissionDeniedError, a.NotFoundError)):
+            log.error("LLM misconfigured: %s", type(exc).__name__)
+            return LLMError("misconfigured", type(exc).__name__)
+        if isinstance(exc, a.APIStatusError):
+            return LLMError("unavailable", f"status {exc.status_code}")
+        return LLMError("unavailable", "connection")
+
+    def complete(self, system: str, user: str, max_tokens: int) -> LLMReply:
+        try:
+            resp: Any = self._client.messages.create(**self._request(system, user, max_tokens))
+        except self._anthropic.APIError as exc:
+            raise self._error(exc) from exc
+        return self._reply(resp)
+
+    def stream(self, system: str, user: str, max_tokens: int) -> Iterator[StreamEvent]:
+        """Text pieces as Claude writes them, then the finished reply. The client
+        timeout bounds each wait, so a stalled answer still ends in a clear error."""
+        try:
+            with self._client.messages.stream(**self._request(system, user, max_tokens)) as s:
+                for text in s.text_stream:
+                    if text:
+                        yield ("delta", text)
+                resp: Any = s.get_final_message()
+        except self._anthropic.APIError as exc:
+            raise self._error(exc) from exc
+        yield ("done", self._reply(resp))
+
+    def _reply(self, resp: Any) -> LLMReply:
         usage = usage_from(getattr(resp, "usage", None))
         if getattr(resp, "stop_reason", None) == "refusal":
             raise LLMError("refused", usage=usage)
