@@ -11,6 +11,7 @@ import { useDelayedFlag } from '@/hooks/useDelayedFlag';
 import { useTitle } from '@/hooks/useTitle';
 import { errorMessage } from '@/lib/api';
 import { askStream } from '@/lib/askStream';
+import { UNSAVED_KEY } from '@/lib/cache';
 import { capsDate, clockTime, dayHeading, dayIn, isoDate, parseDate, todayIn } from '@/lib/format';
 import { load, save } from '@/lib/storage';
 import type { Log, LogMode, Mode } from '@/lib/types';
@@ -22,7 +23,6 @@ import { Composer } from './Composer';
 import { Entry } from './Entry';
 
 const MODE_KEY = 'jarvis.mode';
-const UNSAVED_KEY = 'jarvis.unsaved';
 /** The feed starts with the last 30 days; scrolling to the top loads 30 more. */
 const DEFAULT_DAYS = 30;
 const MORE_DAYS = 30;

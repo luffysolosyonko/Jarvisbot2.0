@@ -15,6 +15,8 @@ import { dehydrate, hydrate, type DehydratedState, type QueryClient } from '@tan
 const HINT_KEY = 'jarvis.session';
 const CACHE_KEY = 'jarvis.cache.v1';
 const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+/** Entries whose save failed, kept by the Notebook until they're saved or discarded. */
+export const UNSAVED_KEY = 'jarvis.unsaved';
 const PERSIST = new Set(['me', 'logs', 'ask-history', 'dashboard', 'calendar', 'exercises']);
 
 type Saved = { uid: string; savedAt: number; state: DehydratedState };
@@ -50,6 +52,8 @@ export function clearCache(): void {
   try {
     localStorage.removeItem(HINT_KEY);
     localStorage.removeItem(CACHE_KEY);
+    // Typed by whoever was signed in: never shown to (or saved by) the next account.
+    localStorage.removeItem(UNSAVED_KEY);
   } catch {
     // nothing to clear
   }

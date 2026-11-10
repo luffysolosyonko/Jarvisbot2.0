@@ -1,6 +1,7 @@
 /** Firebase Auth error codes -> one plain sentence. */
 const MESSAGES: Record<string, string> = {
   'auth/invalid-email': 'That email address doesn’t look right.',
+  'auth/missing-email': 'Enter your email address.',
   'auth/missing-password': 'Enter your password.',
   'auth/invalid-credential': 'Wrong email or password, or there’s no account with this email yet. New here? Create an account.',
   'auth/wrong-password': 'Wrong email or password.',

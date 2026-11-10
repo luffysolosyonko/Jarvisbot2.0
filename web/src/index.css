@@ -521,6 +521,16 @@ input[type='number']::-webkit-outer-spin-button {
   color: var(--paper);
 }
 
+/* In a popup a 4-way switch (Charts) has to fit a 360px screen: share the width. */
+.panel .segmented {
+  display: grid;
+}
+
+.panel .segmented button {
+  min-width: 0;
+  padding: 0 var(--s2);
+}
+
 /* ---------- tables ---------- */
 .table-wrap {
   overflow-x: auto;

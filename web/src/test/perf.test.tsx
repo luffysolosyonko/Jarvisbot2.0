@@ -165,4 +165,11 @@ describe('session cache', () => {
     restoreCache(c);
     expect(c.getQueryData(['logs', 'x', 'y'])).toBeUndefined();
   });
+
+  it('signing out drops entries that failed to save, so the next account never sees them', () => {
+    setSessionHint('u1');
+    localStorage.setItem('jarvis.unsaved', JSON.stringify([{ key: 'k', text: '8x 135lb bench' }]));
+    setSessionHint(null); // what the auth provider does on sign-out
+    expect(localStorage.getItem('jarvis.unsaved')).toBeNull();
+  });
 });
