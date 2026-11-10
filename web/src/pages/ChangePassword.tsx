@@ -4,7 +4,7 @@ import { useAuth } from '@/auth/AuthProvider';
 import { Button } from '@/components/Button';
 import { PasswordRules } from '@/components/PasswordRules';
 import { errorMessage } from '@/lib/api';
-import { passwordOk } from '@/lib/password';
+import { passwordOk, useCommonPasswords } from '@/lib/password';
 
 /**
  * Change the password: the current one (Firebase asks for it again before a
@@ -21,6 +21,8 @@ export function ChangePassword() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
+  const [flagRules, setFlagRules] = useState(false);
+  const common = useCommonPasswords(hasPassword);
 
   if (!hasPassword) return <p className="help">You sign in with Google, so there’s no password to change here.</p>;
 
@@ -28,7 +30,10 @@ export function ChangePassword() {
     e.preventDefault();
     setDone(false);
     if (!current) return setError('Enter your current password.');
-    if (!passwordOk(next)) return setError('Choose a stronger password: it needs everything on the list.');
+    if (!passwordOk(next, common)) {
+      setFlagRules(true);
+      return setError('Choose a stronger password: see the list under New password.');
+    }
     if (next !== confirm) return setError('The new passwords don’t match.');
     if (next === current) return setError('The new password is the same as the current one.');
     setBusy(true);
@@ -70,7 +75,7 @@ export function ChangePassword() {
           aria-describedby={`${id}-rules`}
           onChange={(e) => setNext(e.target.value)}
         />
-        <PasswordRules id={`${id}-rules`} password={next} />
+        <PasswordRules id={`${id}-rules`} password={next} common={common} flag={flagRules} />
       </div>
       <div className="field">
         <label htmlFor={`${id}-confirm`}>Confirm new password</label>

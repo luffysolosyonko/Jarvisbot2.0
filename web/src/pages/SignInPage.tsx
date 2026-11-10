@@ -1,10 +1,11 @@
-import { useState, type FormEvent } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
+import { useRef, useState, type FormEvent } from 'react';
 
 import { useAuth } from '@/auth/AuthProvider';
 import { useTitle } from '@/hooks/useTitle';
 import { errorMessage } from '@/lib/api';
 import { PasswordRules } from '@/components/PasswordRules';
-import { passwordOk } from '@/lib/password';
+import { passwordOk, useCommonPasswords } from '@/lib/password';
 
 type View = 'sign-in' | 'sign-up' | 'reset';
 type Busy = 'email' | 'google' | null;
@@ -44,7 +45,10 @@ export function SignInPage() {
   const [view, setView] = useState<View>('sign-in');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [confirm, setConfirm] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [flagRules, setFlagRules] = useState(false); // after a refused submit
+  const passwordRef = useRef<HTMLInputElement>(null);
+  const common = useCommonPasswords(view === 'sign-up');
   const [busy, setBusy] = useState<Busy>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -64,7 +68,7 @@ export function SignInPage() {
 
   function go(next: View) {
     setView(next);
-    setConfirm('');
+    setFlagRules(false);
     setError(null);
     setNotice(null);
   }
@@ -76,12 +80,12 @@ export function SignInPage() {
         await resetPassword(email);
         setNotice('If that address has an account, a reset link is on its way.');
       });
-    } else if (view === 'sign-up' && !passwordOk(password)) {
+    } else if (view === 'sign-up' && !passwordOk(password, common)) {
+      // The button stays enabled: point at what's missing instead.
+      setError(null);
       setNotice(null);
-      setError('Choose a stronger password: it needs everything on the list below.');
-    } else if (view === 'sign-up' && confirm !== password) {
-      setNotice(null);
-      setError('The passwords don’t match. Type the same password in both boxes.');
+      setFlagRules(true);
+      passwordRef.current?.focus();
     } else {
       void run('email', () => (view === 'sign-in' ? signIn(email, password) : signUp(email, password)));
     }
@@ -128,38 +132,31 @@ export function SignInPage() {
                   </button>
                 ) : null}
               </div>
-              <input
-                id="password"
-                className="auth-input"
-                type="password"
-                autoComplete={view === 'sign-in' ? 'current-password' : 'new-password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                aria-describedby={view === 'sign-up' ? 'password-rules' : undefined}
-                required
-              />
-              {view === 'sign-up' ? <PasswordRules id="password-rules" password={password} /> : null}
-            </div>
-          ) : null}
-          {view === 'sign-up' ? (
-            <div className="auth-field">
-              <div className="auth-label-row">
-                <label htmlFor="confirm-password">Confirm password</label>
-                {confirm ? (
-                  <span className={`auth-match${confirm === password ? ' ok' : ''}`} aria-live="polite">
-                    {confirm === password ? '✓ matches' : 'doesn’t match yet'}
-                  </span>
-                ) : null}
+              <div className="auth-password">
+                <input
+                  id="password"
+                  ref={passwordRef}
+                  className="auth-input"
+                  type={showPassword ? 'text' : 'password'}
+                  autoComplete={view === 'sign-in' ? 'current-password' : 'new-password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  aria-describedby={view === 'sign-up' ? 'password-rules' : undefined}
+                  aria-invalid={view === 'sign-up' && flagRules && !passwordOk(password, common) ? true : undefined}
+                  spellCheck={false}
+                  required
+                />
+                <button
+                  type="button"
+                  className="auth-eye"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                  onClick={() => setShowPassword((s) => !s)}>
+                  {showPassword ? <EyeOff size={20} strokeWidth={1.8} aria-hidden="true" /> : <Eye size={20} strokeWidth={1.8} aria-hidden="true" />}
+                </button>
               </div>
-              <input
-                id="confirm-password"
-                className="auth-input"
-                type="password"
-                autoComplete="new-password"
-                value={confirm}
-                onChange={(e) => setConfirm(e.target.value)}
-                required
-              />
+              {view === 'sign-up' ? (
+                <PasswordRules id="password-rules" password={password} common={common} flag={flagRules} />
+              ) : null}
             </div>
           ) : null}
 

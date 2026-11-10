@@ -3,6 +3,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ChangePassword } from '@/pages/ChangePassword';
+import { SignInPage } from '@/pages/SignInPage';
 import { VerifyEmailPage } from '@/pages/VerifyEmailPage';
 
 const auth = {
@@ -12,6 +13,10 @@ const auth = {
   refreshUser: vi.fn(async () => false),
   resendVerification: vi.fn(async () => {}),
   signOut: vi.fn(async () => {}),
+  signIn: vi.fn(async () => {}),
+  signUp: vi.fn(async () => {}),
+  resetPassword: vi.fn(async () => {}),
+  signInWithGoogle: vi.fn(async () => {}),
 };
 vi.mock('@/auth/AuthProvider', () => ({ useAuth: () => auth }));
 
@@ -38,12 +43,12 @@ describe('ChangePassword', () => {
 
   it('refuses mismatched passwords, then changes it', async () => {
     render(<ChangePassword />);
-    await fill('old-Pass1!', 'New-pass9!', 'New-pass9?');
+    await fill('old-Pass1!', 'quiet barbell morning', 'quiet barbell mornin');
     expect(screen.getByRole('alert')).toHaveTextContent(/don’t match/);
     await userEvent.clear(screen.getByLabelText('Confirm new password'));
-    await userEvent.type(screen.getByLabelText('Confirm new password'), 'New-pass9!');
+    await userEvent.type(screen.getByLabelText('Confirm new password'), 'quiet barbell morning');
     await userEvent.click(screen.getByRole('button', { name: 'Change password' }));
-    await waitFor(() => expect(auth.changePassword).toHaveBeenCalledWith('old-Pass1!', 'New-pass9!'));
+    await waitFor(() => expect(auth.changePassword).toHaveBeenCalledWith('old-Pass1!', 'quiet barbell morning'));
     expect(await screen.findByText('Password changed.')).toBeInTheDocument();
   });
 
@@ -63,5 +68,34 @@ describe('VerifyEmailPage', () => {
     await userEvent.click(screen.getByRole('button', { name: 'I’ve verified it' }));
     expect(await screen.findByRole('alert')).toHaveTextContent(/Not verified yet/);
     expect(auth.refreshUser).toHaveBeenCalled();
+  });
+});
+
+describe('Sign-up password field', () => {
+  it('has a show/hide eye, no confirm box, and points at unmet rules instead of submitting', async () => {
+    render(<SignInPage />);
+    await userEvent.click(screen.getByRole('button', { name: 'Create account' }));
+    expect(screen.queryByLabelText(/Confirm/)).not.toBeInTheDocument();
+    const pw = screen.getByLabelText('Password');
+    expect(pw).toHaveAttribute('aria-describedby', 'password-rules');
+    expect(pw).toHaveAttribute('type', 'password');
+    await userEvent.click(screen.getByRole('button', { name: 'Show password' }));
+    expect(pw).toHaveAttribute('type', 'text');
+    expect(screen.getByRole('button', { name: 'Hide password' })).toBeInTheDocument();
+
+    await userEvent.type(screen.getByLabelText('Email'), 'new@example.com');
+    await userEvent.type(pw, 'password');
+    const submit = screen.getAllByRole('button', { name: 'Create account' }).find((b) => b.getAttribute('type') === 'submit')!;
+    expect(submit).toBeEnabled();
+    await userEvent.click(submit);
+    expect(auth.signUp).not.toHaveBeenCalled();
+    expect(pw).toHaveFocus();
+    expect(screen.getByText(/12\+ characters/)).toHaveClass('flagged');
+
+    await userEvent.clear(pw);
+    await userEvent.type(pw, 'quiet barbell morning');
+    expect(await screen.findByText(/strong password/)).toBeInTheDocument();
+    await userEvent.click(submit);
+    expect(auth.signUp).toHaveBeenCalledWith('new@example.com', 'quiet barbell morning');
   });
 });

@@ -207,9 +207,13 @@ Highlights:
   client config only.
 - New email/password accounts must open the verification link Firebase emails
   them before they can use the app; the API refuses unverified accounts too
-  (`403 email_unverified`), so scripted sign-ups get nowhere. Passwords need 8+
-  characters with upper and lower case, a number and a symbol (sign-up and
-  Settings > Password).
+  (`403 email_unverified`), so scripted sign-ups get nowhere. New passwords need
+  12+ characters and can't be one of the ~10,000 most common breached
+  passwords (a bundled list, checked in the browser with no network call).
+  Firebase's own password policy enforces the 12-character minimum too
+  (`python -m jarvis_api.password_policy --apply`); the common-password list is
+  checked in the app only, since Firebase can't check a list without a paid
+  blocking function.
 - The demo account is one fixed Firebase UID from server config that signs in
   with an ordinary email and password, set with `python -m jarvis_api.demo_login`.
   The password is never in the repo.
@@ -233,3 +237,7 @@ Highlights:
 ## License
 
 MIT. See [LICENSE](LICENSE).
+
+`web/src/lib/common-passwords.txt` is the 10k most common passwords list from
+[SecLists](https://github.com/danielmiessler/SecLists) (MIT, Daniel Miessler
+and contributors), lowercased.
