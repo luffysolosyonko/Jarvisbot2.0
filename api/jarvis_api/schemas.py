@@ -275,15 +275,6 @@ class WeightForecastOut(BaseModel):
 
 
 # --- tools ---------------------------------------------------------------
-class TodayLogsOut(BaseModel):
-    date: date
-    logs: list[LogOut]  # oldest first
-    sets: int
-    volume_lb: float
-    exercises: list[str]
-    weight_lb: float | None
-
-
 class StatsOut(BaseModel):
     days: int
     start: date

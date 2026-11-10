@@ -11,20 +11,16 @@ import { toolLabel, type ToolId } from './registry';
 import {
   ChartsTool,
   EstimateTool,
-  ExportTool,
   LiftTool,
   PredictLiftTool,
   PredictWeightTool,
   SearchTool,
   StatsTool,
-  TodayTool,
 } from './ToolViews';
 
 function Body({ id, onJump }: { id: ToolId; onJump: (log: Log) => void }) {
   const unit = useUnit();
   switch (id) {
-    case 'today':
-      return <TodayTool unit={unit} />;
     case 'stats':
       return <StatsTool unit={unit} />;
     case 'lift':
@@ -39,8 +35,6 @@ function Body({ id, onJump }: { id: ToolId; onJump: (log: Log) => void }) {
       return <ChartsTool unit={unit} />;
     case 'search':
       return <SearchTool unit={unit} onJump={onJump} />;
-    case 'export':
-      return <ExportTool />;
     case 'help':
       return <SyntaxHelp />;
   }

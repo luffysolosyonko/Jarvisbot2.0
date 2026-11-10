@@ -1,6 +1,5 @@
 /** The bot's slash commands, as buttons. */
 export type ToolId =
-  | 'today'
   | 'stats'
   | 'lift'
   | 'estimate'
@@ -8,11 +7,9 @@ export type ToolId =
   | 'predict-lift'
   | 'charts'
   | 'search'
-  | 'export'
   | 'help';
 
 export const TOOLS: { id: ToolId; label: string; command: string }[] = [
-  { id: 'today', label: 'Today', command: '/today' },
   { id: 'stats', label: 'Stats', command: '/stats' },
   { id: 'lift', label: 'Lift', command: '/lift' },
   { id: 'estimate', label: 'Estimate', command: '/estimate' },
@@ -20,7 +17,6 @@ export const TOOLS: { id: ToolId; label: string; command: string }[] = [
   { id: 'predict-lift', label: 'Predict lift', command: '/predict lift' },
   { id: 'charts', label: 'Charts', command: '/chart' },
   { id: 'search', label: 'Search', command: '/search' },
-  { id: 'export', label: 'Export', command: '/export' },
   { id: 'help', label: 'Syntax', command: '/howto' },
 ];
 

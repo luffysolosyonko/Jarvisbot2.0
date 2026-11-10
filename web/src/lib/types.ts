@@ -187,15 +187,6 @@ export type AskMessage = {
   output_tokens: number;
 };
 
-export type TodayLogs = {
-  date: string;
-  logs: Log[];
-  sets: number;
-  volume_lb: number;
-  exercises: string[];
-  weight_lb: number | null;
-};
-
 export type Stats = {
   days: number;
   start: string;

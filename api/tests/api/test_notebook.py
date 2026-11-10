@@ -158,14 +158,10 @@ def test_delete_and_other_users_cannot_touch(client: TestClient) -> None:
 
 
 # --- tools ---------------------------------------------------------------------
-def test_today_and_stats(client: TestClient) -> None:
+def test_stats(client: TestClient) -> None:
     h = auth("alice")
     post(client, "alice", "5x 100lb bench\n5x 100lb bench\n10x 50lb row")
     post(client, "alice", "182.4", mode="weight")
-    today = client.get(f"{API}/today", headers=h).json()
-    assert today["sets"] == 3 and today["volume_lb"] == 1500.0 and today["weight_lb"] == 182.4
-    assert [lg["kind"] for lg in today["logs"]] == ["workout", "weight"]  # oldest first
-
     stats = client.get(f"{API}/stats?days=30", headers=h).json()
     assert stats["gym_days"] == 1 and stats["sets"] == 3 and stats["volume_lb"] == 1500.0
     assert stats["weight_end_lb"] == 182.4 and stats["weight_change_lb"] is None
@@ -210,12 +206,12 @@ def test_export_csv(client: TestClient) -> None:
     post(client, "alice", "5x 100lb bench")
     post(client, "alice", "182.4", mode="weight")
     h = auth("alice")
-    sets = client.get(f"{API}/export/sets.csv", headers=h)
-    assert sets.status_code == 200 and sets.headers["content-type"].startswith("text/csv")
-    lines = sets.text.strip().splitlines()
-    assert lines[0].startswith("date,exercise,reps") and ",bench,5,5,0,100.0," in lines[1]
-    weights = client.get(f"{API}/export/weighins.csv", headers=h).text.strip().splitlines()
-    assert weights[1].endswith(",182.4,")
+    r = client.get(f"{API}/export/all.csv", headers=h)
+    assert r.status_code == 200 and r.headers["content-type"].startswith("text/csv")
+    lines = r.text.strip().splitlines()
+    assert lines[0].startswith("date,time,kind,exercise,reps")
+    assert ",workout,bench,5,5,0,100.0," in lines[1]
+    assert ",weight,,,,,182.4," in lines[2]
 
 
 # --- logging never calls the LLM -------------------------------------------------
@@ -228,7 +224,7 @@ def test_logging_makes_zero_llm_calls(settings: Settings, engine: Engine) -> Non
     client.post(f"{API}/logs", headers=h, json={"text": "83.9kg", "mode": "weight"})
     client.patch(f"{API}/logs/{log.json()['id']}", headers=h, json={"text": "5x 160lb bench"})
     client.get(f"{API}/logs", headers=h)
-    client.get(f"{API}/today", headers=h)
+    client.get(f"{API}/stats", headers=h)
     client.delete(f"{API}/logs/{log.json()['id']}", headers=h)
     assert provider.calls == []
 

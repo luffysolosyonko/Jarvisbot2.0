@@ -6,7 +6,6 @@ import { TrendChart, WeeklyBars } from '@/components/Charts';
 import { ExerciseSelect } from '@/components/ExerciseSelect';
 import { ICON } from '@/components/icons';
 import { Segmented } from '@/components/Segmented';
-import { SetRows } from '@/components/SetRows';
 import { Stat } from '@/components/Stat';
 import { EmptyState, ErrorState, QueryView, Skeleton } from '@/components/States';
 import {
@@ -19,11 +18,10 @@ import {
   useRemoveAlias,
   useSearch,
   useStats,
-  useToday,
   useWeightForecast,
 } from '@/hooks/queries';
 import { useDebounced } from '@/hooks/useDebounced';
-import { downloadFile, errorMessage } from '@/lib/api';
+import { errorMessage } from '@/lib/api';
 import { exerciseName, longDate, num, signedWeight, toLb, weight } from '@/lib/format';
 import { reachText, setRefText } from '@/lib/describe';
 import type { ExerciseDetail, Log, Unit } from '@/lib/types';
@@ -39,34 +37,6 @@ function DaysToggle({ value, onChange }: { value: number; onChange: (d: number) 
 }
 
 // ---------------------------------------------------------------------------
-export function TodayTool({ unit }: { unit: Unit }) {
-  const q = useToday();
-  return (
-    <QueryView query={q}>
-      {(t) =>
-        !t.logs.length ? (
-          <EmptyState message="Nothing logged today. Type a set like 8x 160lb bench in the Notebook." />
-        ) : (
-          <div className="stack-4">
-            <div className="stats">
-              <Stat label="Sets" value={`${t.sets} sets`} />
-              <Stat label="Weigh-in" value={t.weight_lb === null ? '–' : weight(t.weight_lb, unit)} />
-            </div>
-            <ul className="stack-3">
-              {t.logs.map((lg) => (
-                <li key={lg.id} className="stack-2">
-                  <div className="raw">{lg.raw_text}</div>
-                  {lg.weigh_in ? <p className="t-label tnum">→ {weight(lg.weigh_in.weight_lb, unit)}</p> : <SetRows sets={lg.sets} unit={unit} />}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )
-      }
-    </QueryView>
-  );
-}
-
 export function StatsTool({ unit }: { unit: Unit }) {
   const [days, setDays] = useState(7);
   const q = useStats(days);
@@ -432,34 +402,3 @@ export function AliasesTool() {
     </div>
   );
 }
-
-export function ExportTool() {
-  const [busy, setBusy] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  async function get(path: string, name: string) {
-    setBusy(path);
-    setError(null);
-    try {
-      await downloadFile(path, name);
-    } catch (e) {
-      setError(errorMessage(e));
-    } finally {
-      setBusy(null);
-    }
-  }
-  return (
-    <div className="stack-3">
-      <p className="t-label secondary">One row per set or weigh-in, weights in lb.</p>
-      <div className="row">
-        <Button loading={busy === '/export/sets.csv'} onClick={() => void get('/export/sets.csv', 'jarvis-sets.csv')}>
-          Download sets CSV
-        </Button>
-        <Button loading={busy === '/export/weighins.csv'} onClick={() => void get('/export/weighins.csv', 'jarvis-weigh-ins.csv')}>
-          Download weigh-ins CSV
-        </Button>
-      </div>
-      {error ? <p className="error-text" role="alert">{error}</p> : null}
-    </div>
-  );
-}
-

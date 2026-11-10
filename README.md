@@ -43,9 +43,9 @@ The demo account's made-up data.
   was 80 lb**, **Keep 176.4** and **Edit**. Until you answer, it's left out of
   averages, trends, forecasts and monthly change, and drawn on the chart as a
   hollow orange circle.
-- **Every bot command is a button.** The Tools menu (wrench): Today, Stats (7/30/90 days), Lift,
+- **Every bot command is a button.** The Tools menu (wrench): Stats (7/30/90 days), Lift,
   Estimate (maxes for 3–12 reps), Predict weight, Predict lift (the date
-  you'll hit a target), Charts, Search and Export (CSV), plus the
+  you'll hit a target), Charts and Search, plus the
   Syntax cheat sheet. Exercise-name shortcuts are under Settings.
 - **History and Progress.** A month heatmap shades each day by sets logged and
   dots weigh-in days; click a day for one table of its sets ("3 ✓ · 1 ✗") and

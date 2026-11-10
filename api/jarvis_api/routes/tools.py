@@ -1,4 +1,4 @@
-"""The bot's slash commands as endpoints: /today, /stats, /search, /usage,
+"""The bot's slash commands as endpoints: /stats, /search, /usage,
 /export, plus the History calendar. Each is a thin wrapper over jarvis_core.analysis.
 (/lift and /estimate are GET /exercises/{name}; /predict is GET /weight/forecast and
 GET /exercises/{name}/forecast.)"""
@@ -22,7 +22,7 @@ from jarvis_api.errors import ApiError
 from jarvis_api.models import AiUsage, Log, LoggedSet
 from jarvis_api.routes.ask import daily_cap
 from jarvis_api.routes.logs import logs_out
-from jarvis_api.services.logs import load_user_data, logs_between
+from jarvis_api.services.logs import load_user_data
 from jarvis_api.services.users import local_now, user_tz
 from jarvis_core import analysis
 
@@ -35,24 +35,6 @@ SEARCH_LIMIT = 50
 
 def _r(x: float, nd: int = 1) -> float:
     return round(x, nd)
-
-
-@router.get("/today")
-def today(user: CurrentUser, db: DB) -> schemas.TodayLogsOut:
-    """Everything logged today, oldest first."""
-    day = local_now(user, datetime.now(UTC)).date()
-    data = load_user_data(db, user)
-    logs = list(reversed(logs_between(db, user, day, day)))
-    sets = [s for s in data.sets if s.day == day]
-    weights = [w for w in analysis.daily_weights(data.weighins) if w.day == day]
-    return schemas.TodayLogsOut(
-        date=day,
-        logs=logs_out(db, user, logs, data),
-        sets=len(sets),
-        volume_lb=_r(sum(analysis.set_volume(s) for s in sets)),
-        exercises=list(dict.fromkeys(s.exercise for s in sets if s.exercise)),
-        weight_lb=weights[0].weight_lb if weights else None,
-    )
 
 
 @router.get("/stats")
@@ -202,30 +184,6 @@ def _csv(name: str, header: list[str], rows: list[list[object]]) -> Response:
     )
 
 
-@router.get("/export/sets.csv", response_class=Response)
-def export_sets(user: CurrentUser, db: DB) -> Response:
-    """Every set as CSV (weights in lb; bodyweight sets use that day's weigh-in)."""
-    data = load_user_data(db, user)
-    rows: list[list[object]] = [
-        [
-            s.day.isoformat(),
-            s.exercise or "",
-            s.reps,
-            s.good_reps,
-            s.failed_reps,
-            "" if s.weight_lb is None else _r(s.weight_lb),
-            int(s.estimated),
-            int(s.bodyweight),
-            int(s.per_hand),
-            s.weight_text or "",
-        ]
-        for s in data.sets
-    ]
-    header = ["date", "exercise", "reps", "good_reps", "failed_reps", "weight_lb"]
-    header += ["estimated", "bodyweight", "per_hand", "weight_as_written"]
-    return _csv("jarvis-sets.csv", header, rows)
-
-
 @router.get("/export/all.csv", response_class=Response)
 def export_all(user: CurrentUser, db: DB) -> Response:
     """Every entry as one CSV: a row per set and per weigh-in, oldest first, with the
@@ -265,12 +223,3 @@ def export_all(user: CurrentUser, db: DB) -> Response:
     header = ["date", "time", "kind", "exercise", "reps", "good_reps", "failed_reps"]
     header += ["weight_lb", "estimated", "bodyweight", "per_hand", "note", "as_written"]
     return _csv("jarvis-entries.csv", header, rows)
-
-
-@router.get("/export/weighins.csv", response_class=Response)
-def export_weighins(user: CurrentUser, db: DB) -> Response:
-    data = load_user_data(db, user)
-    rows: list[list[object]] = [
-        [w.day.isoformat(), w.weight_lb, w.note or ""] for w in data.weighins
-    ]
-    return _csv("jarvis-weigh-ins.csv", ["date", "weight_lb", "note"], rows)

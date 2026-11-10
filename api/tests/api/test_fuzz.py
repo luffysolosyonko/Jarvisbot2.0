@@ -180,7 +180,6 @@ def test_fuzz_api_never_500s(client: TestClient) -> None:
             assert client.delete(f"/api/v1/logs/{lid}", headers=h).status_code == 204
     for path in [
         "/logs",
-        "/today",
         "/dashboard",
         "/exercises",
         "/stats?days=30",
@@ -188,8 +187,6 @@ def test_fuzz_api_never_500s(client: TestClient) -> None:
         "/weight/forecast",
         "/aliases/matches",
         "/export/all.csv",
-        "/export/sets.csv",
-        "/export/weighins.csv",
         "/me/data",
         "/usage",
         "/ask/history",

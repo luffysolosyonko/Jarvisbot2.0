@@ -18,7 +18,6 @@ import type {
   ParseResult,
   SearchResult,
   Stats,
-  TodayLogs,
   Unit,
   WeightForecast,
 } from '@/lib/types';
@@ -35,7 +34,7 @@ export const keys = {
 
 /** Anything derived from logs: refresh it all after a log changes. */
 function invalidateLogData(qc: ReturnType<typeof useQueryClient>) {
-  for (const key of [['logs'], ['data-summary'], ['dashboard'], ['exercises'], ['exercise'], ['calendar'], ['today'], ['stats'], ['search'], ['forecast'], ['weight-forecast']]) {
+  for (const key of [['logs'], ['data-summary'], ['dashboard'], ['exercises'], ['exercise'], ['calendar'], ['stats'], ['search'], ['forecast'], ['weight-forecast']]) {
     void qc.invalidateQueries({ queryKey: key });
   }
 }
@@ -238,10 +237,6 @@ export function useWeightForecast(days = 28) {
     queryKey: ['weight-forecast', days],
     queryFn: () => api<WeightForecast>('/weight/forecast', { query: { days } }),
   });
-}
-
-export function useToday() {
-  return useQuery({ queryKey: ['today'], queryFn: () => api<TodayLogs>('/today') });
 }
 
 export function useStats(days: number) {

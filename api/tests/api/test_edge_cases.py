@@ -40,12 +40,10 @@ def test_exported_text_never_runs_as_a_spreadsheet_formula(client: TestClient) -
     post(client, '181 =HYPERLINK("http://example.com")', "weight")
     post(client, "180.4 @SUM(1)", "weight")
     h = auth("alice")
-    for path in ["/api/v1/export/all.csv", "/api/v1/export/weighins.csv"]:
-        cells = [
-            c for row in csv.reader(io.StringIO(client.get(path, headers=h).text)) for c in row
-        ]
-        assert not [c for c in cells if c[:1] in ("=", "+", "@")], path
-        assert any(c.startswith("'=HYPERLINK") for c in cells), path
+    text = client.get("/api/v1/export/all.csv", headers=h).text
+    cells = [c for row in csv.reader(io.StringIO(text)) for c in row]
+    assert not [c for c in cells if c[:1] in ("=", "+", "@")]
+    assert any(c.startswith("'=HYPERLINK") for c in cells)
 
 
 def test_long_names_and_weights_fit_the_database(client: TestClient) -> None:
