@@ -1604,15 +1604,6 @@ figure .legend {
 }
 
 
-.kbd {
-  font-family: var(--font-mono);
-  font-size: var(--t-time);
-  padding: 0 var(--s1);
-  border: 1px solid var(--rule);
-  border-radius: 4px;
-  background: var(--paper-raised);
-}
-
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
