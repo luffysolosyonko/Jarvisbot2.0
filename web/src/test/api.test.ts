@@ -45,10 +45,10 @@ describe('api client', () => {
     expect(fetchImpl).not.toHaveBeenCalled();
   });
 
-  it('allows unauthenticated calls when asked (demo token)', async () => {
-    const fetchImpl = vi.fn(async () => jsonResponse(200, { token: 'c' }));
+  it('allows unauthenticated calls when asked', async () => {
+    const fetchImpl = vi.fn(async () => jsonResponse(200, { ok: true }));
     const api = createApiClient({ baseUrl: 'http://x', getToken: async () => null, fetchImpl });
-    await expect(api('/demo/token', { method: 'POST', auth: false })).resolves.toEqual({ token: 'c' });
+    await expect(api('/health', { auth: false })).resolves.toEqual({ ok: true });
   });
 
   it('turns network failures into a clear error', async () => {

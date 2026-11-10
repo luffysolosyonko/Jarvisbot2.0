@@ -10,7 +10,7 @@ import { ParseLine } from './ParseLine';
 const PLACEHOLDER: Record<Mode, string> = {
   workout: '(reps)x (weight) (lift)',
   weight: '(weight)kg/lbs',
-  ask: 'Is my bench still improving?',
+  ask: 'Ask about your training',
 };
 
 const EXAMPLE: Record<Mode, string> = {
@@ -74,11 +74,12 @@ export function Composer({ mode, onModeChange, text, onTextChange, onSend, sendi
         <span className="spacer" />
         <button
           type="button"
-          className="btn btn-accent-outline"
+          className="btn btn-accent-outline icon-only"
+          aria-label="Ask"
+          title="Ask Jarvis"
           aria-pressed={isAsk}
           onClick={() => onModeChange(isAsk ? 'workout' : 'ask')}>
-          <MessageCircle size={18} strokeWidth={1.8} aria-hidden="true" />
-          Ask
+          <MessageCircle size={22} strokeWidth={1.8} aria-hidden="true" />
         </button>
         {tools}
       </div>

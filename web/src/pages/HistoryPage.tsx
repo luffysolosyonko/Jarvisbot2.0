@@ -72,11 +72,12 @@ export function HistoryPage() {
         <h1 className="t-title">History</h1>
         <Button
           size="small"
+          title="Go to today"
           onClick={() => {
             setMonth(today.slice(0, 7));
             setSelected(today);
           }}>
-          Jump to today
+          Present
         </Button>
       </div>
       <div className="grid-2">

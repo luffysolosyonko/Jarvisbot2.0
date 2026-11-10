@@ -5,7 +5,7 @@ import { useTitle } from '@/hooks/useTitle';
 import { errorMessage } from '@/lib/api';
 
 type View = 'sign-in' | 'sign-up' | 'reset';
-type Busy = 'email' | 'google' | 'demo' | null;
+type Busy = 'email' | 'google' | null;
 
 /** Google's standard "G" mark, unaltered (per Google's sign-in branding guidelines). */
 function GoogleG() {
@@ -33,11 +33,12 @@ function GoogleG() {
 
 /**
  * A minimal sign-in page in the logbook style: the wordmark, two underlined fields,
- * Sign in and Google, and Create account / Try the demo pinned to the bottom.
+ * Sign in and Google, and Create account pinned to the bottom. The demo is an
+ * ordinary email/password account (see docs/DEMO.md).
  * The same page handles creating an account and resetting a password.
  */
 export function SignInPage() {
-  const { signIn, signUp, resetPassword, signInWithGoogle, signInDemo } = useAuth();
+  const { signIn, signUp, resetPassword, signInWithGoogle } = useAuth();
   const [view, setView] = useState<View>('sign-in');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -173,15 +174,6 @@ export function SignInPage() {
             Back to sign in
           </button>
         )}
-        <button
-          type="button"
-          className="auth-link auth-foot-link auth-demo"
-          disabled={!!busy}
-          aria-busy={busy === 'demo' || undefined}
-          title="12 weeks of made-up training data"
-          onClick={() => void run('demo', signInDemo)}>
-          {busy === 'demo' ? 'Working…' : 'Try the demo →'}
-        </button>
       </footer>
     </main>
   );

@@ -181,23 +181,23 @@ a {
   flex: 1;
 }
 
+/* Icons only (each link has an aria-label and a tooltip). */
 .tab {
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
   height: 100%;
   min-height: var(--touch);
   color: var(--nav-inactive);
-  font-size: var(--t-time);
-  font-weight: 500;
   text-decoration: none;
 }
 
 .tab.active {
   color: var(--accent);
-  font-weight: 600;
+}
+
+.tab.active svg {
+  stroke-width: 2.2;
 }
 
 /* ---------- layout helpers ---------- */
@@ -323,6 +323,11 @@ a {
 .btn-accent-outline {
   border-color: var(--accent);
   color: var(--accent);
+}
+
+.btn.icon-only {
+  width: var(--touch);
+  padding: 0;
 }
 
 .btn-accent-outline[aria-pressed='true'] {
@@ -695,6 +700,12 @@ input[type='number']::-webkit-outer-spin-button {
   padding: var(--s3) 0;
 }
 
+/* In the notebook, states and skeletons sit right of the margin line. */
+.feed > .state,
+.feed > [aria-busy='true'] {
+  padding-left: calc(var(--margin-w) + var(--s3));
+}
+
 /* ---------- toast ---------- */
 .toasts {
   position: fixed;
@@ -947,6 +958,40 @@ input[type='number']::-webkit-outer-spin-button {
 
 .entry-text.prose {
   font-family: var(--font-ui);
+}
+
+/* Click the text to edit it in place, like a notepad. */
+.entry-text.editable {
+  cursor: text;
+  border-radius: 4px;
+}
+
+.entry-text.editable:hover {
+  background: rgb(28 26 23 / 0.04);
+}
+
+.entry-text.editable:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+/* The editor is the same text on the same lines, with a caret and an underline. */
+.entry-inline {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  box-shadow: inset 0 -2px 0 var(--accent);
+  resize: none;
+  overflow: hidden;
+}
+
+.entry-inline:focus {
+  outline: none;
 }
 
 .raw-line {
@@ -1598,11 +1643,6 @@ figure .legend {
 .auth-foot-link.accent {
   font-weight: 500;
 }
-
-.auth-demo {
-  color: var(--ink-2);
-}
-
 
 @media (prefers-reduced-motion: reduce) {
   *,

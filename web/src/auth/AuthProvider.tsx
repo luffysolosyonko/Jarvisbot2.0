@@ -4,7 +4,6 @@ import {
   GoogleAuthProvider,
   onAuthStateChanged,
   sendPasswordResetEmail,
-  signInWithCustomToken,
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut as fbSignOut,
@@ -12,7 +11,7 @@ import {
 } from 'firebase/auth';
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
-import { api, ApiError, setTokenGetter } from '@/lib/api';
+import { ApiError, setTokenGetter } from '@/lib/api';
 import { firebaseConfigured } from '@/lib/config';
 import { getFirebaseAuth } from '@/lib/firebase';
 
@@ -25,7 +24,6 @@ type AuthState = {
   signUp: (email: string, password: string) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
-  signInDemo: () => Promise<void>;
   signOut: () => Promise<void>;
 };
 
@@ -101,17 +99,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     [],
   );
 
-  /** "Try the demo": the API mints a custom token for its one fixed demo account. */
-  const signInDemo = useCallback(
-    () =>
-      wrap(async () => {
-        const auth = requireAuth();
-        const { token } = await api<{ token: string }>('/demo/token', { method: 'POST', auth: false });
-        await signInWithCustomToken(auth, token);
-      }),
-    [],
-  );
-
   const signOut = useCallback(async () => {
     const auth = getFirebaseAuth();
     if (auth) await fbSignOut(auth);
@@ -119,8 +106,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [queryClient]);
 
   const value = useMemo(
-    () => ({ user, initializing, signIn, signUp, resetPassword, signInWithGoogle, signInDemo, signOut }),
-    [user, initializing, signIn, signUp, resetPassword, signInWithGoogle, signInDemo, signOut],
+    () => ({ user, initializing, signIn, signUp, resetPassword, signInWithGoogle, signOut }),
+    [user, initializing, signIn, signUp, resetPassword, signInWithGoogle, signOut],
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

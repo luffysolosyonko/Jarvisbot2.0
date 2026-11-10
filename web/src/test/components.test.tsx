@@ -145,7 +145,7 @@ describe('Composer', () => {
     expect(screen.getByRole('button', { name: 'Ask' })).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('radio', { name: 'Workout' })).toHaveAttribute('aria-checked', 'false');
     const box = screen.getByLabelText('Ask Jarvis');
-    expect(box).toHaveAttribute('placeholder', 'Is my bench still improving?');
+    expect(box).toHaveAttribute('placeholder', 'Ask about your training');
     await userEvent.type(box, 'How is my squat?');
     expect(screen.queryByText(/↳|e\.g\./)).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Send question' }));
@@ -242,6 +242,29 @@ describe('Entry', () => {
     await userEvent.clear(box);
     await userEvent.type(box, '5x 160lb bench{Enter}');
     await waitFor(() => expect(apiMock).toHaveBeenCalledWith('/logs/7', { method: 'PATCH', body: { text: '5x 160lb bench' } }));
+  });
+
+  it('clicking the text edits it in place: clicking away saves, Escape puts it back', async () => {
+    apiMock.mockResolvedValue({ ...LOG, warnings: [] });
+    wrap(
+      <>
+        <Entry log={LOG} unit="lb" />
+        <button type="button">elsewhere</button>
+      </>,
+    );
+    expect(screen.queryByRole('button', { name: 'Save' })).not.toBeInTheDocument();
+    await userEvent.click(screen.getByText('5x 155lb bench'));
+    const box = screen.getByLabelText('Edit entry text');
+    expect(box).toHaveFocus();
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByLabelText('Edit entry text')).not.toBeInTheDocument();
+    expect(apiMock).not.toHaveBeenCalledWith('/logs/7', expect.anything());
+
+    await userEvent.click(screen.getByText('5x 155lb bench'));
+    await userEvent.clear(screen.getByLabelText('Edit entry text'));
+    await userEvent.type(screen.getByLabelText('Edit entry text'), '5x 165lb bench');
+    await userEvent.click(screen.getByRole('button', { name: 'elsewhere' }));
+    await waitFor(() => expect(apiMock).toHaveBeenCalledWith('/logs/7', { method: 'PATCH', body: { text: '5x 165lb bench' } }));
   });
 
   it('deletes only after the undo window, and Undo cancels it', async () => {

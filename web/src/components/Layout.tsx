@@ -50,9 +50,13 @@ export function Layout() {
         <ul>
           {LINKS.map(({ to, label, Icon, end }) => (
             <li key={to}>
-              <NavLink to={to} end={end} className={({ isActive }) => `tab${isActive ? ' active' : ''}`}>
-                <Icon size={22} strokeWidth={1.8} aria-hidden="true" />
-                {label}
+              <NavLink
+                to={to}
+                end={end}
+                aria-label={label}
+                title={label}
+                className={({ isActive }) => `tab${isActive ? ' active' : ''}`}>
+                <Icon size={28} strokeWidth={1.8} aria-hidden="true" />
               </NavLink>
             </li>
           ))}

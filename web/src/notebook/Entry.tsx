@@ -1,4 +1,4 @@
-import { Pencil, Trash2, Wrench } from 'lucide-react';
+import { Trash2, Wrench } from 'lucide-react';
 import { useId, useState, type KeyboardEvent } from 'react';
 
 import { Button, IconButton } from '@/components/Button';
@@ -114,13 +114,26 @@ export function Entry({ log, unit, highlight = false }: { log: Log; unit: Unit; 
     setFixing(false);
   }
 
+  function cancel() {
+    setEditing(false);
+    setDraft(log.raw_text);
+    edit.reset();
+  }
+
+  /** Like a notepad: Enter (or clicking away) saves, Escape puts it back. */
+  function commit() {
+    const text = draft.trim();
+    if (!text || text === log.raw_text.trim()) cancel();
+    else if (!edit.isPending) save(text);
+  }
+
   function onKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
       e.preventDefault();
-      if (draft.trim()) save(draft);
+      commit();
     } else if (e.key === 'Escape') {
-      setEditing(false);
-      setDraft(log.raw_text);
+      e.preventDefault();
+      cancel();
     }
   }
 
@@ -135,9 +148,6 @@ export function Entry({ log, unit, highlight = false }: { log: Log; unit: Unit; 
       <div className="entry-main">
         {log.pending ? null : (
           <div className="entry-actions">
-            <IconButton label="Edit entry" onClick={startEdit}>
-              <Pencil {...ICON} />
-            </IconButton>
             {log.warnings.length ? (
               <IconButton
                 label="Fix unlogged lines"
@@ -156,41 +166,48 @@ export function Entry({ log, unit, highlight = false }: { log: Log; unit: Unit; 
         )}
 
         {editing ? (
-          <div className="stack-2 entry-edit">
+          <div className="entry-edit">
             <label htmlFor={editId} className="visually-hidden">
               Edit entry text
             </label>
             <textarea
               id={editId}
-              className="textarea mono"
-              rows={Math.min(8, Math.max(2, draft.split('\n').length))}
+              className="entry-text entry-inline"
+              rows={Math.max(1, draft.split('\n').length)}
               value={draft}
               autoFocus
+              onFocus={(e) => e.currentTarget.setSelectionRange(e.currentTarget.value.length, e.currentTarget.value.length)}
               onChange={(e) => setDraft(e.target.value)}
               onKeyDown={onKeyDown}
+              onBlur={commit}
+              aria-busy={edit.isPending || undefined}
+              spellCheck={false}
+              autoComplete="off"
             />
             {edit.error ? (
               <p className="error-text" role="alert">
                 {errorMessage(edit.error)}
               </p>
             ) : null}
-            <div className="row">
-              <Button size="small" variant="primary" loading={edit.isPending} disabled={!draft.trim()} onClick={() => save(draft)}>
-                Save
-              </Button>
-              <Button
-                size="small"
-                variant="ghost"
-                onClick={() => {
-                  setEditing(false);
-                  setDraft(log.raw_text);
-                }}>
-                Cancel
-              </Button>
-            </div>
           </div>
         ) : (
-          <div className="entry-text">
+          <div
+            className={`entry-text${log.pending ? '' : ' editable'}`}
+            role={log.pending ? undefined : 'button'}
+            tabIndex={log.pending ? undefined : 0}
+            aria-label={log.pending ? undefined : 'Edit entry'}
+            title={log.pending ? undefined : 'Click to edit'}
+            onClick={log.pending ? undefined : startEdit}
+            onKeyDown={
+              log.pending
+                ? undefined
+                : (e) => {
+                    if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
+                      e.preventDefault();
+                      startEdit();
+                    }
+                  }
+            }>
             {lines.map((line, i) => (
               <div key={i} className="raw-line">
                 <span>{line || ' '}</span>
@@ -198,7 +215,13 @@ export function Entry({ log, unit, highlight = false }: { log: Log; unit: Unit; 
                   <span className="status danger no-shrink">
                     ✗ Not logged
                     {!fixing ? (
-                      <button type="button" className="link-btn" onClick={() => setFixing(true)}>
+                      <button
+                        type="button"
+                        className="link-btn"
+                        onClick={(e) => {
+                          e.stopPropagation(); // fix, don't start editing
+                          setFixing(true);
+                        }}>
                         Fix
                       </button>
                     ) : null}

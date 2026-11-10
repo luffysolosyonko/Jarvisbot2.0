@@ -9,7 +9,6 @@ import { SyntaxHelp } from '@/notebook/SyntaxHelp';
 
 import { toolLabel, type ToolId } from './registry';
 import {
-  AliasesTool,
   ChartsTool,
   EstimateTool,
   ExportTool,
@@ -43,8 +42,6 @@ function Body({ id, onJump }: { id: ToolId; onJump: (log: Log) => void }) {
       return <ChartsTool unit={unit} />;
     case 'search':
       return <SearchTool unit={unit} onJump={onJump} />;
-    case 'aliases':
-      return <AliasesTool />;
     case 'export':
       return <ExportTool />;
     case 'help':

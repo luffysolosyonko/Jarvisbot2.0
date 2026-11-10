@@ -9,7 +9,6 @@ export type ToolId =
   | 'volume'
   | 'charts'
   | 'search'
-  | 'aliases'
   | 'export'
   | 'help';
 
@@ -23,9 +22,8 @@ export const TOOLS: { id: ToolId; label: string; command: string }[] = [
   { id: 'volume', label: 'Volume', command: '/volume' },
   { id: 'charts', label: 'Charts', command: '/chart' },
   { id: 'search', label: 'Search', command: '/search' },
-  { id: 'aliases', label: 'Aliases', command: '/alias' },
   { id: 'export', label: 'Export', command: '/export' },
-  { id: 'help', label: 'Syntax help', command: '/howto' },
+  { id: 'help', label: 'Syntax', command: '/howto' },
 ];
 
 export function toolLabel(id: ToolId): string {
