@@ -5,41 +5,40 @@ import { outlierReason, outlierTitle, setNotes, weighInNote } from '@/lib/notes'
 import type { LogMode, Unit } from '@/lib/types';
 
 import { Notes } from './Entry';
-import { FixList } from './FixList';
 
 /**
- * Under the box: an example while it's empty, then the live "↳" read of the input,
- * as the note it will get once saved. A weigh-in that will be flagged says so now;
- * lines that won't log get their reason and fixes.
+ * Under the box: the live "↳" read of the input, as the note it will get once saved.
+ * Quiet while you type: half-typed lines ("12x") get no warnings here, just the
+ * example until something reads as a set. A weigh-in that will be flagged says so.
+ * (Lines that still don't log once saved get their fixes on the entry.)
  */
 export function ParseLine({
   text,
   mode,
   unit,
   example,
-  onTextChange,
-  onModeChange,
 }: {
   text: string;
   mode: LogMode;
   unit: Unit;
-  example: string; // shown while the box is empty
-  onTextChange: (text: string) => void;
-  onModeChange: (mode: LogMode) => void;
+  example: string; // shown until the text reads as something
 }) {
   const debounced = useDebounced(text, 300);
   const parse = useParse(debounced, mode);
-  if (!text.trim())
-    return (
-      <p className="preview">
-        <span className="note pending">{example}</span>
-      </p>
-    );
+  const exampleLine = (
+    <p className="preview">
+      <span className="note pending">{example}</span>
+    </p>
+  );
+  if (!text.trim()) return exampleLine;
   if (parse.error) return <p className="preview danger">{errorMessage(parse.error)}</p>;
   const r = parse.data;
-  if (!r) return null;
+  if (!r) return exampleLine;
   const w = r.weigh_in;
-  const notes = w ? [weighInNote(w, unit)] : setNotes(r.sets, unit);
+  // Only sets that are complete so far: a name, and a weight (or uw / an estimate).
+  const ready = r.sets.filter((x) => (x.matched_exercise ?? x.exercise) && (x.weight_lb !== null || x.bodyweight || x.estimated));
+  const notes = w ? [weighInNote(w, unit)] : setNotes(ready, unit);
+  if (!w && !notes.length) return exampleLine;
   return (
     <div className="preview" aria-live="polite">
       {w?.flagged ? (
@@ -50,18 +49,6 @@ export function ParseLine({
         <p className="note" key={notes.map((n) => n.text).join('|')}>
           <Notes lines={notes} />
         </p>
-      ) : null}
-      {r.warnings.length ? (
-        <div className="composer-fixes">
-          <FixList
-            warnings={r.warnings}
-            text={text}
-            onApply={(next, m) => {
-              onTextChange(next);
-              if (m) onModeChange(m);
-            }}
-          />
-        </div>
       ) : null}
     </div>
   );

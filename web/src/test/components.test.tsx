@@ -107,6 +107,30 @@ describe('Composer', () => {
     expect(apiMock).toHaveBeenCalledWith('/parse', expect.objectContaining({ body: { text: '5x 155lb 1x bench', mode: 'workout' } }));
   });
 
+  it('stays quiet about a half-typed line: no warnings or fix buttons, just the example', async () => {
+    apiMock.mockImplementation(async (path: string) =>
+      path === '/parse'
+        ? {
+            ...PARSED,
+            sets: [],
+            exercises: [],
+            warnings: [
+              warning({
+                message: 'No exercise name.',
+                fixes: [{ label: 'Add sit ups', line: 1, text: '12x sit ups', template: null, placeholder: null, mode: null }],
+              }),
+            ],
+          }
+        : { exercises: [] },
+    );
+    wrap(<ComposerHarness onSend={vi.fn()} />);
+    await userEvent.type(screen.getByLabelText('Log a set'), '12x');
+    await waitFor(() => expect(apiMock).toHaveBeenCalledWith('/parse', expect.objectContaining({ body: { text: '12x', mode: 'workout' } })));
+    expect(screen.queryByText('No exercise name.')).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Add sit ups' })).not.toBeInTheDocument();
+    expect(screen.getByText('e.g. 8x 135lb bench')).toBeInTheDocument();
+  });
+
   it('Weight mode has its own label and placeholder', async () => {
     wrap(<ComposerHarness onSend={vi.fn()} />);
     await userEvent.click(screen.getByRole('radio', { name: 'Weight' }));

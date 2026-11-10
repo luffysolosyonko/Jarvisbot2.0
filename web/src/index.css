@@ -1262,10 +1262,6 @@ input[type='number']::-webkit-outer-spin-button {
   margin-top: var(--s2);
 }
 
-.composer-fixes {
-  margin-top: var(--s2);
-}
-
 /* ---------- chart ---------- */
 .chart-svg {
   display: block;

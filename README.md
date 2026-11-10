@@ -30,7 +30,8 @@ is now a button.
   text back as the note it will get: `5x 155lb 2x1x1xf bench` shows
   "↳ Bench · 5, 2, 1, 1, 1 reps · 155 lb · ✗ last rep". kg is converted to lb, `?` and ranges are estimates, `uw` is
   bodyweight, and `^` or a bare number repeats the set above.
-- **Fix, don't retype.** Lines that don't parse are flagged with the reason and
+- **Fix, don't retype.** The preview stays quiet while you type. Once saved,
+  lines that didn't parse are marked "✗ Not logged" with the reason and
   one-click fixes ("Add unit: lb", "Mark as estimate", "Set exercise
   name…", "Log as a weigh-in"). Saved entries can be edited, fixed or deleted
   (with undo); edits re-parse, like the bot re-parsed edited messages.

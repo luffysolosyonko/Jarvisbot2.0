@@ -119,7 +119,7 @@ export function Composer({ mode, onModeChange, text, onTextChange, onSend, sendi
         </p>
       ) : null}
       {isAsk ? null : (
-        <ParseLine text={text} mode={mode} unit={unit} example={EXAMPLE[mode]} onTextChange={onTextChange} onModeChange={onModeChange} />
+        <ParseLine text={text} mode={mode} unit={unit} example={EXAMPLE[mode]} />
       )}
     </div>
   );
