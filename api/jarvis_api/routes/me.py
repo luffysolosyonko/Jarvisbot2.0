@@ -3,12 +3,14 @@ from __future__ import annotations
 from typing import Literal
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Request, Response
+from sqlalchemy import func, select
 
 from jarvis_api import schemas
 from jarvis_api.deps import DB, AppSettings, CurrentUser
 from jarvis_api.errors import ApiError
-from jarvis_api.models import User
+from jarvis_api.firebase import AccountAdmin
+from jarvis_api.models import Log, LoggedSet, User, WeighIn
 
 router = APIRouter(tags=["me"])
 
@@ -23,7 +25,9 @@ def me_out(user: User, demo_uid: str) -> schemas.MeOut:
         auth_provider=user.auth_provider,
         is_demo=bool(demo_uid) and user.firebase_uid == demo_uid,
         created_at=user.created_at,
-        settings=schemas.SettingsOut(tz_name=s.tz_name, set_unit=unit, bar_lb=s.bar_lb),
+        settings=schemas.SettingsOut(
+            tz_name=s.tz_name, set_unit=unit, bar_lb=s.bar_lb, outlier_pct=s.outlier_pct
+        ),
     )
 
 
@@ -49,5 +53,45 @@ def patch_settings(
         s.set_unit = body.set_unit
     if body.bar_lb is not None:
         s.bar_lb = body.bar_lb
+    if body.outlier_pct is not None:
+        s.outlier_pct = body.outlier_pct
     db.commit()
     return me_out(user, settings.demo_uid)
+
+
+@router.get("/me/data")
+def data_summary(user: CurrentUser, db: DB) -> schemas.DataSummaryOut:
+    """How much is stored: for the export caption."""
+    sets = db.scalar(
+        select(func.count()).select_from(LoggedSet).where(LoggedSet.user_id == user.id)
+    )
+    weigh_ins = db.scalar(
+        select(func.count()).select_from(WeighIn).where(WeighIn.user_id == user.id)
+    )
+    return schemas.DataSummaryOut(sets=int(sets or 0), weigh_ins=int(weigh_ins or 0))
+
+
+@router.delete("/me", status_code=204)
+def delete_account(
+    body: schemas.DeleteAccountIn,
+    request: Request,
+    user: CurrentUser,
+    db: DB,
+    settings: AppSettings,
+) -> Response:
+    """Delete the account: the sign-in first (so nothing is left half-deleted if that
+    fails), then every row the account owns (logs, sets, weigh-ins, aliases, questions,
+    usage, settings). The shared demo account can't be deleted."""
+    if settings.demo_uid and user.firebase_uid == settings.demo_uid:
+        raise ApiError(403, "demo_account", "The demo account can't be deleted.")
+    accounts: AccountAdmin = request.app.state.accounts
+    try:
+        accounts.delete_user(user.firebase_uid)
+    except Exception as exc:  # Firebase unreachable or misconfigured
+        raise ApiError(
+            502, "delete_failed", "Couldn't delete your sign-in right now. Nothing was deleted."
+        ) from exc
+    db.query(Log).filter(Log.user_id == user.id).delete()  # sets and weigh-ins cascade
+    db.delete(user)  # settings, aliases, questions and usage cascade
+    db.commit()
+    return Response(status_code=204)

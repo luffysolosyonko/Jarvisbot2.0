@@ -15,6 +15,7 @@ class Settings(BaseSettings):
     log_level: str = "info"
     cors_origins: str = "http://localhost:5173"  # comma-separated; the Vite dev server
     max_body_bytes: int = 32_768
+    max_import_bytes: int = 25 * 1024 * 1024  # a Jarvis 1.0 database upload
 
     database_url: str = "sqlite:///./jarvis.db"
 

@@ -51,6 +51,11 @@ is now a button.
   weight with a 7-day average and a dashed forecast, this week's sets
   and sessions, and top lifts with e1RM charts and
   forecasts.
+- **Settings that apply at once.** Show weights in lb or kg (always stored in lb),
+  how far off the 7-day average a weigh-in must be to be double-checked (1-15%),
+  exercise names (shortcuts the parser applies), import from Jarvis 1.0 (the
+  Discord bot's SQLite file, re-read with this parser and deduplicated by time),
+  export every entry as one CSV, and delete the account and all its data.
 - **Ask, on purpose.** Only Ask mode calls Claude, and it sends only the data
   relevant to the question. Questions and Jarvis's answers appear as messages,
   are saved, and are still in the notebook after a reload; "Hide answers" in

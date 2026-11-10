@@ -36,6 +36,16 @@ class FakeVerifier:
         )
 
 
+class FakeAccounts:
+    """Records which Firebase users were deleted."""
+
+    def __init__(self) -> None:
+        self.deleted: list[str] = []
+
+    def delete_user(self, uid: str) -> None:
+        self.deleted.append(uid)
+
+
 class FakeClock:
     def __init__(self) -> None:
         self.t = 1000.0
@@ -78,11 +88,17 @@ def clock() -> FakeClock:
 
 
 @pytest.fixture
-def app(settings: Settings, engine: Engine, clock: FakeClock) -> FastAPI:
+def accounts() -> FakeAccounts:
+    return FakeAccounts()
+
+
+@pytest.fixture
+def app(settings: Settings, engine: Engine, clock: FakeClock, accounts: FakeAccounts) -> FastAPI:
     return create_app(
         settings,
         engine=engine,
         verifier=FakeVerifier(),
+        accounts=accounts,
         limiter=RateLimiter(clock),
     )
 

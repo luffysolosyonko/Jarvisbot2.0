@@ -52,7 +52,12 @@ def test_first_call_creates_the_user_once(client: TestClient) -> None:
     second = client.get("/api/v1/me", headers=auth("alice")).json()
     assert first["id"] == second["id"]
     assert first["email"] == "alice@example.com" and first["auth_provider"] == "password"
-    assert first["settings"] == {"tz_name": "UTC", "set_unit": "lb", "bar_lb": 45.0}
+    assert first["settings"] == {
+        "tz_name": "UTC",
+        "set_unit": "lb",
+        "bar_lb": 45.0,
+        "outlier_pct": 5,
+    }
     assert first["is_demo"] is False
 
 

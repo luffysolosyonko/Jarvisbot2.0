@@ -224,6 +224,47 @@ def export_sets(user: CurrentUser, db: DB) -> Response:
     return _csv("jarvis-sets.csv", header, rows)
 
 
+@router.get("/export/all.csv", response_class=Response)
+def export_all(user: CurrentUser, db: DB) -> Response:
+    """Every entry as one CSV: a row per set and per weigh-in, oldest first, with the
+    time it was logged and the text as written (weights in lb)."""
+    tz = user_tz(user)
+    logs = db.scalars(
+        select(Log)
+        .where(Log.user_id == user.id)
+        .options(selectinload(Log.sets), selectinload(Log.weigh_in))
+        .order_by(Log.logged_at, Log.id)
+    ).all()
+    rows: list[list[object]] = []
+    for lg in logs:
+        when = lg.logged_at.astimezone(tz)
+        base = [lg.local_date.isoformat(), when.strftime("%H:%M"), lg.kind]
+        if lg.weigh_in is not None:
+            w = lg.weigh_in
+            rows.append(
+                [*base, "", "", "", "", _r(w.weight_lb), "", "", "", w.note or "", lg.raw_text]
+            )
+        for s in lg.sets:
+            rows.append(
+                [
+                    *base,
+                    s.exercise or "",
+                    s.reps,
+                    s.good_reps,
+                    s.failed_reps,
+                    "" if s.weight_lb is None else _r(s.weight_lb),
+                    int(s.estimated),
+                    int(s.bodyweight),
+                    int(s.per_hand),
+                    "",
+                    lg.raw_text,
+                ]
+            )
+    header = ["date", "time", "kind", "exercise", "reps", "good_reps", "failed_reps"]
+    header += ["weight_lb", "estimated", "bodyweight", "per_hand", "note", "as_written"]
+    return _csv("jarvis-entries.csv", header, rows)
+
+
 @router.get("/export/weighins.csv", response_class=Response)
 def export_weighins(user: CurrentUser, db: DB) -> Response:
     data = load_user_data(db, user)

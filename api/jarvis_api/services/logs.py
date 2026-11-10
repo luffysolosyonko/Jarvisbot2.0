@@ -148,6 +148,7 @@ class UserData:
     name_counts: dict[str, int]  # raw normalized name -> sets (for matching new names)
     weigh_flags: dict[int, WeighFlag] = field(default_factory=dict)  # by log id
     flagged: list[analysis.WeightPoint] = field(default_factory=list)  # for the chart
+    outlier_share: float = 0.05  # the user's "Double-check weigh-ins" setting
     # canonical() answers, per name, for the life of this object (one request).
     _canon_memo: dict[str, str] = field(default_factory=dict, repr=False, compare=False)
 
@@ -192,8 +193,10 @@ def load_user_data(db: Session, user: User) -> UserData:
         .where(WeighIn.user_id == user.id, Log.user_id == user.id)
         .order_by(Log.local_date, Log.logged_at, Log.id)
     ).all()
+    share = (user.settings.outlier_pct if user.settings else 5) / 100
     flags = flag_weighins(
-        WeighRow(w.log_id, d, at, w.weight_lb, confirmed) for w, d, at, confirmed in rows_w
+        (WeighRow(w.log_id, d, at, w.weight_lb, confirmed) for w, d, at, confirmed in rows_w),
+        share,
     )
     weights = [
         analysis.WeightPoint(d, w.weight_lb, w.note)
@@ -211,7 +214,7 @@ def load_user_data(db: Session, user: User) -> UserData:
         if s.exercise:
             counts[s.exercise] = counts.get(s.exercise, 0) + 1
     return UserData(
-        analysis.prepare(raw, weights, aliases), weights, aliases, counts, flags, flagged
+        analysis.prepare(raw, weights, aliases), weights, aliases, counts, flags, flagged, share
     )
 
 

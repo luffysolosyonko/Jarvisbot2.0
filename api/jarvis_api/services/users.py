@@ -14,6 +14,11 @@ from jarvis_api.models import User, UserSettings
 def get_or_create_user(db: Session, claims: Claims) -> User:
     user = db.scalar(select(User).where(User.firebase_uid == claims.uid))
     if user:
+        # Keep the email and sign-in method current (an account can gain an email
+        # login, like the demo did); the display name is the user's own to change.
+        if claims.email and (user.email != claims.email or user.auth_provider != claims.provider):
+            user.email, user.auth_provider = claims.email, claims.provider
+            db.commit()
         return user
     user = User(
         firebase_uid=claims.uid,

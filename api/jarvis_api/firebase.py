@@ -30,6 +30,10 @@ class TokenVerifier(Protocol):
     def verify(self, token: str) -> Claims: ...
 
 
+class AccountAdmin(Protocol):
+    def delete_user(self, uid: str) -> None: ...
+
+
 class FirebaseAuth:
     """Real implementation. The Admin SDK app is created on first use.
 
@@ -77,6 +81,15 @@ class FirebaseAuth:
             provider=str(firebase.get("sign_in_provider", "unknown")),
             email_verified=bool(decoded.get("email_verified", False)),
         )
+
+    def delete_user(self, uid: str) -> None:
+        """Remove the sign-in itself (already gone is fine)."""
+        from firebase_admin import auth
+
+        try:
+            auth.delete_user(uid, app=self._get_app())
+        except auth.UserNotFoundError:
+            return
 
     def set_email_login(self, uid: str, email: str, password: str) -> bool:
         """Give the user `uid` this email and password, creating the user if needed.

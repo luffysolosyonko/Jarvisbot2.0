@@ -39,17 +39,17 @@ def average_before(accepted: list[tuple[date, float]], day: date) -> float | Non
     return sum(by_day.values()) / len(by_day) if by_day else None
 
 
-def is_outlier(weight_lb: float, avg: float | None) -> bool:
-    return avg is not None and abs(weight_lb - avg) / avg > OUTLIER_SHARE
+def is_outlier(weight_lb: float, avg: float | None, share: float = OUTLIER_SHARE) -> bool:
+    return avg is not None and abs(weight_lb - avg) / avg > share
 
 
-def flag_weighins(rows: Iterable[WeighRow]) -> dict[int, WeighFlag]:
+def flag_weighins(rows: Iterable[WeighRow], share: float = OUTLIER_SHARE) -> dict[int, WeighFlag]:
     """Flags by log id, deciding in time order so a flagged reading never moves the average."""
     accepted: list[tuple[date, float]] = []
     out: dict[int, WeighFlag] = {}
     for r in sorted(rows, key=lambda r: (r.day, r.at, r.log_id)):
         avg = average_before(accepted, r.day)
-        flagged = not r.confirmed and is_outlier(r.weight_lb, avg)
+        flagged = not r.confirmed and is_outlier(r.weight_lb, avg, share)
         out[r.log_id] = WeighFlag(flagged, None if avg is None else round(avg, 1))
         if not flagged:
             accepted.append((r.day, r.weight_lb))
