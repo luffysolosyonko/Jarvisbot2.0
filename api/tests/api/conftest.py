@@ -18,14 +18,22 @@ DEMO_UID = "demo-uid-for-tests"
 
 
 class FakeVerifier:
-    """'token-<uid>' is a valid ID token for <uid>; anything else is rejected."""
+    """'token-<uid>' is a valid ID token for <uid>; anything else is rejected.
+
+    Password users are email-verified unless the uid starts with "unverified".
+    """
 
     def verify(self, token: str) -> Claims:
         if not token.startswith("token-"):
             raise AuthError("bad token")
         uid = token.removeprefix("token-")
         provider = "custom" if uid == DEMO_UID else "password"
-        return Claims(uid=uid, email=f"{uid}@example.com", provider=provider)
+        return Claims(
+            uid=uid,
+            email=f"{uid}@example.com",
+            provider=provider,
+            email_verified=not uid.startswith("unverified"),
+        )
 
 
 class FakeClock:

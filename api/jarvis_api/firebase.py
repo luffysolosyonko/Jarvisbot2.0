@@ -22,7 +22,8 @@ class Claims:
     uid: str
     email: str | None = None
     name: str | None = None
-    provider: str = "unknown"  # "password", "google.com", "custom" (demo)
+    provider: str = "unknown"  # "password", "google.com", "custom"
+    email_verified: bool = False
 
 
 class TokenVerifier(Protocol):
@@ -74,6 +75,7 @@ class FirebaseAuth:
             email=decoded.get("email"),
             name=decoded.get("name"),
             provider=str(firebase.get("sign_in_provider", "unknown")),
+            email_verified=bool(decoded.get("email_verified", False)),
         )
 
     def set_email_login(self, uid: str, email: str, password: str) -> bool:

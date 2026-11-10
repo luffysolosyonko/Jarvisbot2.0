@@ -205,6 +205,11 @@ Highlights:
 - No secrets in the repo: `.env` files and the service account key are
   gitignored and excluded from the Docker image. `VITE_*` values are public
   client config only.
+- New email/password accounts must open the verification link Firebase emails
+  them before they can use the app; the API refuses unverified accounts too
+  (`403 email_unverified`), so scripted sign-ups get nowhere. Passwords need 8+
+  characters with upper and lower case, a number and a symbol (sign-up and
+  Settings > Password).
 - The demo account is one fixed Firebase UID from server config that signs in
   with an ordinary email and password, set with `python -m jarvis_api.demo_login`.
   The password is never in the repo.

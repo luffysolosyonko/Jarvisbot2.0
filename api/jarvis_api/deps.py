@@ -41,6 +41,12 @@ def current_user(request: Request, db: DB) -> User:
         claims = verifier.verify(token.strip())
     except AuthError as exc:
         raise ApiError(401, "unauthenticated", "Your session has expired. Sign in again.") from exc
+    # Email/password accounts must confirm their address first (the link Firebase
+    # emails at sign-up), so a script can't create accounts and start using the API.
+    if claims.provider == "password" and not claims.email_verified:
+        raise ApiError(
+            403, "email_unverified", "Verify your email first: open the link we sent you."
+        )
     return get_or_create_user(db, claims)
 
 

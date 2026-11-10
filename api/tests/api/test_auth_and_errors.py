@@ -106,12 +106,13 @@ def test_firebase_verify_maps_claims_and_errors(monkeypatch: pytest.MonkeyPatch)
         return {
             "uid": "u1",
             "email": "u1@example.com",
+            "email_verified": True,
             "firebase": {"sign_in_provider": "google.com"},
         }
 
     monkeypatch.setattr(fa, "verify_id_token", ok)
     claims = fa_auth.verify("t")
-    assert (claims.uid, claims.provider) == ("u1", "google.com")
+    assert (claims.uid, claims.provider, claims.email_verified) == ("u1", "google.com", True)
 
     def bad(token: str, app: object) -> dict[str, Any]:
         raise fa.InvalidIdTokenError("bad", cause=None)
@@ -127,3 +128,9 @@ def test_firebase_verify_maps_claims_and_errors(monkeypatch: pytest.MonkeyPatch)
     with pytest.raises(AuthError):
         fa_auth.verify("t")
     assert fb.Claims("x").provider == "unknown"
+
+
+def test_unverified_email_accounts_are_refused_until_verified(client: TestClient) -> None:
+    for path in ("/api/v1/me", "/api/v1/logs?from=2026-11-01&to=2026-11-10"):
+        assert_error(client.get(path, headers=auth("unverified-bot")), 403, "email_unverified")
+    assert client.get("/api/v1/me", headers=auth("alice")).status_code == 200  # verified
