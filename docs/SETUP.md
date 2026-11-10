@@ -88,6 +88,14 @@ docker compose up -d --build
 docker compose exec api python -m jarvis_api.seed
 ```
 
+Turn on Firebase's password policy (new passwords need 12+ characters; existing
+ones keep working). Run it once per Firebase project; without `--apply` it
+shows the current policy:
+
+```powershell
+docker compose exec api python -m jarvis_api.password_policy --apply
+```
+
 The database is published on host port 15432 (not 5432) so it never collides
 with a Postgres installed on the laptop; set `JARVIS_DB_PORT` to change it.
 
