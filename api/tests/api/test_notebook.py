@@ -158,7 +158,7 @@ def test_delete_and_other_users_cannot_touch(client: TestClient) -> None:
 
 
 # --- tools ---------------------------------------------------------------------
-def test_today_stats_volume(client: TestClient) -> None:
+def test_today_and_stats(client: TestClient) -> None:
     h = auth("alice")
     post(client, "alice", "5x 100lb bench\n5x 100lb bench\n10x 50lb row")
     post(client, "alice", "182.4", mode="weight")
@@ -169,12 +169,6 @@ def test_today_stats_volume(client: TestClient) -> None:
     stats = client.get(f"{API}/stats?days=30", headers=h).json()
     assert stats["gym_days"] == 1 and stats["sets"] == 3 and stats["volume_lb"] == 1500.0
     assert stats["weight_end_lb"] == 182.4 and stats["weight_change_lb"] is None
-
-    vol = client.get(f"{API}/volume?days=7", headers=h).json()["exercises"]
-    assert [(e["exercise"], e["sets"], e["volume_lb"]) for e in vol] == [
-        ("bench", 2, 1000.0),
-        ("row", 1, 500.0),
-    ]
 
 
 def test_calendar_marks_days_and_validates_month(client: TestClient) -> None:

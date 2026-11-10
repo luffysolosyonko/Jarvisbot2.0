@@ -279,3 +279,20 @@ def test_negative_numbers_are_not_weigh_ins_but_ranges_and_bullets_are_fine() ->
     w = parse_weigh_in("- 180")
     assert w is not None and w.weight_lb == 180
     assert sets("5x 20-25lb curl") == [(5, 0, 22.5, "curl")]
+
+
+@pytest.mark.parametrize(
+    "text",
+    ["3x8 135lb bench", "3x8 135 bench", "3 x 8 60kg squat", "3x8 bench 135lb", "4x10 22.5 curl"],
+)
+def test_sets_x_reps_notation_is_not_read_as_a_set(text: str) -> None:
+    log = parse_log(text, kind="workout")
+    assert log.sets == [] and [w.code for w in log.warnings] == ["not_understood"]
+
+
+def test_one_weight_written_in_two_numbers_is_still_a_set() -> None:
+    assert sets("12x 60 or 50kg bench") == [(12, 0, 121.3, "bench")]
+    assert sets("8x 20 - 25lb curl") == [(8, 0, 22.5, "curl")]
+    assert sets("8x 135 bench") == [(8, 0, 135.0, "bench")]
+    assert sets("5x 155 2x1xf bench")[0] == (5, 0, 155.0, "bench")
+    assert sets("8x 100 bench (3 sets)") == [(8, 0, 100.0, "bench")]

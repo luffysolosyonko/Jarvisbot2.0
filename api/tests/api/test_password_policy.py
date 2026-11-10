@@ -1,4 +1,5 @@
-"""The Firebase password policy we set: 12+ characters, enforced, no forced upgrade."""
+"""The Firebase password policy we set: 12+ characters with upper, lower, a number and
+a symbol; enforced; no forced upgrade."""
 
 from __future__ import annotations
 
@@ -10,4 +11,7 @@ def test_policy_enforces_twelve_characters_without_locking_out_old_passwords() -
     assert MIN_LENGTH == 12
     assert cfg["passwordPolicyEnforcementState"] == "ENFORCE"
     assert cfg["forceUpgradeOnSignin"] is False
-    assert cfg["passwordPolicyVersions"][0]["customStrengthOptions"]["minPasswordLength"] == 12
+    options = cfg["passwordPolicyVersions"][0]["customStrengthOptions"]
+    assert options["minPasswordLength"] == 12
+    for kind in ("Uppercase", "Lowercase", "Numeric", "NonAlphanumeric"):
+        assert options[f"contains{kind}Character"] is True

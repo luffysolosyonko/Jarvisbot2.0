@@ -1,4 +1,4 @@
-"""The bot's slash commands as endpoints: /today, /stats, /volume, /search, /usage,
+"""The bot's slash commands as endpoints: /today, /stats, /search, /usage,
 /export, plus the History calendar. Each is a thin wrapper over jarvis_core.analysis.
 (/lift and /estimate are GET /exercises/{name}; /predict is GET /weight/forecast and
 GET /exercises/{name}/forecast.)"""
@@ -80,24 +80,6 @@ def stats(user: CurrentUser, db: DB, days: Days = 7) -> schemas.StatsOut:
         weight_start_lb=first,
         weight_end_lb=last,
         weight_change_lb=change,
-    )
-
-
-@router.get("/volume")
-def volume(user: CurrentUser, db: DB, days: Days = 7) -> schemas.VolumeOut:
-    """Sets, reps and load per exercise over the last `days` days."""
-    end = local_now(user, datetime.now(UTC)).date()
-    w = analysis.window_summary(load_user_data(db, user).sets, end, days)
-    return schemas.VolumeOut(
-        days=days,
-        start=w.start,
-        end=end,
-        exercises=[
-            schemas.ExerciseVolumeOut(
-                exercise=e.exercise, sets=e.sets, good_reps=e.good_reps, volume_lb=_r(e.volume_lb)
-            )
-            for e in w.by_exercise
-        ],
     )
 
 

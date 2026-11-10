@@ -26,7 +26,7 @@ import re
 from dataclasses import dataclass, field, replace
 from typing import Literal
 
-PARSER_VERSION = 6
+PARSER_VERSION = 7
 """Bump when parsing rules change; a rebuild job re-parses every stored log."""
 
 KG_TO_LB = 2.20462
@@ -69,6 +69,11 @@ class SetLine:
 # A minus sign right before a number ("-5lb", "-180"). Weights and reps can't be
 # negative, so such a line isn't read. Ranges ("20-25lb") and bullets ("- 180") are fine.
 NEGATIVE_RE = re.compile(r"(?<![\w.])-\d")
+# "3x8 135lb bench" is sets x reps, which this shorthand doesn't use: read as a set it
+# would be 3 reps at 8 lb. A bare number after the x followed by another weight is
+# left unread instead ("8x 60 or 50kg" and "8x 20 - 25lb" are still one weight).
+SETS_X_REPS_RE = re.compile(r"^\s*\d{1,3}\s*x\s*\d{1,3}(?![\w.])\s+(?!or\b)(?![-/])(.*)$", re.I)
+SECOND_WEIGHT_RE = re.compile(rf"^{NUM}(?![\w.])|\b{NUM}\s*(?:kgs?|lbs?)(?![\w.])", re.I)
 # "8x 160lb", "12x1f 25kg rear delt fly", "7xf dips", "30x ^"
 SET_HEAD_RE = re.compile(r"^\s*(\d{1,3})\s*x\s*(\d*f\b)?\s*(.*)$", re.I)
 # "160lb", "25kg", "70/80kg", "20-25lb", "70/80kg?"
@@ -258,6 +263,11 @@ def parse_multi_set_line(
     ]
 
 
+def _is_sets_x_reps(line: str) -> bool:
+    m = SETS_X_REPS_RE.match(line)
+    return bool(m and SECOND_WEIGHT_RE.search(m.group(1)))
+
+
 def _is_header(line: str) -> bool:
     return (
         not re.search(r"\d", line)
@@ -278,7 +288,7 @@ def parse_workout_lines(
         line = raw.strip()
         if not line:
             continue
-        if URL_RE.search(line) or NEGATIVE_RE.search(line):
+        if URL_RE.search(line) or NEGATIVE_RE.search(line) or _is_sets_x_reps(line):
             unknown.append(n)
             continue
         multi = parse_multi_set_line(line, default_unit, bar_lb)

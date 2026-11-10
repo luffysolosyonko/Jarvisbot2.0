@@ -1,9 +1,9 @@
-"""Set Firebase Auth's password policy: new passwords need 12+ characters.
+"""Set Firebase Auth's password policy: new passwords need 12+ characters with an
+uppercase letter, a lowercase letter, a number and a symbol.
 
-Firebase then refuses shorter passwords at sign-up and password change, even when
+Firebase then refuses weaker passwords at sign-up and password change, even when
 someone calls Firebase directly instead of using the app. Existing passwords keep
-working (no forced upgrade at sign-in). Firebase can't check a list of common
-passwords; the app does that before it ever sends one.
+working (no forced upgrade at sign-in).
 
     docker compose exec api python -m jarvis_api.password_policy          # show it
     docker compose exec api python -m jarvis_api.password_policy --apply  # set it
@@ -32,6 +32,10 @@ def policy_body(min_length: int = MIN_LENGTH) -> dict[str, Any]:
                     "customStrengthOptions": {
                         "minPasswordLength": min_length,
                         "maxPasswordLength": 4096,
+                        "containsUppercaseCharacter": True,
+                        "containsLowercaseCharacter": True,
+                        "containsNumericCharacter": True,
+                        "containsNonAlphanumericCharacter": True,
                     }
                 }
             ],

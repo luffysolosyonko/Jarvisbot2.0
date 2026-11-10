@@ -184,7 +184,6 @@ def test_fuzz_api_never_500s(client: TestClient) -> None:
         "/dashboard",
         "/exercises",
         "/stats?days=30",
-        "/volume?days=30",
         "/calendar?month=2026-11",
         "/weight/forecast",
         "/aliases/matches",

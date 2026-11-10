@@ -284,13 +284,6 @@ class TodayLogsOut(BaseModel):
     weight_lb: float | None
 
 
-class ExerciseVolumeOut(BaseModel):
-    exercise: str
-    sets: int
-    good_reps: int
-    volume_lb: float
-
-
 class StatsOut(BaseModel):
     days: int
     start: date
@@ -304,13 +297,6 @@ class StatsOut(BaseModel):
     weight_start_lb: float | None
     weight_end_lb: float | None
     weight_change_lb: float | None
-
-
-class VolumeOut(BaseModel):
-    days: int
-    start: date
-    end: date
-    exercises: list[ExerciseVolumeOut]
 
 
 class CalendarDayOut(BaseModel):
