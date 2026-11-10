@@ -99,6 +99,11 @@ export function setTokenGetter(getter: () => Promise<string | null>): void {
   tokenGetter = getter;
 }
 
+/** The current ID token (waits for the sign-in to be restored), or null. */
+export function authToken(): Promise<string | null> {
+  return tokenGetter();
+}
+
 export const api: ApiClient = createApiClient({
   baseUrl: config.apiUrl,
   getToken: () => tokenGetter(),

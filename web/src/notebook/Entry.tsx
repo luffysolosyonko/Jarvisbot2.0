@@ -78,7 +78,19 @@ function OutlierBox({ log, unit, onEdit }: { log: Log; unit: Unit; onEdit: () =>
  * and the "↳" note of what it logged (click it for the parsed sets). Edit, Fix and
  * Delete show on hover, always on touch.
  */
-export function Entry({ log, unit, highlight = false }: { log: Log; unit: Unit; highlight?: boolean }) {
+export function Entry({
+  log,
+  unit,
+  highlight = false,
+  onRetry,
+  onDiscard,
+}: {
+  log: Log;
+  unit: Unit;
+  highlight?: boolean;
+  onRetry?: () => void; // a failed save
+  onDiscard?: () => void;
+}) {
   const [editing, setEditing] = useState(false);
   const [fixing, setFixing] = useState(false);
   const [details, setDetails] = useState(false);
@@ -90,6 +102,7 @@ export function Entry({ log, unit, highlight = false }: { log: Log; unit: Unit; 
   const detailsId = useId();
 
   const badLines = new Set(log.warnings.map((w) => w.line));
+  const locked = !!log.pending || !!log.failed; // not saved yet: nothing to edit
   const lines = log.raw_text.split('\n');
   const when = messageTime(log.logged_at, tz, todayIn(tz));
   const flagged = !!log.weigh_in?.flagged;
@@ -146,7 +159,7 @@ export function Entry({ log, unit, highlight = false }: { log: Log; unit: Unit; 
         {clockTime(log.logged_at, tz)}
       </time>
       <div className="entry-main">
-        {log.pending ? null : (
+        {log.pending || log.failed ? null : (
           <div className="entry-actions">
             {log.warnings.length ? (
               <IconButton
@@ -192,14 +205,14 @@ export function Entry({ log, unit, highlight = false }: { log: Log; unit: Unit; 
           </div>
         ) : (
           <div
-            className={`entry-text${log.pending ? '' : ' editable'}`}
-            role={log.pending ? undefined : 'button'}
-            tabIndex={log.pending ? undefined : 0}
-            aria-label={log.pending ? undefined : 'Edit entry'}
-            title={log.pending ? undefined : 'Click to edit'}
-            onClick={log.pending ? undefined : startEdit}
+            className={`entry-text${locked ? '' : ' editable'}`}
+            role={locked ? undefined : 'button'}
+            tabIndex={locked ? undefined : 0}
+            aria-label={locked ? undefined : 'Edit entry'}
+            title={locked ? undefined : 'Click to edit'}
+            onClick={locked ? undefined : startEdit}
             onKeyDown={
-              log.pending
+              locked
                 ? undefined
                 : (e) => {
                     if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
@@ -232,10 +245,27 @@ export function Entry({ log, unit, highlight = false }: { log: Log; unit: Unit; 
           </div>
         )}
 
-        {editing ? null : log.pending ? (
-          <span className="note pending" role="status">
-            ↳ saving…
-          </span>
+        {editing ? null : log.failed ? (
+          <p className="note failed" role="alert">
+            <span title={log.failed}>✗ not saved</span>
+            {' · '}
+            <button type="button" className="note-btn" onClick={onRetry}>
+              retry
+            </button>
+            {onDiscard ? (
+              <>
+                {' · '}
+                <button type="button" className="note-btn" onClick={onDiscard}>
+                  discard
+                </button>
+              </>
+            ) : null}
+          </p>
+        ) : log.pending ? (
+          // Saving: the note it will get, faded; it fills in once saved.
+          <p className="note is-pending" role="status" aria-label="Saving">
+            {notes.length ? <Notes lines={notes} /> : '↳ saving'}
+          </p>
         ) : flagged ? (
           <OutlierBox log={log} unit={unit} onEdit={startEdit} />
         ) : notes.length ? (

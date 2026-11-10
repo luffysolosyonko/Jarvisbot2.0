@@ -4,7 +4,9 @@ import { useRef, useState, type FormEvent } from 'react';
 import { useAuth } from '@/auth/AuthProvider';
 import { useTitle } from '@/hooks/useTitle';
 import { errorMessage } from '@/lib/api';
+import { Dots } from '@/components/Loading';
 import { PasswordRules } from '@/components/PasswordRules';
+import { useDelayedFlag } from '@/hooks/useDelayedFlag';
 import { passwordOk, useCommonPasswords } from '@/lib/password';
 
 type View = 'sign-in' | 'sign-up' | 'reset';
@@ -31,6 +33,20 @@ function GoogleG() {
         d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"
       />
     </svg>
+  );
+}
+
+/** A button label that turns into "Signing in" + filling dots while busy (after
+ * 300 ms). The button is full width, so its size never changes. */
+function BusyLabel({ busy, label, busyLabel }: { busy: boolean; label: string; busyLabel: string }) {
+  const show = useDelayedFlag(busy);
+  if (!show) return <>{label}</>;
+  return (
+    <span className="busy-label">
+      {busyLabel}
+      <Dots />
+      <span className="visually-hidden">…</span>
+    </span>
   );
 }
 
@@ -177,7 +193,11 @@ export function SignInPage() {
               className="auth-btn auth-btn-ink"
               disabled={!!busy}
               aria-busy={busy === 'email' || undefined}>
-              {busy === 'email' ? 'Working…' : submitLabel}
+              <BusyLabel
+                busy={busy === 'email'}
+                label={submitLabel}
+                busyLabel={view === 'sign-in' ? 'Signing in' : view === 'sign-up' ? 'Creating account' : 'Sending'}
+              />
             </button>
             {view !== 'reset' ? (
               <button
@@ -187,7 +207,7 @@ export function SignInPage() {
                 aria-busy={busy === 'google' || undefined}
                 onClick={() => void run('google', signInWithGoogle)}>
                 <GoogleG />
-                {busy === 'google' ? 'Working…' : 'Continue with Google'}
+                <BusyLabel busy={busy === 'google'} label="Continue with Google" busyLabel="Signing in" />
               </button>
             ) : null}
           </div>

@@ -1,5 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query';
 import {
+  browserPopupRedirectResolver,
   createUserWithEmailAndPassword,
   EmailAuthProvider,
   GoogleAuthProvider,
@@ -16,6 +17,7 @@ import {
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 import { ApiError, setTokenGetter } from '@/lib/api';
+import { clearCache, sessionHint, setSessionHint } from '@/lib/cache';
 import { firebaseConfigured } from '@/lib/config';
 import { getFirebaseAuth } from '@/lib/firebase';
 
@@ -24,6 +26,8 @@ import { authErrorMessage } from './errors';
 type AuthState = {
   user: User | null;
   initializing: boolean;
+  /** Firebase is still restoring the sign-in, but this browser was signed in last time. */
+  restoring: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string) => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
@@ -67,18 +71,29 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [user, setUser] = useState<User | null>(null);
   const [initializing, setInitializing] = useState(firebaseConfigured);
+  const [hint] = useState(sessionHint);
   // Firebase updates the same User object in place (reload): bump this to re-render.
   const [version, setVersion] = useState(0);
 
   useEffect(() => {
     const auth = getFirebaseAuth();
     if (!auth) return;
-    setTokenGetter(async () => (auth.currentUser ? auth.currentUser.getIdToken() : null));
+    // Requests made while Firebase restores the sign-in wait for it, then carry the token.
+    setTokenGetter(async () => {
+      await auth.authStateReady();
+      return auth.currentUser ? auth.currentUser.getIdToken() : null;
+    });
     return onAuthStateChanged(auth, (u) => {
+      // Someone else (or nobody) than last time: drop the cached data.
+      if (u?.uid !== sessionHint()) {
+        clearCache();
+        queryClient.clear();
+      }
+      setSessionHint(u?.uid ?? null);
       setUser(u);
       setInitializing(false);
     });
-  }, []);
+  }, [queryClient]);
 
   const signIn = useCallback(
     (email: string, password: string) =>
@@ -107,7 +122,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     () =>
       wrap(async () => {
         try {
-          await signInWithPopup(requireAuth(), new GoogleAuthProvider());
+          await signInWithPopup(requireAuth(), new GoogleAuthProvider(), browserPopupRedirectResolver);
         } catch (e) {
           const code = (e as { code?: unknown } | null)?.code;
           if (typeof code === 'string' && CANCELLED.has(code)) return;
@@ -161,15 +176,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = useCallback(async () => {
     const auth = getFirebaseAuth();
     if (auth) await fbSignOut(auth);
+    clearCache();
     queryClient.clear();
   }, [queryClient]);
 
   const needsVerification = isPasswordUser(user) && !user?.emailVerified;
+  const restoring = initializing && !!hint;
   const hasPassword = isPasswordUser(user);
   const value = useMemo(
     () => ({
       user,
       initializing,
+      restoring,
       signIn,
       signUp,
       resetPassword,
@@ -183,7 +201,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }),
     // `version` re-creates the value after a reload changes the user in place.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [user, version, initializing, signIn, signUp, resetPassword, signInWithGoogle, signOut, needsVerification, hasPassword, resendVerification, refreshUser, changePassword],
+    [user, version, initializing, restoring, signIn, signUp, resetPassword, signInWithGoogle, signOut, needsVerification, hasPassword, resendVerification, refreshUser, changePassword],
   );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }

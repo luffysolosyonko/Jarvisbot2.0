@@ -1061,7 +1061,6 @@ input[type='number']::-webkit-outer-spin-button {
   font-variant-numeric: tabular-nums;
   color: var(--accent);
   cursor: pointer;
-  animation: note-in 220ms ease both;
 }
 
 .note-line .fail {
@@ -1069,14 +1068,168 @@ input[type='number']::-webkit-outer-spin-button {
   font-weight: 700;
 }
 
-.note.pending {
+.note.pending,
+.note.thinking {
   color: var(--ink-3);
   cursor: default;
 }
 
+/* Saving: the note it will get, at 60%; it comes up to full once saved. */
+.note.is-pending {
+  opacity: 0.6;
+  cursor: default;
+}
+
+/* The save failed: say so, with retry (the text stays in the entry). */
+.note.failed {
+  color: var(--fail);
+  font-weight: 600;
+  cursor: default;
+}
+
+.note-btn {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--touch);
+  margin: calc((var(--ruled) - var(--touch)) / 2) 0;
+  padding: 0 2px;
+  border: none;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.note-btn:focus-visible {
+  outline: 2px solid var(--fail);
+  outline-offset: 1px;
+}
+
+/* ---------- loading indicators ----------
+   Static text by default (and with reduced motion); the ink cursor, filling dots and
+   fades only when motion is welcome. */
+.ink-loading {
+  padding-left: calc(var(--margin-w) + var(--s3));
+  line-height: var(--ruled);
+  font-family: var(--font-mono);
+  font-size: var(--t-log);
+  color: var(--ink);
+}
+
+.ink-cursor {
+  display: none;
+}
+
+.ink-static {
+  font-size: var(--t-note);
+  color: var(--ink-3);
+}
+
+.splash {
+  min-height: 100dvh;
+}
+
+.dots i {
+  font-style: normal;
+}
+
+.busy-label {
+  display: inline-flex;
+  align-items: baseline;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ink-cursor {
+    display: inline;
+    animation: blink 1s steps(1) infinite;
+  }
+
+  .ink-static {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+  }
+
+  /* The dots fill one after another, then start again. */
+  .dots i {
+    animation: dot-fill 1.2s infinite;
+  }
+
+  .dots i:nth-child(2) {
+    animation-delay: 0.2s;
+  }
+
+  .dots i:nth-child(3) {
+    animation-delay: 0.4s;
+  }
+
+  /* A note fades in; one that was saving (at 60%) comes up to full. */
+  .note:not(.is-pending) {
+    animation: note-in 220ms ease both;
+  }
+
+  /* A streaming answer ends in a blinking cursor. */
+  .answer-text.streaming::after {
+    content: '▍';
+    margin-left: 1px;
+    color: var(--ink);
+    animation: blink 1s steps(1) infinite;
+  }
+
+  /* The chart: the 7-day average draws left to right, then the dots fade in. */
+  .chart-draw {
+    stroke-dasharray: 1;
+    animation: draw-line 600ms ease-out both;
+  }
+
+  .chart-after {
+    animation: appear 300ms ease 600ms both;
+  }
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes dot-fill {
+  0%,
+  20% {
+    opacity: 0.15;
+  }
+  40%,
+  100% {
+    opacity: 1;
+  }
+}
+
 @keyframes note-in {
   from {
+    opacity: 0.6;
+  }
+}
+
+@keyframes draw-line {
+  from {
+    stroke-dashoffset: 1;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes appear {
+  from {
     opacity: 0;
+  }
+  to {
+    opacity: 1;
   }
 }
 

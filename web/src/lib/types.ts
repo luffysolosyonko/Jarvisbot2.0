@@ -71,6 +71,8 @@ export type Log = {
   weigh_in: WeighIn | null;
   warnings: ParseWarning[];
   pending?: boolean; // client only: shown while the save is in flight
+  failed?: string; // client only: the save failed (the reason); kept for a retry
+  retryKey?: string; // client only: which unsaved entry this is
 };
 
 export type Point = { date: string; value: number };

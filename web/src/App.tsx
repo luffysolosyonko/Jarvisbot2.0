@@ -1,11 +1,13 @@
 import { QueryClientProvider } from '@tanstack/react-query';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router';
 
 import { AuthProvider, useAuth } from '@/auth/AuthProvider';
 import { Layout } from '@/components/Layout';
-import { SkeletonEntries } from '@/components/States';
+import { InkCursor } from '@/components/Loading';
 import { ToastProvider } from '@/components/Toast';
+import { useDelayedFlag } from '@/hooks/useDelayedFlag';
+import { persistCache, restoreCache } from '@/lib/cache';
 import { makeQueryClient } from '@/lib/queryClient';
 import { NotebookPage } from '@/notebook/NotebookPage';
 import { HistoryPage } from '@/pages/HistoryPage';
@@ -16,8 +18,10 @@ import { SignInPage } from '@/pages/SignInPage';
 import { VerifyEmailPage } from '@/pages/VerifyEmailPage';
 
 function RequireUser({ children }: { children: ReactNode }) {
-  const { user, initializing, needsVerification } = useAuth();
+  const { user, initializing, restoring, needsVerification } = useAuth();
   const location = useLocation();
+  // Signed in last time: show the app (and its cached data) while Firebase confirms.
+  if (restoring) return <>{children}</>;
   if (initializing) return <Splash />;
   if (!user) return <Navigate to="/sign-in" replace state={{ from: location.pathname + location.search }} />;
   if (needsVerification) return <VerifyEmailPage />;
@@ -25,18 +29,21 @@ function RequireUser({ children }: { children: ReactNode }) {
 }
 
 function SignedOutOnly({ children }: { children: ReactNode }) {
-  const { user, initializing } = useAuth();
+  const { user, initializing, restoring } = useAuth();
   const location = useLocation();
+  if (restoring) return <Navigate to={(location.state as { from?: string } | null)?.from ?? '/'} replace />;
   if (initializing) return <Splash />;
   const from = (location.state as { from?: string } | null)?.from ?? '/';
   if (user) return <Navigate to={from} replace />;
   return <>{children}</>;
 }
 
+/** First visit (nothing cached): ruled paper and the ink cursor, after 300 ms. */
 function Splash() {
+  const show = useDelayedFlag(true);
   return (
-    <main className="main" aria-label="Loading">
-      <SkeletonEntries count={3} />
+    <main className="main">
+      <div className="feed splash">{show ? <InkCursor /> : null}</div>
     </main>
   );
 }
@@ -72,7 +79,12 @@ export function AppRoutes() {
 }
 
 export function App() {
-  const [queryClient] = useState(makeQueryClient);
+  const [queryClient] = useState(() => {
+    const client = makeQueryClient();
+    restoreCache(client); // last session's data, shown while it refreshes
+    return client;
+  });
+  useEffect(() => persistCache(queryClient), [queryClient]);
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>

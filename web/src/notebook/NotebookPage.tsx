@@ -1,15 +1,19 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router';
 
 import { Button } from '@/components/Button';
-import { EmptyState, ErrorState, SkeletonEntries } from '@/components/States';
+import { Dots, InkCursor } from '@/components/Loading';
+import { EmptyState, ErrorState } from '@/components/States';
 import { useToast } from '@/components/Toast';
-import { useAsk, useAskHistory, useClearAskHistory, useLogs, useMe, useSaveLog, useTz, useUnit } from '@/hooks/queries';
+import { useAskHistory, useClearAskHistory, useLogs, useMe, useSaveLog, useTz, useUnit } from '@/hooks/queries';
+import { useDelayedFlag } from '@/hooks/useDelayedFlag';
 import { useTitle } from '@/hooks/useTitle';
 import { errorMessage } from '@/lib/api';
+import { askStream } from '@/lib/askStream';
 import { capsDate, clockTime, dayHeading, dayIn, isoDate, parseDate, todayIn } from '@/lib/format';
 import { load, save } from '@/lib/storage';
-import type { Log, Mode } from '@/lib/types';
+import type { Log, LogMode, Mode } from '@/lib/types';
 import { ToolPanel } from '@/tools/ToolPanel';
 import { MoreMenu } from '@/tools/MoreMenu';
 import type { ToolId } from '@/tools/registry';
@@ -18,15 +22,33 @@ import { Composer } from './Composer';
 import { Entry } from './Entry';
 
 const MODE_KEY = 'jarvis.mode';
-const DEFAULT_DAYS = 14;
+const UNSAVED_KEY = 'jarvis.unsaved';
+/** The feed starts with the last 30 days; scrolling to the top loads 30 more. */
+const DEFAULT_DAYS = 30;
+const MORE_DAYS = 30;
+const MAX_DAYS = 366; // the API's limit for one request
 
 const isMode = (v: unknown): v is Mode => v === 'workout' || v === 'weight' || v === 'ask';
 
-/** A question not saved yet: in flight, or failed (with a retry). */
-type PendingAsk = { id: string; question: string; at: string; error?: string };
+/** A question not saved yet: in flight (its answer streaming in), or failed. */
+type PendingAsk = { id: string; question: string; at: string; answer?: string; error?: string };
 
 /** A question as shown in the feed: saved (with its answer) or pending. */
-type AskView = { key: string; question: string; at: string; answer?: string; error?: string; retryId?: string };
+type AskView = {
+  key: string;
+  question: string;
+  at: string;
+  answer?: string;
+  streaming?: boolean;
+  error?: string;
+  retryId?: string;
+};
+
+/** An entry whose save failed: kept (in this browser too) until it's saved or discarded. */
+type Unsaved = { key: string; text: string; mode: LogMode; at: string; day: string; error: string };
+
+const isUnsavedList = (v: unknown): v is Unsaved[] =>
+  Array.isArray(v) && v.every((x) => x && typeof x === 'object' && typeof (x as Unsaved).text === 'string');
 
 type FeedItem = { kind: 'log'; at: string; day: string; log: Log } | { kind: 'ask'; at: string; day: string; item: AskView };
 
@@ -47,18 +69,22 @@ function AskReply({ item, onRetry, tz }: { item: AskView; onRetry: () => void; t
         <p className="entry-text prose">{item.question}</p>
         <div className="answer">
           <p className="answer-label">Jarvis</p>
-          {item.answer !== undefined ? (
-            <p className="answer-text">{item.answer}</p>
-          ) : item.error ? (
+          {item.error ? (
             <div className="stack-2" role="alert">
+              {item.answer ? <p className="answer-text">{item.answer}</p> : null}
               <p className="danger">{item.error}</p>
               <Button size="small" onClick={onRetry}>
                 Try again
               </Button>
             </div>
+          ) : item.answer ? (
+            <p className={`answer-text${item.streaming ? ' streaming' : ''}`} aria-busy={item.streaming || undefined}>
+              {item.answer}
+            </p>
           ) : (
-            <p className="note pending" aria-live="polite">
-              ↳ thinking…
+            <p className="note thinking" role="status">
+              ↳ thinking
+              <Dots />
             </p>
           )}
         </div>
@@ -89,6 +115,13 @@ function isTyping(el: Element | null): boolean {
   return !!el && (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement || (el as HTMLElement).isContentEditable);
 }
 
+/** Loading the feed: the ruled page with an ink cursor where the first entry goes,
+ * shown only if the wait passes 300 ms (then for at least 400 ms). */
+function FeedLoading() {
+  const show = useDelayedFlag(true);
+  return show ? <InkCursor label="Loading your notebook" /> : null;
+}
+
 export function NotebookPage() {
   useTitle('Notebook');
   const unit = useUnit();
@@ -104,6 +137,15 @@ export function NotebookPage() {
   const [sendError, setSendError] = useState<string | null>(null);
   const [days, setDays] = useState(DEFAULT_DAYS);
   const [pendingAsks, setPendingAsks] = useState<PendingAsk[]>([]);
+  const [unsaved, setUnsavedState] = useState<Unsaved[]>(() => load(UNSAVED_KEY, [], isUnsavedList));
+  const setUnsaved = useCallback((f: (xs: Unsaved[]) => Unsaved[]) => {
+    setUnsavedState((xs) => {
+      const next = f(xs);
+      save(UNSAVED_KEY, next);
+      return next;
+    });
+  }, []);
+  const qc = useQueryClient();
   const [tool, setTool] = useState<ToolId | null>(null);
   const [highlight, setHighlight] = useState<number | null>(null);
   const { pendingDeletes } = useToast();
@@ -120,7 +162,6 @@ export function NotebookPage() {
   }, [today, days, jumpDate]);
   const logs = useLogs(from, addDays(today, 1));
   const save_ = useSaveLog(today);
-  const ask = useAsk();
   const askHistory = useAskHistory();
   const clearAsks = useClearAskHistory();
 
@@ -174,11 +215,36 @@ export function NotebookPage() {
         kind: 'ask' as const,
         at: p.at,
         day: dayIn(p.at, tz),
-        item: { key: `p${p.id}`, question: p.question, at: p.at, error: p.error, retryId: p.id },
+        item: {
+          key: `p${p.id}`,
+          question: p.question,
+          at: p.at,
+          answer: p.answer,
+          streaming: !p.error,
+          error: p.error,
+          retryId: p.id,
+        },
+      })),
+      ...unsaved.map((u) => ({
+        kind: 'log' as const,
+        at: u.at,
+        day: u.day,
+        log: {
+          id: -Number(u.key.replace(/\D/g, '').slice(0, 12) || 1),
+          kind: u.mode,
+          raw_text: u.text,
+          logged_at: u.at,
+          local_date: u.day,
+          sets: [],
+          weigh_in: null,
+          warnings: [],
+          failed: u.error,
+          retryKey: u.key,
+        } satisfies Log,
       })),
     ];
     return items.sort((a, b) => a.at.localeCompare(b.at));
-  }, [visible, askHistory.data, pendingAsks, from, tz]);
+  }, [visible, askHistory.data, pendingAsks, unsaved, from, tz]);
 
   const summaries = useMemo(() => {
     const byDay = new Map<string, FeedItem[]>();
@@ -186,8 +252,8 @@ export function NotebookPage() {
     return new Map([...byDay].map(([d, items]) => [d, daySummary(items)]));
   }, [feed]);
 
-  // Start at the newest entry, like a chat; follow new entries as they arrive.
-  const count = feed.length;
+  // Start at the newest entry, like a chat; follow new entries as they arrive (but not
+  // older ones loading in above).
   const settled = pendingAsks.filter((a) => a.error).length; // a failure shows up in place, too
   // Scroll the page itself: the composer is sticky, so aligning the last entry with the
   // viewport bottom would leave it hidden behind the composer.
@@ -198,10 +264,48 @@ export function NotebookPage() {
   }, [jumpId]);
   // Also when the newest entry comes back from the server (it may grow a warning box).
   const last = feed[feed.length - 1];
-  const tail = last?.kind === 'log' ? `${last.log.id}:${!!last.log.pending}:${!!last.log.weigh_in?.flagged}` : '';
+  const tail = last
+    ? last.kind === 'log'
+      ? `${last.log.id}:${!!last.log.pending}:${!!last.log.weigh_in?.flagged}`
+      : last.item.key
+    : '';
   useEffect(() => {
     if (!jumpRef.current) window.scrollTo({ top: document.documentElement.scrollHeight });
-  }, [count, settled, tail]);
+  }, [settled, tail]);
+  // A streaming answer grows: keep its end in view if you're reading at the bottom.
+  const streamed = pendingAsks.reduce((n, a) => n + (a.answer?.length ?? 0), 0);
+  useEffect(() => {
+    const doc = document.documentElement;
+    if (streamed && window.scrollY + window.innerHeight >= doc.scrollHeight - 160) {
+      window.scrollTo({ top: doc.scrollHeight });
+    }
+  }, [streamed]);
+
+  // Scrolled to the top: load the 30 days before (until there's nothing older).
+  const topRef = useRef<HTMLDivElement>(null);
+  const [exhausted, setExhausted] = useState(false);
+  const loadedCount = logs.data?.length ?? 0;
+  const lastCount = useRef(-1);
+  useEffect(() => {
+    if (logs.isFetching || !logs.data) return;
+    // A load that brought nothing new means we've reached the start of the notebook.
+    if (days > DEFAULT_DAYS && loadedCount === lastCount.current) setExhausted(true);
+    lastCount.current = loadedCount;
+  }, [days, loadedCount, logs.isFetching, logs.data]);
+  useEffect(() => {
+    const el = topRef.current;
+    if (!el || exhausted || !logs.data || jumpId) return;
+    const io = new IntersectionObserver(
+      ([e]) => {
+        if (e.isIntersecting && !logs.isFetching && window.scrollY > 0) {
+          setDays((d) => Math.min(MAX_DAYS, d + MORE_DAYS));
+        }
+      },
+      { rootMargin: '400px 0px 0px 0px' },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [exhausted, logs.data, logs.isFetching, jumpId]);
 
   // The header shows the date of the day you're reading: the last day heading that
   // has scrolled up to (or under) the header, the first day at the top of the page,
@@ -246,14 +350,37 @@ export function NotebookPage() {
     setParams({}, { replace: true });
   }, [jumpId, logs.data, setParams]);
 
+  const update = (id: string, f: (a: PendingAsk) => PendingAsk) =>
+    setPendingAsks((xs) => xs.map((x) => (x.id === id ? f(x) : x)));
+
+  /** "↳ thinking" at once, then the answer streams in word by word. */
   function runAsk(question: string, id: string = crypto.randomUUID()) {
     const at = new Date().toISOString();
     setPendingAsks((xs) => [...xs.filter((x) => x.id !== id), { id, question, at }]);
-    ask.mutate(question, {
-      // Saved on the server: it comes back in the history, so drop the local copy.
-      onSuccess: () => setPendingAsks((xs) => xs.filter((x) => x.id !== id)),
-      onError: (e) => setPendingAsks((xs) => xs.map((x) => (x.id === id ? { ...x, error: errorMessage(e) } : x))),
-    });
+    askStream(question, (piece) => update(id, (a) => ({ ...a, answer: (a.answer ?? '') + piece })))
+      .then(async () => {
+        // Saved on the server: once the history has it, drop the local copy.
+        await qc.invalidateQueries({ queryKey: ['ask-history'] });
+        setPendingAsks((xs) => xs.filter((x) => x.id !== id));
+      })
+      .catch((e: unknown) => update(id, (a) => ({ ...a, error: errorMessage(e) })));
+  }
+
+  function saveEntry(body: string, logMode: LogMode, retryKey?: string) {
+    if (retryKey) setUnsaved((xs) => xs.filter((u) => u.key !== retryKey));
+    const at = new Date().toISOString();
+    // Optimistic: the entry shows now (pending); if the save fails it stays in the feed
+    // as "not saved" with a retry, so the typed text is never lost.
+    save_.mutate(
+      { text: body, mode: logMode },
+      {
+        onError: (e) =>
+          setUnsaved((xs) => [
+            ...xs,
+            { key: retryKey ?? crypto.randomUUID(), text: body, mode: logMode, at, day: today, error: errorMessage(e) },
+          ]),
+      },
+    );
   }
 
   function send() {
@@ -265,19 +392,8 @@ export function NotebookPage() {
       setText('');
       return;
     }
-    const body = t;
-    // Optimistic: clear the input and show the entry now; if the save fails, the entry
-    // is removed again and the text comes back so nothing is lost.
     setText('');
-    save_.mutate(
-      { text: body, mode },
-      {
-        onError: (e) => {
-          setText((current) => (current.trim() ? current : t));
-          setSendError(`Not saved: ${errorMessage(e)} Your text is back in the box.`);
-        },
-      },
-    );
+    saveEntry(t, mode);
   }
 
   function jump(log: Log) {
@@ -308,10 +424,15 @@ export function NotebookPage() {
           </time>
         </header>
         <div className="feed" aria-live="polite">
+          <div ref={topRef} aria-hidden="true" />
           <div className="row-between feed-bar">
             {feed.length ? (
-              <Button size="small" variant="ghost" onClick={() => setDays((d) => d + 14)} disabled={logs.isFetching}>
-                Show earlier
+              <Button
+                size="small"
+                variant="ghost"
+                onClick={() => setDays((d) => Math.min(MAX_DAYS, d + MORE_DAYS))}
+                disabled={logs.isFetching || exhausted}>
+                {exhausted ? 'Start of your notebook' : 'Show earlier'}
               </Button>
             ) : (
               <span />
@@ -321,7 +442,7 @@ export function NotebookPage() {
           {logs.error && !logs.data ? (
             <ErrorState error={logs.error} onRetry={() => void logs.refetch()} />
           ) : !logs.data ? (
-            <SkeletonEntries count={4} />
+            <FeedLoading />
           ) : !feed.length ? (
             <EmptyState message="Type a set like 8x 160lb bench in the box below to start your notebook." />
           ) : (
@@ -338,7 +459,13 @@ export function NotebookPage() {
                 <div key={f.kind === 'log' ? `l${f.log.id}` : f.item.key}>
                   {header}
                   {f.kind === 'log' ? (
-                    <Entry log={f.log} unit={unit} highlight={highlight === f.log.id} />
+                    <Entry
+                      log={f.log}
+                      unit={unit}
+                      highlight={highlight === f.log.id}
+                      onRetry={f.log.failed ? () => saveEntry(f.log.raw_text, f.log.kind, f.log.retryKey) : undefined}
+                      onDiscard={f.log.failed ? () => setUnsaved((xs) => xs.filter((u) => u.key !== f.log.retryKey)) : undefined}
+                    />
                   ) : (
                     <AskReply item={f.item} tz={tz} onRetry={() => runAsk(f.item.question, f.item.retryId)} />
                   )}
@@ -356,7 +483,7 @@ export function NotebookPage() {
             if (sendError) setSendError(null);
           }}
           onSend={send}
-          sending={mode === 'ask' && ask.isPending}
+          sending={mode === 'ask' && pendingAsks.some((a) => !a.error)}
           error={sendError}
           unit={unit}
           tools={
