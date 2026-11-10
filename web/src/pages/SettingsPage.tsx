@@ -98,7 +98,7 @@ export function SettingsPage() {
               <ExportTool />
             </Section>
             <Section title="Password">
-              <ChangePassword isDemo={m.is_demo} />
+              <ChangePassword />
             </Section>
             <Section title="Account">
               <div className="stack-3">

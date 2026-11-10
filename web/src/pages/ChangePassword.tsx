@@ -9,8 +9,10 @@ import { passwordOk } from '@/lib/password';
 /**
  * Change the password: the current one (Firebase asks for it again before a
  * password change), then the new one twice, with the same rules as sign-up.
+ * The demo account can change its password too; `python -m jarvis_api.demo_login`
+ * resets it.
  */
-export function ChangePassword({ isDemo }: { isDemo: boolean }) {
+export function ChangePassword() {
   const { hasPassword, changePassword } = useAuth();
   const id = useId();
   const [current, setCurrent] = useState('');
@@ -20,7 +22,6 @@ export function ChangePassword({ isDemo }: { isDemo: boolean }) {
   const [error, setError] = useState<string | null>(null);
   const [done, setDone] = useState(false);
 
-  if (isDemo) return <p className="help">The demo account’s password can’t be changed here.</p>;
   if (!hasPassword) return <p className="help">You sign in with Google, so there’s no password to change here.</p>;
 
   async function submit(e: FormEvent) {

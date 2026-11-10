@@ -30,14 +30,14 @@ async function fill(current: string, next: string, confirm: string) {
 
 describe('ChangePassword', () => {
   it('needs a strong new password, typed twice, before changing it', async () => {
-    render(<ChangePassword isDemo={false} />);
+    render(<ChangePassword />);
     await fill('old-Pass1!', '12345678', '12345678');
     expect(screen.getByRole('alert')).toHaveTextContent(/stronger password/);
     expect(auth.changePassword).not.toHaveBeenCalled();
   });
 
   it('refuses mismatched passwords, then changes it', async () => {
-    render(<ChangePassword isDemo={false} />);
+    render(<ChangePassword />);
     await fill('old-Pass1!', 'New-pass9!', 'New-pass9?');
     expect(screen.getByRole('alert')).toHaveTextContent(/don’t match/);
     await userEvent.clear(screen.getByLabelText('Confirm new password'));
@@ -47,11 +47,10 @@ describe('ChangePassword', () => {
     expect(await screen.findByText('Password changed.')).toBeInTheDocument();
   });
 
-  it('is not offered to the demo account or Google sign-ins', () => {
-    const { rerender } = render(<ChangePassword isDemo />);
-    expect(screen.queryByLabelText('New password')).not.toBeInTheDocument();
+  it('is not offered to Google sign-ins (they have no password here)', () => {
     auth.hasPassword = false;
-    rerender(<ChangePassword isDemo={false} />);
+    render(<ChangePassword />);
+    expect(screen.queryByLabelText('New password')).not.toBeInTheDocument();
     expect(screen.getByText(/sign in with Google/)).toBeInTheDocument();
   });
 });
