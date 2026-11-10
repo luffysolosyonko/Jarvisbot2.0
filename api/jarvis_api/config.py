@@ -14,19 +14,17 @@ class Settings(BaseSettings):
     env: str = "local"
     log_level: str = "info"
     cors_origins: str = "http://localhost:5173"  # comma-separated; the Vite dev server
-    trust_proxy_headers: bool = False  # True behind Cloud Run to read X-Forwarded-For
     max_body_bytes: int = 32_768
 
     database_url: str = "sqlite:///./jarvis.db"
 
     firebase_project_id: str = ""
-    # Path to a service account key, outside git. Needed locally to mint demo tokens.
+    # Path to a service account key, outside git. Needed to set the demo login.
     google_application_credentials: str = ""
 
-    # Demo account: a fixed Firebase UID. Empty disables "Try the demo".
+    # Demo account: a fixed Firebase UID. It signs in with an email and password like
+    # any account (set with `python -m jarvis_api.demo_login`); the seed fills it.
     demo_uid: str = ""
-    demo_token_per_min: int = 5
-    demo_token_per_day: int = 50
 
     rate_limit_parse_per_min: int = 60
     rate_limit_ask_per_min: int = 10

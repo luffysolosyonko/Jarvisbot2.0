@@ -36,7 +36,8 @@ Run every command from the repo root unless it says otherwise. Use PowerShell.
    ```
 
    Leave it running. It serves <http://localhost:5173>.
-5. [ ] **Open Chrome** at <http://localhost:5173> and click **Try the demo**.
+5. [ ] **Open Chrome** at <http://localhost:5173> and sign in with the demo
+   email and password (set with `jarvis_api.demo_login`, see SETUP.md section 2).
    The Notebook should show the last two weeks of entries.
 6. [ ] Zoom the browser to 110–125% (Ctrl +) so text reads well over screen
    share.
@@ -46,7 +47,7 @@ Run every command from the repo root unless it says otherwise. Use PowerShell.
 
 | Time | Where | Do | Point out |
 |---|---|---|---|
-| 0:00 | Sign in | Show the form, then click **Try the demo** | Email, Google popup and the demo all go through Firebase. The demo is a custom token for one fixed account, minted by the API; there's no demo password. |
+| 0:00 | Sign in | Show the form, then sign in with the demo email and password | Email and the Google popup both go through Firebase. The demo is an ordinary email/password account whose data the seed resets to made-up history. |
 | 0:30 | Notebook | Scroll the page | A ruled logbook: the time in the margin, what was typed in mono, and a green "↳" note of what it logged. Click a note for the parsed sets. |
 | 1:00 | Notebook, Workout | Type `5x 155lb 2x1x1xf bench`, then press Enter | The "↳" line under the box reads it back as the note it will get, with "✗ last rep" for the failed rep. Enter saves and it appears at once. No AI is involved in logging. |
 | 1:30 | Notebook, Workout | Type `8x 135lb bench`, Shift+Enter, then `8 135 squat`, Enter | The preview stays quiet while typing. The saved entry marks the bad line "✗ Not logged"; click **Fix**, then **Add unit: lb**, and it's rewritten and re-parsed. **Tools > Syntax help** lists the formats with examples. |
@@ -73,7 +74,7 @@ B's data, and the design-token contrast test.
 | Charts or the calendar are empty | Re-run the seed command (step 3) and reload the page. |
 | Port 15432 or 8000 already in use | Stop whatever holds it, or set `JARVIS_DB_PORT` to another port. Then `docker compose down` and up again. |
 | Port 5173 already in use | Close the other `npm run dev` window (the port is fixed because the API's CORS allows only it). |
-| "Continue with Google" fails | Use **Try the demo** or email sign-in. See SETUP.md section 3 for enabling Google. |
+| "Continue with Google" fails | Use the demo email and password. See SETUP.md section 3 for enabling Google. |
 
 ## After the demo
 

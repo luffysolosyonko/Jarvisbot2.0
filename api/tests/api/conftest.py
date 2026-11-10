@@ -28,15 +28,6 @@ class FakeVerifier:
         return Claims(uid=uid, email=f"{uid}@example.com", provider=provider)
 
 
-class FakeMinter:
-    def __init__(self) -> None:
-        self.minted: list[str] = []
-
-    def mint(self, uid: str) -> str:
-        self.minted.append(uid)
-        return f"custom-token-for-{uid}"
-
-
 class FakeClock:
     def __init__(self) -> None:
         self.t = 1000.0
@@ -79,17 +70,11 @@ def clock() -> FakeClock:
 
 
 @pytest.fixture
-def minter() -> FakeMinter:
-    return FakeMinter()
-
-
-@pytest.fixture
-def app(settings: Settings, engine: Engine, minter: FakeMinter, clock: FakeClock) -> FastAPI:
+def app(settings: Settings, engine: Engine, clock: FakeClock) -> FastAPI:
     return create_app(
         settings,
         engine=engine,
         verifier=FakeVerifier(),
-        minter=minter,
         limiter=RateLimiter(clock),
     )
 

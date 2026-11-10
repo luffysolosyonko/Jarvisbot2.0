@@ -19,7 +19,7 @@ from jarvis_api.models import AiUsage, AskMessage
 from jarvis_api.ratelimit import RateLimiter
 from jarvis_core.ai import Usage
 
-from .conftest import DEMO_UID, FakeClock, FakeMinter, FakeVerifier, auth
+from .conftest import DEMO_UID, FakeClock, FakeVerifier, auth
 from .test_auth_and_errors import assert_error
 
 
@@ -44,7 +44,6 @@ def make_client(
         settings,
         engine=engine,
         verifier=FakeVerifier(),
-        minter=FakeMinter(),
         limiter=RateLimiter(clock or FakeClock()),
         llm=provider,
     )

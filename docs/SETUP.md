@@ -40,10 +40,16 @@ Firebase Auth works on the free Spark plan; no billing account needed.
    `web/.env.local` (section 4). These are public client config, not secrets.
 5. Copy the project ID into `FIREBASE_PROJECT_ID` in `api/.env` (section 3).
 
-There's no demo user to create and no demo password. "Try the demo" asks the
-API for a Firebase custom token for one fixed UID (`DEMO_UID` in `api/.env`,
-default `jarvis-demo`). Firebase creates that user on its first sign-in. The
-UID comes only from server config, never from the request.
+The demo account is one fixed Firebase UID (`DEMO_UID` in `api/.env`, default
+`jarvis-demo`). It signs in with an ordinary email and password, which you set
+once the API is running (section 3):
+
+```powershell
+docker compose exec api python -m jarvis_api.demo_login --email demo@example.com
+```
+
+It prints a generated password (or pass `--password`). Keep it out of the repo.
+Re-running it changes the password; the demo data stays attached to the UID.
 
 ## 3. Local API configuration
 
@@ -56,7 +62,7 @@ Fill in `FIREBASE_PROJECT_ID`. `DATABASE_URL` already points at the Postgres
 in `docker-compose.yml`, and `CORS_ORIGINS` already allows the web app on
 `http://localhost:5173`.
 
-**Service account key** (needed to mint "Try the demo" tokens):
+**Service account key** (needed to set the demo login):
 
 1. Firebase console > **Project settings > Service accounts** > **Generate new
    private key** > **Generate key**.

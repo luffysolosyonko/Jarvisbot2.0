@@ -390,8 +390,3 @@ class AskHistoryOut(BaseModel):
 
 class ClearedOut(BaseModel):
     cleared: int
-
-
-# --- demo ------------------------------------------------------------------
-class DemoTokenOut(BaseModel):
-    token: str

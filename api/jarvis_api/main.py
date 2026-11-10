@@ -11,10 +11,10 @@ from sqlalchemy import Engine
 from jarvis_api import errors
 from jarvis_api.config import Settings, get_settings
 from jarvis_api.db import make_engine, make_sessionmaker
-from jarvis_api.firebase import DemoTokenMinter, FirebaseAuth, TokenVerifier
+from jarvis_api.firebase import FirebaseAuth, TokenVerifier
 from jarvis_api.llm import LLMProvider, make_provider
 from jarvis_api.ratelimit import RateLimiter
-from jarvis_api.routes import aliases, ask, demo, logs, me, stats, tools
+from jarvis_api.routes import aliases, ask, logs, me, stats, tools
 
 API_PREFIX = "/api/v1"
 _FROM_SETTINGS: object = object()  # build the LLM provider from settings
@@ -25,7 +25,6 @@ def create_app(
     *,
     engine: Engine | None = None,
     verifier: TokenVerifier | None = None,
-    minter: DemoTokenMinter | None = None,
     limiter: RateLimiter | None = None,
     llm: LLMProvider | object | None = _FROM_SETTINGS,
 ) -> FastAPI:
@@ -44,7 +43,6 @@ def create_app(
     app.state.engine = engine
     app.state.sessionmaker = make_sessionmaker(engine)
     app.state.verifier = verifier or firebase
-    app.state.minter = minter or firebase
     app.state.limiter = limiter or RateLimiter()
     app.state.llm = make_provider(settings) if llm is _FROM_SETTINGS else llm
 
@@ -74,7 +72,7 @@ def create_app(
         """Liveness probe. Unauthenticated by design."""
         return {"status": "ok"}
 
-    for module in (me, logs, stats, tools, aliases, ask, demo):
+    for module in (me, logs, stats, tools, aliases, ask):
         app.include_router(module.router, prefix=API_PREFIX)
     return app
 

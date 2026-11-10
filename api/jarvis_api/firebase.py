@@ -1,4 +1,4 @@
-"""Firebase Admin: ID token verification and demo custom tokens.
+"""Firebase Admin: ID token verification, and the demo account's email login.
 
 Both are behind small protocols so tests can swap in fakes without network calls.
 """
@@ -29,15 +29,11 @@ class TokenVerifier(Protocol):
     def verify(self, token: str) -> Claims: ...
 
 
-class DemoTokenMinter(Protocol):
-    def mint(self, uid: str) -> str: ...
-
-
 class FirebaseAuth:
     """Real implementation. The Admin SDK app is created on first use.
 
     Verifying ID tokens only needs the project ID (Google's public keys are fetched
-    and cached by the SDK). Minting custom tokens needs a service account: a key
+    and cached by the SDK). Changing a user (the demo login) needs a service account: a key
     file locally, or the Cloud Run identity in production.
     """
 
@@ -80,9 +76,19 @@ class FirebaseAuth:
             provider=str(firebase.get("sign_in_provider", "unknown")),
         )
 
-    def mint(self, uid: str) -> str:
-        """A custom token for `uid` with no developer claims."""
+    def set_email_login(self, uid: str, email: str, password: str) -> bool:
+        """Give the user `uid` this email and password, creating the user if needed.
+
+        Returns True if the user was created. The UID never changes, so the account's
+        data (keyed by UID) stays attached.
+        """
         from firebase_admin import auth
 
-        token = auth.create_custom_token(uid, app=self._get_app())
-        return token.decode() if isinstance(token, bytes) else str(token)
+        app = self._get_app()
+        try:
+            auth.get_user(uid, app=app)
+        except auth.UserNotFoundError:
+            auth.create_user(uid=uid, email=email, password=password, email_verified=True, app=app)
+            return True
+        auth.update_user(uid, email=email, password=password, email_verified=True, app=app)
+        return False

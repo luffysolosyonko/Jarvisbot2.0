@@ -63,14 +63,14 @@ flowchart LR
   subgraph Browser
     Web["React web app<br/>Vite · React Router · TanStack Query<br/>Recharts"]
   end
-  Web -- "email, Google popup,<br/>custom token (demo)" --> FA[Firebase Auth]
+  Web -- "email/password,<br/>Google popup" --> FA[Firebase Auth]
   Web -- "HTTPS + Firebase ID token" --> API
   subgraph Server["API (Docker locally)"]
     API["FastAPI /api/v1<br/>auth · rate limits · JSON errors"]
     Core["jarvis_core<br/>parser · names · analysis · ai"]
     API --> Core
   end
-  API -- verify ID token,<br/>mint demo token --> FA
+  API -- verify ID token --> FA
   API --> DB[(PostgreSQL)]
   API -- "LLMProvider (Ask only)" --> Claude[Claude API]
 ```
@@ -118,7 +118,7 @@ docs/               SETUP.md (one-time setup), DEMO.md (demo checklist)
 | Routing | React Router | Signed-in and signed-out route guards, deep links like `/progress/bench` |
 | Data fetching | TanStack Query | Caching, the debounced parse-as-you-type, optimistic saves with rollback |
 | Charts | Recharts (SVG) | Composed line, dot and bar charts with full control of colors and dashes |
-| Auth | Firebase Auth (JS SDK) + Admin SDK | Email, Google popup and custom tokens without running an auth server |
+| Auth | Firebase Auth (JS SDK) + Admin SDK | Email/password and the Google popup without running an auth server |
 | API | FastAPI + Pydantic v2 | Typed request and response models and automatic validation |
 | Persistence | SQLAlchemy 2 + Alembic, PostgreSQL | Typed ORM, versioned migrations; SQLite in tests |
 | AI | Claude (`claude-haiku-5-5`) behind an `LLMProvider` interface | Fast, cheap answers over small contexts; provider and model are env vars |
@@ -190,8 +190,8 @@ Highlights:
 - `api/tests/core`: every shorthand rule from Jarvis 1.0 (failure notation,
   estimates, multi-set chains, header lines, repeats), name matching,
   forecasts and projections.
-- `api/tests/api`: auth on every route, user isolation, the demo token (fixed
-  UID, no claims, per-IP limits), rate limits, migrations and rebuild.
+- `api/tests/api`: auth on every route, user isolation, the demo login (fixed
+  UID, email and password), rate limits, migrations and rebuild.
 - `api/tests/api/test_notebook.py`: modes, fix suggestions, edit and delete
   (with same-day re-parsing), the calendar, the tools, CSV export, and that
   logging makes zero LLM calls.
@@ -205,9 +205,9 @@ Highlights:
 - No secrets in the repo: `.env` files and the service account key are
   gitignored and excluded from the Docker image. `VITE_*` values are public
   client config only.
-- "Try the demo" uses a Firebase custom token minted for one fixed UID from
-  server config, with no extra claims, rate limited per IP (5/minute, 50/day).
-  There is no demo password anywhere.
+- The demo account is one fixed Firebase UID from server config that signs in
+  with an ordinary email and password, set with `python -m jarvis_api.demo_login`.
+  The password is never in the repo.
 - Input limits (2,000-character logs, 500-character questions, 32 KB bodies),
   per-user rate limits on `/parse` and `/ask`, and a per-user daily token cap
   on Ask (lower for the demo account).
