@@ -44,6 +44,7 @@ export function SignInPage() {
   const [view, setView] = useState<View>('sign-in');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirm, setConfirm] = useState('');
   const [busy, setBusy] = useState<Busy>(null);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -63,6 +64,7 @@ export function SignInPage() {
 
   function go(next: View) {
     setView(next);
+    setConfirm('');
     setError(null);
     setNotice(null);
   }
@@ -77,6 +79,9 @@ export function SignInPage() {
     } else if (view === 'sign-up' && !passwordOk(password)) {
       setNotice(null);
       setError('Choose a stronger password: it needs everything on the list below.');
+    } else if (view === 'sign-up' && confirm !== password) {
+      setNotice(null);
+      setError('The passwords don’t match. Type the same password in both boxes.');
     } else {
       void run('email', () => (view === 'sign-in' ? signIn(email, password) : signUp(email, password)));
     }
@@ -134,6 +139,27 @@ export function SignInPage() {
                 required
               />
               {view === 'sign-up' ? <PasswordRules id="password-rules" password={password} /> : null}
+            </div>
+          ) : null}
+          {view === 'sign-up' ? (
+            <div className="auth-field">
+              <div className="auth-label-row">
+                <label htmlFor="confirm-password">Confirm password</label>
+                {confirm ? (
+                  <span className={`auth-match${confirm === password ? ' ok' : ''}`} aria-live="polite">
+                    {confirm === password ? '✓ matches' : 'doesn’t match yet'}
+                  </span>
+                ) : null}
+              </div>
+              <input
+                id="confirm-password"
+                className="auth-input"
+                type="password"
+                autoComplete="new-password"
+                value={confirm}
+                onChange={(e) => setConfirm(e.target.value)}
+                required
+              />
             </div>
           ) : null}
 
