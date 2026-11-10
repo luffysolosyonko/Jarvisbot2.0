@@ -14,7 +14,7 @@ from jarvis_api.db import make_engine, make_sessionmaker
 from jarvis_api.firebase import AccountAdmin, FirebaseAuth, TokenVerifier
 from jarvis_api.llm import LLMProvider, make_provider
 from jarvis_api.ratelimit import RateLimiter
-from jarvis_api.routes import aliases, ask, imports, logs, me, stats, tools
+from jarvis_api.routes import aliases, ask, logs, me, stats, tools
 
 API_PREFIX = "/api/v1"
 _FROM_SETTINGS: object = object()  # build the LLM provider from settings
@@ -55,10 +55,7 @@ def create_app(
         request: Request, call_next: Callable[[Request], Awaitable[Response]]
     ) -> Response:
         length = request.headers.get("content-length")
-        limit = settings.max_body_bytes
-        if request.url.path.endswith("/import/jarvis1"):
-            limit = settings.max_import_bytes  # a database file, not a JSON body
-        if length and length.isdigit() and int(length) > limit:
+        if length and length.isdigit() and int(length) > settings.max_body_bytes:
             return JSONResponse(
                 errors.error_body("payload_too_large", "The request is too large."), 413
             )
@@ -77,7 +74,7 @@ def create_app(
         """Liveness probe. Unauthenticated by design."""
         return {"status": "ok"}
 
-    for module in (me, logs, stats, tools, aliases, ask, imports):
+    for module in (me, logs, stats, tools, aliases, ask):
         app.include_router(module.router, prefix=API_PREFIX)
     return app
 

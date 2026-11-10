@@ -8,7 +8,7 @@ Set lines (one per line; weights are stored in lb, kg is converted):
     8x ?70/80kg bench         estimated: midpoint of a range, or a "?"
     12x 60 or 50kg bench      estimated: unsure which, midpoint
     10x uw dips               bodyweight only
-    8x bar bench              the empty bar (bar_lb, default 45)
+    8x bar bench              the empty bar (45 lb)
     25x 15kg each hand shrug  per-hand weight
     30x ^                     same exercise (and weight) as the set above
     2                         a bare number repeats the previous set

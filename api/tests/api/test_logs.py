@@ -81,11 +81,11 @@ def test_same_day_context_carries_between_logs(client: TestClient) -> None:
 
 def test_user_settings_change_parsing(client: TestClient) -> None:
     h = auth("alice")
-    client.patch("/api/v1/me/settings", headers=h, json={"set_unit": "kg", "bar_lb": 35})
+    client.patch("/api/v1/me/settings", headers=h, json={"set_unit": "kg"})
     body = client.post(
         "/api/v1/parse", headers=h, json={"text": "8x 60 bench\n10x bar bench"}
     ).json()
-    assert [s["weight_lb"] for s in body["sets"]] == [132.3, 35.0]
+    assert [s["weight_lb"] for s in body["sets"]] == [132.3, 45.0]
 
 
 def test_matched_exercise_uses_known_names_and_aliases(client: TestClient) -> None:

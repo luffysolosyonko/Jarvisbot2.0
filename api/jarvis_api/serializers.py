@@ -86,7 +86,7 @@ def parse_out(p: ParsedLog, data: UserData, text: str, day: date | None = None) 
             typed=w.typed,
             typed_unit=w.typed_unit,
             unit_assumed=w.unit_assumed,
-            flagged=is_outlier(w.weight_lb, avg, data.outlier_share),
+            flagged=is_outlier(w.weight_lb, avg),
             avg_7d=None if avg is None else round(avg, 1),
         )
     return schemas.ParseOut(

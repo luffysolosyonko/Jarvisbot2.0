@@ -52,12 +52,7 @@ def test_first_call_creates_the_user_once(client: TestClient) -> None:
     second = client.get("/api/v1/me", headers=auth("alice")).json()
     assert first["id"] == second["id"]
     assert first["email"] == "alice@example.com" and first["auth_provider"] == "password"
-    assert first["settings"] == {
-        "tz_name": "UTC",
-        "set_unit": "lb",
-        "bar_lb": 45.0,
-        "outlier_pct": 5,
-    }
+    assert first["settings"] == {"tz_name": "UTC", "set_unit": "lb"}
     assert first["is_demo"] is False
 
 
@@ -66,7 +61,7 @@ def test_settings_patch(client: TestClient) -> None:
     r = client.patch(
         "/api/v1/me/settings",
         headers=h,
-        json={"tz_name": "America/Chicago", "set_unit": "kg", "bar_lb": 35},
+        json={"tz_name": "America/Chicago", "set_unit": "kg"},
     )
     assert r.status_code == 200 and r.json()["settings"]["set_unit"] == "kg"
     assert_error(
@@ -81,6 +76,11 @@ def test_settings_patch(client: TestClient) -> None:
     )
     assert_error(
         client.patch("/api/v1/me/settings", headers=h, json={"admin": True}),
+        422,
+        "invalid_request",
+    )
+    assert_error(  # the bar weight is fixed at 45 lb
+        client.patch("/api/v1/me/settings", headers=h, json={"bar_lb": 35}),
         422,
         "invalid_request",
     )

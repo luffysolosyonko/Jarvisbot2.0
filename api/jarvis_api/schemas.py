@@ -18,8 +18,6 @@ class Strict(BaseModel):
 class SettingsOut(BaseModel):
     tz_name: str
     set_unit: Literal["lb", "kg"]
-    bar_lb: float
-    outlier_pct: int
 
 
 class MeOut(BaseModel):
@@ -37,8 +35,6 @@ class SettingsPatch(Strict):
     display_name: str | None = Field(default=None, max_length=60)
     tz_name: str | None = Field(default=None, max_length=64)
     set_unit: Literal["lb", "kg"] | None = None
-    bar_lb: float | None = Field(default=None, ge=0, le=100)
-    outlier_pct: int | None = Field(default=None, ge=1, le=15)
 
 
 class DataSummaryOut(BaseModel):

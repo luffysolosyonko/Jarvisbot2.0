@@ -55,9 +55,6 @@ class UserSettings(Base):
     )
     tz_name: Mapped[str] = mapped_column(String(64), default="UTC")
     set_unit: Mapped[str] = mapped_column(String(2), default="lb")
-    bar_lb: Mapped[float] = mapped_column(Float, default=45.0)
-    # "Double-check weigh-ins": flag one this many percent off the 7-day average.
-    outlier_pct: Mapped[int] = mapped_column(Integer, default=5, server_default="5")
 
     user: Mapped[User] = relationship(back_populates="settings")
 

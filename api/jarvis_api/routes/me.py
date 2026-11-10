@@ -25,9 +25,7 @@ def me_out(user: User, demo_uid: str) -> schemas.MeOut:
         auth_provider=user.auth_provider,
         is_demo=bool(demo_uid) and user.firebase_uid == demo_uid,
         created_at=user.created_at,
-        settings=schemas.SettingsOut(
-            tz_name=s.tz_name, set_unit=unit, bar_lb=s.bar_lb, outlier_pct=s.outlier_pct
-        ),
+        settings=schemas.SettingsOut(tz_name=s.tz_name, set_unit=unit),
     )
 
 
@@ -51,10 +49,6 @@ def patch_settings(
         s.tz_name = body.tz_name
     if body.set_unit is not None:
         s.set_unit = body.set_unit
-    if body.bar_lb is not None:
-        s.bar_lb = body.bar_lb
-    if body.outlier_pct is not None:
-        s.outlier_pct = body.outlier_pct
     db.commit()
     return me_out(user, settings.demo_uid)
 

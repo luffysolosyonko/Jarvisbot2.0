@@ -160,7 +160,7 @@ def reset_demo(db: Session, uid: str, tz_name: str, today: date | None = None) -
     db.execute(delete(Alias).where(Alias.user_id == user.id))
     db.execute(delete(AiUsage).where(AiUsage.user_id == user.id))
     db.execute(delete(AskMessage).where(AskMessage.user_id == user.id))
-    user.settings.tz_name, user.settings.set_unit, user.settings.bar_lb = tz_name, "lb", 45.0
+    user.settings.tz_name, user.settings.set_unit = tz_name, "lb"
     user.display_name = "Demo athlete"
     db.add_all(Alias(user_id=user.id, short=s, full=f) for s, f in DEMO_ALIASES.items())
     db.commit()
