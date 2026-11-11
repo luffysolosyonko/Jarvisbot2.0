@@ -59,3 +59,17 @@ def test_end_to_end_abbreviated_set_reported_under_full_name() -> None:
     assert {s.exercise for s in sets} == {"one arm lat pulldown"}
     [summary] = exercise_summaries(sets)
     assert summary.sets == 2 and summary.sessions == 2
+
+
+def test_an_alias_does_not_expand_inside_its_own_full_form() -> None:
+    aliases = {"bench": "bench press", "ohp": "overhead press"}
+    assert apply_aliases("bench", aliases) == "bench press"
+    assert apply_aliases("bench press", aliases) == "bench press"
+    assert apply_aliases("dumbbell bench press", aliases) == "dumbbell bench press"
+    assert apply_aliases("dumbbell bench", aliases) == "dumbbell bench press"
+    assert apply_aliases("overhead press", aliases) == "overhead press"
+    assert apply_aliases("ohp", aliases) == "overhead press"
+    assert apply_aliases("press", {"press": "bench press"}) == "bench press"
+    assert apply_aliases("bench press", {"press": "bench press"}) == "bench press"
+    names = canonical_names({"bench": 2, "bench press": 40}, {"bench": "bench press"})
+    assert names == {"bench": "bench press", "bench press": "bench press"}

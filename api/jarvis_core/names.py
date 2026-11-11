@@ -62,8 +62,20 @@ def _expands(short_t: tuple[str, ...], full_t: tuple[str, ...]) -> bool | None:
     return go(0, 0)
 
 
+def _already_full(words: list[str], i: int, short: list[str], full: list[str]) -> bool:
+    """Is the shortcut at `words[i]` part of its own full form, already written out?
+    With {'bench': 'bench press'}, the "bench" in "bench press" is."""
+    for k in range(len(full) - len(short) + 1):
+        start = i - k
+        if start >= 0 and full[k : k + len(short)] == short and words[start:][: len(full)] == full:
+            return True
+    return False
+
+
 def apply_aliases(name: str, aliases: Mapping[str, str]) -> str:
-    """Replace whole-word shortcuts, longest first: {'oa': 'one arm'}."""
+    """Replace whole-word shortcuts, longest first: {'oa': 'one arm'}. A name that
+    already spells out the full form is left alone, so {'bench': 'bench press'} turns
+    "bench" into "bench press" and never "bench press" into "bench press press"."""
     if not aliases:
         return name
     words, out, i = name.split(), [], 0
@@ -72,7 +84,7 @@ def apply_aliases(name: str, aliases: Mapping[str, str]) -> str:
         for s in shorts:
             sw = s.split()
             if words[i : i + len(sw)] == sw:
-                out += aliases[s].split()
+                out += sw if _already_full(words, i, sw, aliases[s].split()) else aliases[s].split()
                 i += len(sw)
                 break
         else:
