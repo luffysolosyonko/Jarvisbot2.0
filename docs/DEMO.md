@@ -22,11 +22,17 @@ Run every command from the repo root unless it says otherwise. Use PowerShell.
    ```
 
    Check that <http://localhost:8000/healthz> returns `{"status":"ok"}`.
-3. [ ] **Reset and seed the demo account** with 12 weeks of made-up history:
+3. [ ] **Reset and seed the demo account:**
 
    ```powershell
    docker compose exec api python -m jarvis_api.seed
    ```
+
+   It erases the demo account's data, then loads `workouts.tsv` and
+   `weighins.tsv` from `api/demo_data` when that folder has them (it's
+   git-ignored and stays on this laptop; columns in SETUP.md section 3).
+   Otherwise it makes up 12 weeks of history. The last line it prints says
+   which one it used.
 
 4. [ ] **Start the web app** in a second PowerShell window:
 
@@ -37,8 +43,9 @@ Run every command from the repo root unless it says otherwise. Use PowerShell.
 
    Leave it running. It serves <http://localhost:5173>.
 5. [ ] **Open Chrome** at <http://localhost:5173> and sign in with the demo
-   email and password (set with `jarvis_api.demo_login`, see SETUP.md section 2).
-   The Notebook should show the last two weeks of entries.
+   email, `demo@example.com`, and its password (set with
+   `jarvis_api.demo_login`, see SETUP.md section 2). The Notebook should show
+   the last 30 days of entries.
 6. [ ] Zoom the browser to 110–125% (Ctrl +) so text reads well over screen
    share.
 7. [ ] Clear the input, switch to **Workout** mode, close any open tool panel.
@@ -47,15 +54,15 @@ Run every command from the repo root unless it says otherwise. Use PowerShell.
 
 | Time | Where | Do | Point out |
 |---|---|---|---|
-| 0:00 | Sign in | Show the form, then sign in with the demo email and password | Email and the Google popup both go through Firebase. The demo is an ordinary email/password account whose data the seed resets to made-up history. |
+| 0:00 | Sign in | Show the form, then sign in with the demo email and password | Email and the Google popup both go through Firebase. The demo is an ordinary email/password account, with every feature any other account has; the seed resets its data. |
 | 0:30 | Notebook | Scroll the page | A ruled logbook: the time in the margin, what was typed in mono, and a green "↳" note of what it logged. Click a note for the parsed sets. |
 | 1:00 | Notebook, Workout | Type `5x 155lb 2x1x1xf bench`, then press Enter | The "↳" line under the box reads it back as the note it will get, with "✗ last rep" for the failed rep. Enter saves and it appears at once. No AI is involved in logging. |
 | 1:30 | Notebook, Workout | Type `8x 135lb bench`, Shift+Enter, then `8 135 squat`, Enter | The preview stays quiet while typing. The saved entry marks the bad line "✗ Not logged"; click **Fix**, then **Add unit: lb**, and it's rewritten and re-parsed. **Tools > Syntax** lists the formats with examples. |
-| 2:00 | Notebook, Weight | Switch to **Weight**, type `83.9kg`, Enter; then type `90`, Enter | Converted to 185 lb. A bare `90` reads as 90 kg = 198.4 lb, about 19 lb over the 7-day average, so it gets a warning box: **It was 90 lb**, **Keep 198.4** or **Edit**. Until you answer, it's left out of every average and forecast. |
-| 2:30 | Tools | **Tools > Predict lift**, pick **Bench**, target `225`, **Get date** | Every slash command is in the Tools menu (wrench), with dropdowns instead of typed syntax. The forecast is a regression over recent sessions, with the date you'd hit the target at this pace. |
+| 2:00 | Notebook, Weight | Switch to **Weight**, type `70.3kg`, Enter; then hover the new entry and press **Delete entry** (the bin) | Converted and noted as "↳ weigh-in · 155.0 lb". The notebook is a notepad: a weigh-in is saved and counted as written, whatever the number. Deleting shows a toast with **Undo**; leave it or undo it. |
+| 2:30 | Tools | **Tools > Predict lift**, pick the bench press, target `225`, **Get date** | Every slash command is in the Tools menu (wrench), with dropdowns instead of typed syntax. The forecast is a regression over recent sessions, with the date you'd hit the target at this pace. |
 | 3:15 | History | Click a dark day in the heatmap | Darker = more sets, a dot = a weigh-in. The day shows as one table of every set (exercise, "3 ✓ · 1 ✗", weight) and the weigh-in. |
-| 3:45 | Progress | Scroll; click **Bench** | The latest confirmed weigh-in up top, then body weight with a 7-day average and a dashed forecast (the flagged `90` from earlier is a hollow orange circle, pinned at the top), this week's sets and sessions, and top lifts. Bench shows the deload dip and the forecast line. |
-| 4:15 | Notebook, Ask | Press **Ask**, ask "Is my bench still improving?" | Only Ask mode calls Claude. The answer uses only this account's data and appears as a message from Jarvis. It's saved: reload and it's still there; **Tools > Hide answers** hides it. |
+| 3:45 | Progress | Scroll; click the bench press under Top lifts | The latest weigh-in up top, then body weight with a 7-day average and a dashed forecast, this week's sets and sessions, and top lifts. The lift page shows its e1RM chart and the forecast line. |
+| 4:15 | Ask | Open **Ask** in the nav, ask "Is my bench still improving?" | Ask is its own page, and the only one that calls Claude. The answer streams in under the question: two sentences at most, from this account's data only. Questions and answers are saved: reload and they're still there, oldest first. |
 
 If there's time for questions, the strongest code to show: the `jarvis_core`
 parser tests, the test that logging makes zero LLM calls
@@ -74,7 +81,7 @@ B's data, and the design-token contrast test.
 | Charts or the calendar are empty | Re-run the seed command (step 3) and reload the page. |
 | Port 15432 or 8000 already in use | Stop whatever holds it, or set `JARVIS_DB_PORT` to another port. Then `docker compose down` and up again. |
 | Port 5173 already in use | Close the other `npm run dev` window (the port is fixed because the API's CORS allows only it). |
-| The demo password doesn't work | It was changed outside the app (Settings doesn't offer it for the demo account). Set it back: `docker compose exec api python -m jarvis_api.demo_login --email demo@example.com --password <password>`. |
+| The demo password doesn't work | Someone changed it (**Settings > Password > Change** works for the demo account like any other). Set it back: `docker compose exec api python -m jarvis_api.demo_login --email demo@example.com --password <password>`. |
 | "Continue with Google" fails | Use the demo email and password. See SETUP.md section 3 for enabling Google. |
 
 ## After the demo

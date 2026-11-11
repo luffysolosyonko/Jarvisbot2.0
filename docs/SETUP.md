@@ -50,6 +50,8 @@ docker compose exec api python -m jarvis_api.demo_login --email demo@example.com
 
 It prints a generated password (or pass `--password`). Keep it out of the repo.
 Re-running it changes the password; the demo data stays attached to the UID.
+In the app the demo account is like any other, so its password can also be
+changed under Settings; run the command again to set it back.
 
 ## 3. Local API configuration
 
@@ -75,8 +77,8 @@ in `docker-compose.yml`, and `CORS_ORIGINS` already allows the web app on
 
 `docker compose up` needs this file to exist.
 
-`ANTHROPIC_API_KEY` is optional. Without it everything works except Ask mode,
-which shows a clear "not configured" error. Logging never uses it. To enable
+`ANTHROPIC_API_KEY` is optional. Without it everything works except the Ask
+page, which shows a clear "not configured" error. Logging never uses it. To enable
 Ask, create a key at <https://console.anthropic.com> > API keys and set a
 monthly spend limit under Billing > Limits. `ASK_DEMO_DAILY_TOKEN_CAP` limits
 what the demo account can spend per day (one question uses about 4,000 tokens).
@@ -87,6 +89,31 @@ Start the API and seed the demo account:
 docker compose up -d --build
 docker compose exec api python -m jarvis_api.seed
 ```
+
+The seed erases the demo account's data and fills it again. With nothing else
+set up it makes up 12 weeks of history. To load an exported history instead,
+put two tab-separated files, with no header row, in `api/demo_data` (the
+folder is git-ignored, kept out of the Docker image and mounted read-only into
+the API container, so it stays on this machine):
+
+| File | Columns, in order |
+|---|---|
+| `workouts.tsv` | date, time, exercise, reps, good reps, failed reps, weight in lb (blank if none), estimated (`Y`/`N`), bodyweight (`Y`/`N`), estimated 1RM, message id |
+| `weighins.tsv` | date, time, weight in lb, the text as typed, message id |
+
+Dates and times are local, like `2026-03-02` and `6:05 PM`. Workout rows with
+the same message id were typed as one entry. The estimated 1RM and the
+weigh-in message id are read past, not stored. A made-up workout row (tabs
+shown as `→`):
+
+```
+2026-03-02→6:05 PM→bench→8→8→0→135→N→N→171→1001
+```
+
+Each row is rewritten in the notebook's shorthand and saved through the normal
+parser. If any row would be stored differently from the file, the seed names
+it and changes nothing. Unless both files are present, the made-up history is
+used.
 
 Turn on Firebase's password policy (new passwords need 12+ characters with an uppercase
 letter, a lowercase letter, a number and a symbol; existing
