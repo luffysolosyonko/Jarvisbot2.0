@@ -31,6 +31,14 @@ def test_topics() -> None:
         {"workouts"},
         ["bench"],
     )
+    names = ["bench press", "squat", "bicep curls", "row"]
+    assert question_topics("when was the last time i benched", names) == (
+        {"workouts"},
+        ["bench press"],
+    )
+    assert question_topics("have I been squatting less?", names)[1] == ["squat"]
+    assert question_topics("how is my curl going", names)[1] == ["bicep curls"]
+    assert question_topics("did I sleep enough?", names)[1] == []
     assert question_topics("whats my weight trend")[0] == {"weight"}
     assert question_topics("how am I doing overall?")[0] == set()
     assert question_topics("did weight gain hurt my squat?", ["squat"])[0] == {

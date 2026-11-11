@@ -10,7 +10,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass, field
 from datetime import date, datetime, timedelta
 
-from sqlalchemy import delete, select
+from sqlalchemy import and_, delete, or_, select
 from sqlalchemy.orm import Session, selectinload
 
 from jarvis_api.models import Alias, Log, LoggedSet, User, WeighIn
@@ -38,12 +38,21 @@ def parse_for_user(
 
 
 def day_context(
-    db: Session, user: User, day: date, before: datetime | None = None
+    db: Session,
+    user: User,
+    day: date,
+    before: datetime | None = None,
+    before_id: int | None = None,
 ) -> DayContext | None:
-    """Names and the last set carried over from the user's earlier workout logs on `day`."""
+    """Names and the last set carried over from the user's earlier workout logs on `day`.
+    "Earlier" follows the (time, id) order logs are shown in: for a stored log pass its
+    time and id; for a new one pass the time alone, and every log saved up to then counts,
+    including one saved in the same instant."""
     q = select(Log).where(Log.user_id == user.id, Log.local_date == day, Log.kind == "workout")
-    if before is not None:
-        q = q.where(Log.logged_at < before)
+    if before is not None and before_id is not None:
+        q = q.where(or_(Log.logged_at < before, and_(Log.logged_at == before, Log.id < before_id)))
+    elif before is not None:
+        q = q.where(Log.logged_at <= before)
     ctx: DayContext | None = None
     for log in db.scalars(q.order_by(Log.logged_at, Log.id)):
         ctx = parse_log(
@@ -268,7 +277,11 @@ def edit_log(
     """Replace a log's text and re-parse it (the bot re-parsed edited messages).
     Returns None, changing nothing, if the new text doesn't parse."""
     kind = kind or _kind(log)
-    ctx = day_context(db, user, log.local_date, before=log.logged_at) if kind == "workout" else None
+    ctx = (
+        day_context(db, user, log.local_date, before=log.logged_at, before_id=log.id)
+        if kind == "workout"
+        else None
+    )
     parsed = parse_log(
         text,
         kind=kind,
@@ -302,7 +315,7 @@ def parse_logs(db: Session, user: User, logs: Sequence[Log]) -> dict[int, Parsed
     out: dict[int, ParsedLog] = {}
     for day, day_logs in by_day.items():
         day_logs.sort(key=lambda lg: (lg.logged_at, lg.id))
-        ctx = day_context(db, user, day, before=day_logs[0].logged_at)
+        ctx = day_context(db, user, day, before=day_logs[0].logged_at, before_id=day_logs[0].id)
         for log in day_logs:
             parsed = _parse_stored(user, log, ctx)
             if _kind(log) == "workout":

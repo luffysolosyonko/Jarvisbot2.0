@@ -73,13 +73,33 @@ body weight was lifted (weight_lb is their latest weigh-in). per_hand = the weig
 per dumbbell. Estimated 1RM (e1RM) uses Epley: weight x (1 + good_reps / 30)."""
 
 
+def _stems(word: str) -> set[str]:
+    """A word and its plain forms: "benched" -> bench, "squatting" -> squat, "curls" -> curl."""
+    out = {word}
+    for suffix in ("ing", "ed", "es", "s"):
+        if word.endswith(suffix) and len(word) - len(suffix) >= 3:
+            stem = word[: -len(suffix)]
+            out.add(stem)
+            if len(stem) >= 4 and stem[-1] == stem[-2]:  # "squatt" -> squat
+                out.add(stem[:-1])
+    return out
+
+
 def question_topics(question: str, exercises: Sequence[str] = ()) -> tuple[set[Topic], list[str]]:
-    """Topics a question is about, and the exercises it names ('bench' -> 'bench press')."""
+    """Topics a question is about, and the exercises it names ('bench' or 'benched' ->
+    'bench press')."""
     q = question.lower()
     words = set(re.findall(r"[a-z0-9.\-]+", q))
     topics: set[Topic] = {t for t, vocab in TOPIC_WORDS.items() if words & vocab}
-    keys = [w for w in re.findall(r"[a-z]{3,}", q) if w not in STOPWORDS]
-    named = [n for n in exercises if any(w in n.split() or w == n for w in keys) or n in q]
+    keys: set[str] = set()
+    for w in re.findall(r"[a-z]{3,}", q):
+        if w not in STOPWORDS:
+            keys |= _stems(w)
+    named = [
+        n
+        for n in exercises
+        if n in q or n in keys or any(keys & _stems(part) for part in n.split())
+    ]
     if named:
         topics.add("workouts")
     return topics, named
@@ -176,8 +196,10 @@ def build_context(
     if general or "workouts" in topics:
         top = exercise_summaries(sets)[:40]
         parts.append(
-            "## Exercises (total sets, best e1RM lb)\n"
-            + ", ".join(f"{e.exercise} ({e.sets}, {_fmt(e.best_e1rm, 0) or '-'})" for e in top)
+            "## Exercises (total sets, best e1RM lb, last logged)\n"
+            + ", ".join(
+                f"{e.exercise} ({e.sets}, {_fmt(e.best_e1rm, 0) or '-'}, {e.last_day})" for e in top
+            )
         )
 
     if "workouts" in topics and sets:
