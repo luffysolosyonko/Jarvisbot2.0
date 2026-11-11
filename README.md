@@ -57,7 +57,7 @@ The demo account.
   parser applies), export every entry as one CSV, and delete the account and
   all its data. The empty bar is 45 lb ("8x bar bench").
 - **Ask, on its own page.** Only the Ask page calls Claude, and it sends only
-  the data relevant to the question. Jarvis answers in two sentences at most,
+  the data relevant to the question. Jarvis keeps answers concise and
   straight to the point. Every question and answer is saved, and the page
   shows them all, oldest first under day headings, with the question box at
   the bottom.

@@ -62,7 +62,7 @@ Run every command from the repo root unless it says otherwise. Use PowerShell.
 | 2:30 | Tools | **Tools > Predict lift**, pick the bench press, target `225`, **Get date** | Every slash command is in the Tools menu (wrench), with dropdowns instead of typed syntax. The forecast is a regression over recent sessions, with the date you'd hit the target at this pace. |
 | 3:15 | History | Click a dark day in the heatmap | Darker = more sets, a dot = a weigh-in. The day shows as one table of every set (exercise, "3 ✓ · 1 ✗", weight) and the weigh-in. |
 | 3:45 | Progress | Scroll; click the bench press under Top lifts | The latest weigh-in up top, then body weight with a 7-day average and a dashed forecast, this week's sets and sessions, and top lifts. The lift page shows its e1RM chart and the forecast line. |
-| 4:15 | Ask | Open **Ask** in the nav, ask "Is my bench still improving?" | Ask is its own page, and the only one that calls Claude. The answer streams in under the question: two sentences at most, from this account's data only. Questions and answers are saved: reload and they're still there, oldest first. |
+| 4:15 | Ask | Open **Ask** in the nav, ask "Is my bench still improving?" | Ask is its own page, and the only one that calls Claude. The answer streams in under the question: short and to the point, from this account's data only. Questions and answers are saved: reload and they're still there, oldest first. |
 
 If there's time for questions, the strongest code to show: the `jarvis_core`
 parser tests, the test that logging makes zero LLM calls

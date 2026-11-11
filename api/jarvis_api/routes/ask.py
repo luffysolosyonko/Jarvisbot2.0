@@ -1,4 +1,4 @@
-"""Ask Jarvis: a question about your own data -> a two-sentence answer plus tokens used.
+"""Ask Jarvis: a question about your own data -> a short answer plus tokens used.
 
 Per-user daily token cap (lower for the demo account), per-user rate limit, a 15s
 provider timeout, and every outcome is a clear JSON response.
@@ -29,7 +29,7 @@ from jarvis_core.ai import Usage
 
 router = APIRouter(tags=["ask"])
 
-# The instructions keep an answer to two short sentences; this cap does not. It is a
+# The instructions keep an answer short; this cap does not. It is a
 # backstop only, left roomy so that an answer is never cut off in the middle of a
 # sentence (any thinking the model does counts against it too).
 MAX_ANSWER_TOKENS = 1024
