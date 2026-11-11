@@ -31,8 +31,8 @@ function DayDetail({ day, today, summary }: { day: string; today: string; summar
         <EmptyState
           message={
             day === today
-              ? 'Nothing logged today. Type a set like 8x 160lb bench in the Notebook.'
-              : `Nothing logged on ${longDate(day)}. To log today, type a set like 8x 160lb bench in the Notebook.`
+              ? 'Nothing logged today. Type a set like 8x 160lbs bench in the Notebook.'
+              : `Nothing logged on ${longDate(day)}. To log today, type a set like 8x 160lbs bench in the Notebook.`
           }
           actionLabel="Open notebook"
           onAction={() => navigate('/')}

@@ -9,12 +9,12 @@ import { ParseLine } from './ParseLine';
 /** The box shows the pattern; the line under it, an example of it. */
 const PLACEHOLDER: Record<LogMode, string> = {
   workout: '(reps)x (weight) (lift)',
-  weight: '(weight)kg/lb',
+  weight: '(weight)kg/lbs',
 };
 
 const EXAMPLE: Record<LogMode, string> = {
-  workout: 'e.g. 8x 135lb bench',
-  weight: 'e.g. 70.3kg or 155lb',
+  workout: 'e.g. 8x 135lbs bench',
+  weight: 'e.g. 70.3kg or 155lbs',
 };
 
 const LABEL: Record<LogMode, string> = {

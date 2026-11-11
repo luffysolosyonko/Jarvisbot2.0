@@ -13,7 +13,7 @@ import {
 } from 'recharts';
 
 import { buildRows, dateAt } from '@/lib/chartRows';
-import { num, shortDate } from '@/lib/format';
+import { num, shortDate, unitLabel } from '@/lib/format';
 import type { Point, Projection, Unit, Window } from '@/lib/types';
 import { colors, fonts, fontSize } from '@/theme/tokens';
 
@@ -85,7 +85,7 @@ export function TrendChart({ main, avg = [], projection, unit, mainLabel, avgLab
             <Tooltip
               isAnimationActive={false}
               labelFormatter={(x) => shortDate(dateAt(origin, Number(x)))}
-              formatter={(v, name) => [`${num(Number(v))} ${unit}`, name === 'main' ? mainLabel : name === 'avg' ? avgLabel : 'Forecast']}
+              formatter={(v, name) => [`${num(Number(v))} ${unitLabel(unit)}`, name === 'main' ? mainLabel : name === 'avg' ? avgLabel : 'Forecast']}
               contentStyle={{ background: colors.surface, border: `1px solid ${colors.border}`, borderRadius: 10, fontFamily: fonts.mono, fontSize: 12 }}
               labelStyle={{ color: colors.inkSecondary }}
               itemStyle={{ color: colors.ink }}

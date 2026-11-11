@@ -421,7 +421,9 @@ def resolve_sets(
             warnings.append(ParseWarning(s.line, "No exercise name.", "no_exercise"))
         if weight is None and not bodyweight and weight_text != "?":
             warnings.append(
-                ParseWarning(s.line, "No weight; add one like 135lb, 60kg, bar or uw.", "no_weight")
+                ParseWarning(
+                    s.line, "No weight; add one like 135lbs, 60kg, bar or uw.", "no_weight"
+                )
             )
 
         rec = ParsedSet(
@@ -579,5 +581,5 @@ def parse_log(
     sets, ctx, more = resolve_sets(lines, context)
     warnings = sorted(warnings + more, key=lambda w: w.line)
     if not sets and not warnings:
-        warnings.append(ParseWarning(1, "No sets found, e.g. 8x 135lb bench.", "no_sets"))
+        warnings.append(ParseWarning(1, "No sets found, e.g. 8x 135lbs bench.", "no_sets"))
     return ParsedLog("workout", sets, None, warnings, ctx)

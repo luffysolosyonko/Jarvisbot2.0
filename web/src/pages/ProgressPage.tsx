@@ -5,7 +5,7 @@ import { EmptyState, QueryView, SkeletonChart } from '@/components/States';
 import { WeightChart } from '@/components/WeightChart';
 import { useDashboard, useUnit } from '@/hooks/queries';
 import { useTitle } from '@/hooks/useTitle';
-import { exerciseName, fromLb, longDate, num, parseDate, signedWeight, weight } from '@/lib/format';
+import { exerciseName, fromLb, longDate, num, parseDate, signedWeight, unitLabel, weight } from '@/lib/format';
 import type { Point } from '@/lib/types';
 
 const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
@@ -55,7 +55,7 @@ export function ProgressPage() {
                   <>
                     <p className="hero-number">
                       {num(fromLb(latest.value, unit))}
-                      <small> {unit}</small>
+                      <small> {unitLabel(unit)}</small>
                     </p>
                     <p className="secondary">Latest weigh-in, {longDate(latest.date)}.</p>
                     {avgNow ? (
@@ -107,7 +107,7 @@ export function ProgressPage() {
 
               <Section title="Top lifts">
                 {!d.top_lifts.length ? (
-                  <EmptyState message="Log sets like 8x 160lb bench to see your top lifts." actionLabel="Open notebook" onAction={() => navigate('/')} />
+                  <EmptyState message="Log sets like 8x 160lbs bench to see your top lifts." actionLabel="Open notebook" onAction={() => navigate('/')} />
                 ) : (
                   <div className="stack-2">
                     <table className="table">

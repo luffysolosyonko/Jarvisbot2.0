@@ -58,8 +58,8 @@ def test_missing_weight_offers_units_estimate_bodyweight_and_bar(client: TestCli
     w = parse(client, "8x bench")["warnings"][0]
     assert w["code"] == "no_weight" and w["line"] == 1
     by_label = {f["label"]: f for f in w["fixes"]}
-    assert by_label["Add weight in lb"]["template"] == "8x {}lb bench"
-    assert by_label["Mark as estimate"]["template"] == "8x ?{}lb bench"
+    assert by_label["Add weight in lbs"]["template"] == "8x {}lbs bench"
+    assert by_label["Mark as estimate"]["template"] == "8x ?{}lbs bench"
     assert by_label["Bodyweight (uw)"]["text"] == "8x uw bench"
     assert by_label["Empty bar"]["text"] == "8x bar bench"
 
@@ -77,17 +77,17 @@ def test_missing_name_suggests_recent_exercises(client: TestClient) -> None:
 def test_unit_fixes_for_a_line_without_x(client: TestClient) -> None:
     w = parse(client, "8 135 bench")["warnings"][0]
     texts = {f["label"]: f["text"] for f in w["fixes"]}
-    assert texts["Add unit: lb"] == "8x 135lb bench"
+    assert texts["Add unit: lbs"] == "8x 135lbs bench"
     assert texts["Add unit: kg"] == "8x 135kg bench"
     assert texts["Remove this line"] == ""
-    assert parse(client, texts["Add unit: lb"])["warnings"] == []
+    assert parse(client, texts["Add unit: lbs"])["warnings"] == []
 
 
 def test_weight_for_reps_line_is_rewritten(client: TestClient) -> None:
     w = parse(client, "8x 135lb bench\n225 for 5 squat", mode="workout")["warnings"][0]
     assert w["line"] == 2
     texts = {f["label"]: f["text"] for f in w["fixes"]}
-    assert texts["Add unit: lb"] == "5x 225lb squat"
+    assert texts["Add unit: lbs"] == "5x 225lbs squat"
 
 
 def test_name_first_line_can_be_reordered(client: TestClient) -> None:

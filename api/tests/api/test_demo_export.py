@@ -66,12 +66,12 @@ def test_rows_become_entries_in_the_notebook_shorthand(tmp_path: Path) -> None:
         (
             "2026-03-02T18:05",  # one message id = one entry
             "workout",
-            "8x 135lb bench\n8x ^\n6xf 145lb bench\n7x uw pull ups\n8x2f 12.5kg curl",
+            "8x 135lbs bench\n8x ^\n6xf 145lbs bench\n7x uw pull ups\n8x2f 12.5kg curl",
         ),
-        ("2026-03-02T18:40", "workout", "8x ?70lb incline\n8x ? incline\n1x plank hold"),
+        ("2026-03-02T18:40", "workout", "8x ?70lbs incline\n8x ? incline\n1x plank hold"),
         ("2026-03-03T07:10", "weight", "82kg"),  # as it was typed
-        ("2026-03-04T00:10", "workout", "5x 225lb squat\n8x split squat"),
-        ("2026-03-04T07:05", "weight", "181lb"),  # the typed text doesn't read as 181
+        ("2026-03-04T00:10", "workout", "5x 225lbs squat\n8x split squat"),
+        ("2026-03-04T07:05", "weight", "181lbs"),  # the typed text doesn't read as 181
         ("2026-03-05T12:30", "weight", "179.6 after lunch"),
     ]
     assert export.renamed == {"l 40lb split squat": "split squat"}
@@ -134,7 +134,7 @@ def test_a_message_too_long_for_one_entry_is_split_between_exercises(tmp_path: P
     first, second = export.entries
     assert first.at == second.at and export.sets == 70
     assert len(first.text.splitlines()) == MAX_LINES and len(second.text.splitlines()) == 10
-    assert second.text.startswith("5x 100lb lift g\n6x ^")
+    assert second.text.startswith("5x 100lbs lift g\n6x ^")
     assert [r.exercise for r in second.rows] == ["lift g"] * 10
 
 

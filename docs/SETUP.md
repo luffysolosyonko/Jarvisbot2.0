@@ -98,8 +98,8 @@ the API container, so it stays on this machine):
 
 | File | Columns, in order |
 |---|---|
-| `workouts.tsv` | date, time, exercise, reps, good reps, failed reps, weight in lb (blank if none), estimated (`Y`/`N`), bodyweight (`Y`/`N`), estimated 1RM, message id |
-| `weighins.tsv` | date, time, weight in lb, the text as typed, message id |
+| `workouts.tsv` | date, time, exercise, reps, good reps, failed reps, weight in lbs (blank if none), estimated (`Y`/`N`), bodyweight (`Y`/`N`), estimated 1RM, message id |
+| `weighins.tsv` | date, time, weight in lbs, the text as typed, message id |
 
 Dates and times are local, like `2026-03-02` and `6:05 PM`. Workout rows with
 the same message id were typed as one entry. The estimated 1RM and the

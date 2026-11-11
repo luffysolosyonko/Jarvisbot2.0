@@ -119,7 +119,7 @@ def prepare(
     data = load_user_data(db, user)
     today = now.astimezone(user_tz(user)).date()
     context, topics = ai.build_context(body.question, data.sets, data.weighins, today)
-    system = ai.ASK_SYSTEM.format(unit=user.settings.set_unit)
+    system = ai.ASK_SYSTEM.format(unit=ai.unit_word(user.settings.set_unit))
     return Prepared(
         provider, now, cap, used, system, ai.user_message(body.question, context), set(topics)
     )

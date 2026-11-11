@@ -22,7 +22,7 @@ import {
 } from '@/hooks/queries';
 import { useDebounced } from '@/hooks/useDebounced';
 import { errorMessage } from '@/lib/api';
-import { exerciseName, longDate, num, signedWeight, toLb, weight } from '@/lib/format';
+import { exerciseName, longDate, num, signedWeight, toLb, unitLabel, weight } from '@/lib/format';
 import { reachText, setRefText } from '@/lib/describe';
 import type { ExerciseDetail, Log, Unit } from '@/lib/types';
 
@@ -189,7 +189,7 @@ export function TargetForm({ name, unit, initialTarget = '' }: { name: string; u
     <div className="stack-3">
       <form className="form-row" onSubmit={submit}>
         <div className="field field-grow">
-          <label htmlFor={id}>Target 1RM ({unit})</label>
+          <label htmlFor={id}>Target 1RM ({unitLabel(unit)})</label>
           <input id={id} className="input tnum" inputMode="decimal" value={input} onChange={(e) => setInput(e.target.value)} placeholder={unit === 'kg' ? '100' : '225'} />
         </div>
         <Button type="submit" variant="primary" disabled={!name || !(Number(input) > 0)}>

@@ -1,5 +1,5 @@
 /** The "↳" margin notes under each entry. */
-import { exerciseName, fromLb, num, weight } from './format';
+import { exerciseName, fromLb, num, unitLabel, weight } from './format';
 import type { ParsedSet, Unit, WeighIn } from './types';
 
 export type NoteLine = { text: string; fail: string | null };
@@ -38,7 +38,7 @@ export function setNotes(sets: ParsedSet[], unit: Unit): NoteLine[] {
  * than the one shown, spells out the conversion: "weigh-in · 90 kg = 198.4 lb".
  */
 export function weighInNote(w: WeighIn, unit: Unit): NoteLine {
-  const shown = `${fromLb(w.weight_lb, unit).toFixed(1)} ${unit}`;
-  const read = w.unit_assumed && w.typed !== null && w.typed_unit !== unit ? `${num(w.typed)} ${w.typed_unit} = ` : '';
+  const shown = `${fromLb(w.weight_lb, unit).toFixed(1)} ${unitLabel(unit)}`;
+  const read = w.unit_assumed && w.typed !== null && w.typed_unit !== unit ? `${num(w.typed)} ${unitLabel(w.typed_unit)} = ` : '';
   return { text: `weigh-in · ${read}${shown}${w.note ? ` · ${w.note}` : ''}`, fail: null };
 }

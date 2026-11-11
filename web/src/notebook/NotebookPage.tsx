@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useLocation, useNavigate, useSearchParams } from 'react-router';
+import { MessageCircle } from 'lucide-react';
+import { Link, useLocation, useNavigate, useSearchParams } from 'react-router';
 
 import { Button } from '@/components/Button';
 import { InkCursor } from '@/components/Loading';
@@ -334,7 +335,7 @@ export function NotebookPage() {
           ) : !logs.data ? (
             <FeedLoading />
           ) : !feed.length ? (
-            <EmptyState message="Type a set like 8x 160lb bench in the box below to start your notebook." />
+            <EmptyState message="Type a set like 8x 160lbs bench in the box below to start your notebook." />
           ) : (
             feed.map((f) => {
               const header =
@@ -371,7 +372,14 @@ export function NotebookPage() {
           onSend={send}
           error={sendError}
           unit={unit}
-          tools={<MoreMenu onPick={setTool} />}
+          tools={
+            <>
+              <Link to="/ask" className="btn btn-accent-outline icon-only" aria-label="Ask" title="Ask Jarvis">
+                <MessageCircle size={22} strokeWidth={1.8} aria-hidden="true" />
+              </Link>
+              <MoreMenu onPick={setTool} />
+            </>
+          }
           inputRef={inputRef}
         />
       </main>

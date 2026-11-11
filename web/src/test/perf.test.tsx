@@ -126,7 +126,7 @@ describe('optimistic entries', () => {
     wrap(<Entry log={{ ...LOG, pending: true }} unit="lb" />);
     const note = screen.getByRole('status', { name: 'Saving' });
     expect(note).toHaveClass('is-pending');
-    expect(note).toHaveTextContent('↳ Bench · 5 reps · 155 lb');
+    expect(note).toHaveTextContent('↳ Bench · 5 reps · 155 lbs');
     expect(screen.queryByRole('button', { name: 'Delete entry' })).not.toBeInTheDocument();
   });
 

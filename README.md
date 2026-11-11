@@ -1,7 +1,7 @@
 # Jarvis 2.0
 
 Jarvis is a training notebook. Type your workout the way you'd jot it in a
-notes app, `5x 155lb 2x1x1xf bench`, and it's parsed into structured sets,
+notes app, `5x 155lbs 2x1x1xf bench`, and it's parsed into structured sets,
 saved, and turned into trends, one-rep-max forecasts and answers about your
 training.
 
@@ -21,7 +21,7 @@ The demo account.
 
 - **A notebook, not a form.** One ruled page, oldest to newest: the time sits
   in the margin, what you typed is written in mono, and a green "↳" note under
-  it says what was logged ("↳ Bench · 3 reps · 155 lb · ✗ last rep"); click
+  it says what was logged ("↳ Bench · 3 reps · 155 lbs · ✗ last rep"); click
   it for the parsed sets. Days are headed "Monday, November 9" with a count of
   sets and weigh-ins. At the bottom, pick **Workout** or **Weight**, type,
   press Enter. Shift+Enter starts a new line, so a whole session can go in at
@@ -29,19 +29,19 @@ The demo account.
   fill in. The notebook is only for logging workouts and weight.
 - **Deterministic logging.** Workout and Weight modes use the parser, never an
   LLM, so logging is instant and free. As you type, the same line reads the
-  text back as the note it will get: `5x 155lb 2x1x1xf bench` shows
-  "↳ Bench · 5, 2, 1, 1, 1 reps · 155 lb · ✗ last rep". kg is converted to lb, `?` and ranges are estimates, `uw` is
+  text back as the note it will get: `5x 155lbs 2x1x1xf bench` shows
+  "↳ Bench · 5, 2, 1, 1, 1 reps · 155 lbs · ✗ last rep". kg is converted to lbs, `?` and ranges are estimates, `uw` is
   bodyweight, and `^` or a bare number repeats the set above.
 - **Fix, don't retype.** The preview stays quiet while you type. Once saved,
   lines that didn't parse are marked "✗ Not logged" with the reason and
-  one-click fixes ("Add unit: lb", "Mark as estimate", "Set exercise
+  one-click fixes ("Add unit: lbs", "Mark as estimate", "Set exercise
   name…", "Log as a weigh-in"). Saved entries can be edited, fixed or deleted
   (with undo); edits re-parse, like the bot re-parsed edited messages.
 - **A weigh-in is saved as written.** The notebook is a notepad: every
   weigh-in counts in averages, trends, forecasts and monthly change, even one
-  far from your 7-day average. A number typed without a unit is read as lb or
+  far from your 7-day average. A number typed without a unit is read as lbs or
   kg by its size, and the note spells out the conversion
-  ("↳ weigh-in · 80 kg = 176.4 lb"); edit the entry if it read wrong.
+  ("↳ weigh-in · 80 kg = 176.4 lbs"); edit the entry if it read wrong.
 - **Every bot command is a button.** The Tools menu (wrench): Stats (7/30/90 days), Lift,
   Estimate (maxes for 3–12 reps), Predict weight, Predict lift (the date
   you'll hit a target), Charts and Search, plus the
@@ -53,9 +53,9 @@ The demo account.
   and sessions, and top lifts with e1RM charts and
   forecasts.
 - **Settings that apply at once.** Your name, a new password (email
-  accounts), lb or kg (always stored in lb), exercise names (shortcuts the
+  accounts), lbs or kg (always stored in lbs), exercise names (shortcuts the
   parser applies), export every entry as one CSV, and delete the account and
-  all its data. The empty bar is 45 lb ("8x bar bench").
+  all its data. The empty bar is 45 lbs ("8x bar bench").
 - **Ask, on its own page.** Only the Ask page calls Claude, and it sends only
   the data relevant to the question. Jarvis keeps answers concise and
   straight to the point. Every question and answer is saved, and the page

@@ -294,6 +294,16 @@ a {
   background: transparent;
 }
 
+.btn-accent-outline {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.btn.icon-only {
+  width: var(--touch);
+  padding: 0;
+}
+
 .btn-ghost {
   border-color: transparent;
   color: var(--accent);
@@ -992,7 +1002,7 @@ input[type='number']::-webkit-outer-spin-button {
   top: 0;
   right: var(--s4);
   display: flex;
-  height: var(--ruled);
+  height: calc(var(--ruled) - 1px); /* leaves the ruled line under it visible */
   background: var(--paper);
   opacity: 0;
   transition: opacity 120ms ease;
@@ -1015,11 +1025,10 @@ input[type='number']::-webkit-outer-spin-button {
   inset: calc((var(--ruled) - var(--touch)) / 2) 0;
 }
 
+/* Touch screens have no hover: the delete button is always shown, still at the end of
+   the entry's first band so that no row leaves the ruled lines. */
 @media (hover: none) {
   .entry .entry-actions {
-    position: static;
-    justify-content: flex-end;
-    background: none;
     opacity: 1;
   }
 }

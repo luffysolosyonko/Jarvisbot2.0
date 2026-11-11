@@ -16,16 +16,21 @@ export function num(value: number, digits = 1): string {
   return fixed.includes('.') ? fixed.replace(/\.?0+$/, '') : fixed;
 }
 
+/** The unit as shown to the user: "lbs" or "kg". (Stored values and settings say "lb".) */
+export function unitLabel(unit: Unit): string {
+  return unit === 'lb' ? 'lbs' : unit;
+}
+
 export function weight(lb: number | null | undefined, unit: Unit, digits = 1): string {
   if (lb === null || lb === undefined) return '–';
-  return `${num(fromLb(lb, unit), digits)} ${unit}`;
+  return `${num(fromLb(lb, unit), digits)} ${unitLabel(unit)}`;
 }
 
 export function signedWeight(lb: number, unit: Unit, digits = 1): string {
   const shown = num(Math.abs(fromLb(lb, unit)), digits);
   // A change that rounds to nothing has no sign ("0 kg", not "−0 kg").
   const sign = Number(shown) === 0 ? '' : lb > 0 ? '+' : '−';
-  return `${sign}${shown} ${unit}`;
+  return `${sign}${shown} ${unitLabel(unit)}`;
 }
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];

@@ -64,20 +64,20 @@ describe('charts and dates', () => {
 
   it('describes sets and forecasts', () => {
     const ref = { date: '2026-11-01', reps: 6, good_reps: 5, failed_reps: 1, weight_lb: 100, estimated: true, bodyweight: false, per_hand: false, e1rm: 116 };
-    expect(setRefText(ref, 'lb')).toBe('5 + 1f × 100 lb (est)');
+    expect(setRefText(ref, 'lb')).toBe('5 + 1f × 100 lbs (est)');
     const projection = { slope_per_week: 2, now: 180, last_date: '2026-11-01', target_date: '2026-12-01', pred: 188, low: 180, high: 196, points: 8, span_days: 60, line: [] };
     const base = { exercise: 'bench', best_e1rm: 180, target_lb: 225, optimistic: false, projection };
     expect(reachText({ ...base, reach: 'flat', reach_date: null }, 'lb')).toMatch(/Not trending up/);
-    expect(reachText({ ...base, reach: 'already', reach_date: null }, 'lb')).toMatch(/already hit 225 lb/);
+    expect(reachText({ ...base, reach: 'already', reach_date: null }, 'lb')).toMatch(/already hit 225 lbs/);
     expect(reachText({ ...base, reach: 'date', reach_date: '2099-04-06' }, 'lb')).toBe('About Mon, Apr 6, 2099 at this pace.');
   });
 });
 
 describe('signedWeight', () => {
   it('signs a real change and leaves a change that rounds to zero unsigned', () => {
-    expect(signedWeight(1.5, 'lb')).toBe('+1.5 lb');
-    expect(signedWeight(-2, 'lb')).toBe('−2 lb');
+    expect(signedWeight(1.5, 'lb')).toBe('+1.5 lbs');
+    expect(signedWeight(-2, 'lb')).toBe('−2 lbs');
     expect(signedWeight(-0.04, 'kg')).toBe('0 kg');
-    expect(signedWeight(0, 'lb')).toBe('0 lb');
+    expect(signedWeight(0, 'lb')).toBe('0 lbs');
   });
 });

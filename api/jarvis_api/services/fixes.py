@@ -66,9 +66,9 @@ def suggest(
         m = HEAD_RE.match(line)
         head, rest = (m.group(1), m.group(2)) if m else (line, "")
         return [
-            Fix("Add weight in lb", n, template=_join(head, "{}lb", rest), placeholder="135"),
+            Fix("Add weight in lbs", n, template=_join(head, "{}lbs", rest), placeholder="135"),
             Fix("Add weight in kg", n, template=_join(head, "{}kg", rest), placeholder="60"),
-            Fix("Mark as estimate", n, template=_join(head, "?{}lb", rest), placeholder="135"),
+            Fix("Mark as estimate", n, template=_join(head, "?{}lbs", rest), placeholder="135"),
             Fix("Bodyweight (uw)", n, text=_join(head, "uw", rest)),
             Fix("Empty bar", n, text=_join(head, "bar", rest)),
         ]
@@ -105,14 +105,14 @@ def suggest(
                     )
                 )
             else:
-                for u in ("lb", "kg"):
+                for u in ("lbs", "kg"):
                     fixes.append(
                         Fix(f"Add unit: {u}", n, text=_join(f"{reps}x", f"{weight}{u}", rest))
                     )
         m4 = WEIGHT_FOR_REPS_RE.match(line)
         if m4:
             weight, unit, reps, rest = m4.groups()
-            units = [unit] if unit else ["lb", "kg"]
+            units = [unit] if unit else ["lbs", "kg"]
             for u in units:
                 label = f"Use {reps}x {weight}{u}" if unit else f"Add unit: {u}"
                 fixes.append(Fix(label, n, text=_join(f"{reps}x", f"{weight}{u}", rest)))
@@ -132,7 +132,7 @@ def suggest(
         m3 = BARE_NUM_RE.search(text)
         if m3:
             num = m3.group(1)
-            for u in ("lb", "kg"):
+            for u in ("lbs", "kg"):
                 candidate = f"{num}{u}"
                 if parse_weigh_in(candidate):
                     fixes.append(Fix(f"Add unit: {u}", n, text=candidate))

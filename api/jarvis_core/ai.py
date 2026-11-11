@@ -269,3 +269,8 @@ def usage_from(raw: Any) -> Usage:
         get(k) for k in ("input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens")
     )
     return Usage(tokens_in, get("output_tokens"))
+
+
+def unit_word(unit: str) -> str:
+    """The unit as written in an answer: "lbs" or "kg"."""
+    return "lbs" if unit == "lb" else unit

@@ -183,7 +183,7 @@ def _written(lb: float) -> str:
     kg = round(lb / KG_TO_LB * 2) / 2
     if lb != int(lb) and kg > 0 and round(kg * KG_TO_LB, 1) == lb:
         return f"{kg:g}kg"
-    return f"{lb:g}lb"
+    return f"{lb:g}lbs"
 
 
 def _weight(r: SetRow) -> str:
@@ -345,7 +345,7 @@ def weigh_in_entries(path: Path) -> list[Entry]:
         except ValueError as exc:
             raise DemoDataError(f"{where}: bad weight {rec[2]!r}") from exc
         # As it was typed when that reads as the same weight; otherwise the weight itself.
-        for text in (rec[3], f"{weight:g}lb"):
+        for text in (rec[3], f"{weight:g}lbs"):
             if text and weigh_in_ok(_parse(text, "weight"), weight):
                 entries.append(Entry(_when(rec[0], rec[1], where), text, "weight", (), weight))
                 break

@@ -87,7 +87,7 @@ const box = () => screen.getByLabelText('Ask Jarvis');
 describe('Ask page', () => {
   it('shows the previous questions and answers, oldest first, under day headings with their times', async () => {
     history = [
-      message(1, '2026-11-08T09:06:00Z', 'How is my squat?', 'Up 10 lb in a month.'),
+      message(1, '2026-11-08T09:06:00Z', 'How is my squat?', 'Up 10 lbs in a month.'),
       message(2, '2026-11-09T17:30:00Z', 'And my bench?', 'Flat since October.'),
     ];
     renderAt('/ask', <AskPage />);
@@ -95,7 +95,7 @@ describe('Ask page', () => {
     const groups = await screen.findAllByRole('group', { name: 'Question to Jarvis' });
     expect(groups).toHaveLength(2);
     expect(within(groups[0]).getByText('How is my squat?')).toBeInTheDocument();
-    expect(within(groups[0]).getByText('Up 10 lb in a month.')).toBeInTheDocument();
+    expect(within(groups[0]).getByText('Up 10 lbs in a month.')).toBeInTheDocument();
     expect(within(groups[0]).getByText('9:06 AM')).toBeInTheDocument();
     expect(within(groups[1]).getByText('And my bench?')).toBeInTheDocument();
     expect(within(groups[1]).getByText('5:30 PM')).toBeInTheDocument();
@@ -209,7 +209,7 @@ describe('navigation', () => {
 
 describe('Notebook without Ask', () => {
   it('logs workouts and weight only: no questions, no answers, no demo hint', async () => {
-    history = [message(1, new Date().toISOString(), 'How is my squat?', 'Up 10 lb in a month.')];
+    history = [message(1, new Date().toISOString(), 'How is my squat?', 'Up 10 lbs in a month.')];
     apiMock.mockImplementation(async (path: string) => {
       if (path === '/me') return { ...ME, is_demo: true };
       if (path === '/logs') return { logs: [] };
@@ -217,7 +217,7 @@ describe('Notebook without Ask', () => {
       return { kind: 'workout', sets: [], weigh_in: null, warnings: [], exercises: [] };
     });
     renderAt('/', <NotebookPage />);
-    expect(await screen.findByText(/Type a set like 8x 160lb bench/)).toBeInTheDocument();
+    expect(await screen.findByText(/Type a set like 8x 160lbs bench/)).toBeInTheDocument();
     expect(screen.getAllByRole('radio').map((r) => r.textContent)).toEqual(['Workout', 'Weight']);
     expect(screen.queryByRole('button', { name: /Ask/ })).not.toBeInTheDocument();
     expect(screen.queryByText('How is my squat?')).not.toBeInTheDocument();

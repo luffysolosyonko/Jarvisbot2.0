@@ -85,7 +85,7 @@ describe('Composer', () => {
     expect(screen.getByRole('radio', { name: 'Workout' })).toHaveAttribute('aria-checked', 'true');
     expect(screen.queryByRole('button', { name: /Ask/ })).not.toBeInTheDocument();
     expect(screen.getByLabelText('Log a set')).toHaveAttribute('placeholder', '(reps)x (weight) (lift)');
-    expect(screen.getByText('e.g. 8x 135lb bench')).toBeInTheDocument();
+    expect(screen.getByText('e.g. 8x 135lbs bench')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Save entry' })).toBeDisabled();
   });
 
@@ -103,7 +103,7 @@ describe('Composer', () => {
   it('previews the note the entry will get, using the mode', async () => {
     wrap(<ComposerHarness onSend={vi.fn()} />);
     await userEvent.type(screen.getByLabelText('Log a set'), '5x 155lb 1x bench');
-    expect(await screen.findByText(/↳ Bench · 5, 5 reps · 155 lb/)).toBeInTheDocument();
+    expect(await screen.findByText(/↳ Bench · 5, 5 reps · 155 lbs/)).toBeInTheDocument();
     expect(apiMock).toHaveBeenCalledWith('/parse', expect.objectContaining({ body: { text: '5x 155lb 1x bench', mode: 'workout' } }));
   });
 
@@ -128,14 +128,14 @@ describe('Composer', () => {
     await waitFor(() => expect(apiMock).toHaveBeenCalledWith('/parse', expect.objectContaining({ body: { text: '12x', mode: 'workout' } })));
     expect(screen.queryByText('No exercise name.')).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: 'Add sit ups' })).not.toBeInTheDocument();
-    expect(screen.getByText('e.g. 8x 135lb bench')).toBeInTheDocument();
+    expect(screen.getByText('e.g. 8x 135lbs bench')).toBeInTheDocument();
   });
 
   it('Weight mode has its own label and placeholder', async () => {
     wrap(<ComposerHarness onSend={vi.fn()} />);
     await userEvent.click(screen.getByRole('radio', { name: 'Weight' }));
-    expect(screen.getByLabelText('Log weight')).toHaveAttribute('placeholder', '(weight)kg/lb');
-    expect(screen.getByText('e.g. 70.3kg or 155lb')).toBeInTheDocument();
+    expect(screen.getByLabelText('Log weight')).toHaveAttribute('placeholder', '(weight)kg/lbs');
+    expect(screen.getByText('e.g. 70.3kg or 155lbs')).toBeInTheDocument();
   });
 });
 
@@ -212,7 +212,7 @@ describe('Entry', () => {
     expect(screen.getByRole('button', { name: /^Logged: 1 set · Bench/ })).toBeInTheDocument();
     expect(screen.queryByText('You')).not.toBeInTheDocument(); // no names on entries
     expect(screen.getByText(/Not logged/)).toBeInTheDocument();
-    expect(screen.getByText('↳ Bench · 5 reps · 155 lb')).toBeInTheDocument();
+    expect(screen.getByText('↳ Bench · 5 reps · 155 lbs')).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Fix' }));
     await userEvent.click(screen.getByRole('button', { name: 'Add unit: lb' }));
     await waitFor(() =>
@@ -324,8 +324,8 @@ describe('Weigh-in note', () => {
   it('is a plain note of what was logged: no warning, no buttons to confirm it', () => {
     const typed = { ...WEIGH_IN, raw_text: '250lb', weigh_in: { ...WEIGH_IN.weigh_in!, weight_lb: 250, typed: 250, typed_unit: 'lb' as const, unit_assumed: false } };
     wrap(<Entry log={typed} unit="lb" />);
-    expect(screen.getByText('↳ weigh-in · 250.0 lb')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /^Logged: 250 lb/ })).toHaveClass('note');
+    expect(screen.getByText('↳ weigh-in · 250.0 lbs')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Logged: 250 lbs/ })).toHaveClass('note');
     expect(screen.queryByText(/7-day average|assumed|\?/)).not.toBeInTheDocument();
     expect(screen.queryByRole('group', { name: 'Check this weigh-in' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /^(Keep|It was|Edit$)/ })).not.toBeInTheDocument();
@@ -333,7 +333,7 @@ describe('Weigh-in note', () => {
 
   it('shows the conversion when the unit was assumed, in the same plain note', () => {
     wrap(<Entry log={WEIGH_IN} unit="lb" />);
-    const note = screen.getByText('↳ weigh-in · 90 kg = 198.4 lb');
+    const note = screen.getByText('↳ weigh-in · 90 kg = 198.4 lbs');
     expect(note.closest('button')).toHaveClass('note');
     expect(document.querySelector('.warn')).toBeNull();
     expect(screen.queryByRole('button', { name: /^(Keep|It was|Edit$)/ })).not.toBeInTheDocument();

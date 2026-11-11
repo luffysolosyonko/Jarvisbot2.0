@@ -263,13 +263,13 @@ export function SettingsPage() {
             </Section>
 
             <Section title="Logging">
-              <Row label="Show weights in" caption="Always stored in lb">
+              <Row label="Show weights in" caption="Always stored in lbs">
                 <Segmented<Unit>
                   label="Show weights in"
                   value={m.settings.set_unit}
                   onChange={(u) => update.mutate({ set_unit: u })}
                   options={[
-                    { value: 'lb', label: 'lb' },
+                    { value: 'lb', label: 'lbs' },
                     { value: 'kg', label: 'kg' },
                   ]}
                 />
