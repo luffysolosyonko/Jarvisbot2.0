@@ -238,7 +238,3 @@ Highlights:
 - End-to-end browser tests (Playwright)
 - Alcohol and BAC tracking from Jarvis 1.0 (left out to keep the scope to
   workouts and weight)
-
-## License
-
-MIT. See [LICENSE](LICENSE).
