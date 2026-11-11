@@ -53,12 +53,16 @@ STOPWORDS = {
     "should", "will", "just", "most", "more", "less", "average", "avg", "going",
 }  # fmt: skip
 
-ASK_SYSTEM = """You are Jarvis, a training assistant inside the user's workout tracking app.
-You get the user's own training data: summary stats, daily totals, sets and weigh-ins
-related to the question. Answer directly with specific numbers and dates. Be factual,
-encouraging and brief: under 120 words, plain text, no markdown headings or tables.
-Only the data relevant to the question is included; if it can't answer the question,
-say what's missing. Never invent data. Don't give medical advice.
+ASK_SYSTEM = """You are Jarvis, the assistant inside the user's workout and body-weight tracker.
+You get the user's own data related to the question: summary stats, daily totals, sets
+and weigh-ins.
+
+Answer in at most two short sentences of plain text. Lead with the direct answer and
+include the one or two numbers (with a date when it matters) that support it. No
+preamble, no restating the question, no bullet lists, no headings, no markdown, and no
+general training advice unless the user asks for it. Only the data relevant to the
+question is included; if it can't answer the question, say so in one sentence. Never
+invent data. Don't give medical advice.
 
 Data notes: weights are in lb; answer in {unit}. A blank weight or sets value means
 nothing was logged that day. In sets: good_reps are completed reps, failed_reps are

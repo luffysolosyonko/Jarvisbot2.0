@@ -25,6 +25,8 @@ class Settings(BaseSettings):
     # Demo account: a fixed Firebase UID. It signs in with an email and password like
     # any account (set with `python -m jarvis_api.demo_login`); the seed fills it.
     demo_uid: str = ""
+    # Folder the seed looks in for an exported history (workouts.tsv, weighins.tsv).
+    demo_data_dir: str = "/srv/demo_data"
 
     rate_limit_parse_per_min: int = 60
     rate_limit_ask_per_min: int = 10

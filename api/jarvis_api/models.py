@@ -73,8 +73,6 @@ class Log(Base):
     logged_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     local_date: Mapped[date] = mapped_column(Date)
     parser_version: Mapped[int] = mapped_column(Integer)
-    # The user said an outlying weigh-in is right ("Keep"), so it counts again.
-    weight_confirmed: Mapped[bool] = mapped_column(Boolean, default=False)
 
     sets: Mapped[list[LoggedSet]] = relationship(
         back_populates="log", cascade="all, delete-orphan", order_by="LoggedSet.idx"
@@ -151,8 +149,8 @@ class AiUsage(Base):
 
 
 class AskMessage(Base):
-    """A question asked in Ask mode and Jarvis's answer. `hidden` clears it from the
-    notebook without deleting it (token usage is tracked separately in ai_usage)."""
+    """A question asked on the Ask page and Jarvis's answer (token usage is tracked
+    separately in ai_usage)."""
 
     __tablename__ = "ask_messages"
     __table_args__ = (Index("ix_ask_messages_user_at", "user_id", "asked_at"),)
@@ -164,4 +162,3 @@ class AskMessage(Base):
     answer: Mapped[str] = mapped_column(Text)
     input_tokens: Mapped[int] = mapped_column(Integer, default=0)
     output_tokens: Mapped[int] = mapped_column(Integer, default=0)
-    hidden: Mapped[bool] = mapped_column(Boolean, default=False)

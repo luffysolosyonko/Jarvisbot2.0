@@ -8,6 +8,7 @@ htmlcov
 *.egg-info
 build
 tests
+demo_data
 *.db
 .env
 .env.*

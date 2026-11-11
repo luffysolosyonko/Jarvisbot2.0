@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Sequence
 from dataclasses import asdict
 from datetime import date
 from typing import TYPE_CHECKING, Literal
@@ -10,7 +10,6 @@ from typing import TYPE_CHECKING, Literal
 from jarvis_api import schemas
 from jarvis_api.models import Log, LoggedSet
 from jarvis_api.services import fixes
-from jarvis_api.services.weighins import WeighFlag, average_before, is_outlier
 from jarvis_core import analysis
 from jarvis_core.parser import ParsedLog, ParsedSet
 
@@ -74,20 +73,16 @@ def exercise_matches(p: ParsedLog, data: UserData) -> list[schemas.ExerciseMatch
     return list(out.values())
 
 
-def parse_out(p: ParsedLog, data: UserData, text: str, day: date | None = None) -> schemas.ParseOut:
+def parse_out(p: ParsedLog, data: UserData, text: str) -> schemas.ParseOut:
     weigh_in = None
     if p.weigh_in:
         w = p.weigh_in
-        # The live preview warns before saving, against the current 7-day average.
-        avg = average_before([(x.day, x.weight_lb) for x in data.weighins], day) if day else None
         weigh_in = schemas.WeighInOut(
             weight_lb=w.weight_lb,
             note=w.note,
             typed=w.typed,
             typed_unit=w.typed_unit,
             unit_assumed=w.unit_assumed,
-            flagged=is_outlier(w.weight_lb, avg),
-            avg_7d=None if avg is None else round(avg, 1),
         )
     return schemas.ParseOut(
         kind=p.kind,
@@ -98,11 +93,10 @@ def parse_out(p: ParsedLog, data: UserData, text: str, day: date | None = None) 
     )
 
 
-def weigh_in_out(log: Log, flags: Mapping[int, WeighFlag] | None) -> schemas.WeighInOut | None:
+def weigh_in_out(log: Log) -> schemas.WeighInOut | None:
     w = log.weigh_in
     if w is None:
         return None
-    flag = (flags or {}).get(log.id)
     typed_unit: Literal["kg", "lb"] = "kg" if w.typed_unit == "kg" else "lb"
     return schemas.WeighInOut(
         weight_lb=w.weight_lb,
@@ -110,17 +104,11 @@ def weigh_in_out(log: Log, flags: Mapping[int, WeighFlag] | None) -> schemas.Wei
         typed=w.typed,
         typed_unit=typed_unit,
         unit_assumed=w.unit_assumed,
-        flagged=bool(flag and flag.flagged),
-        avg_7d=flag.avg_7d if flag else None,
-        confirmed=log.weight_confirmed,
     )
 
 
 def log_out(
-    log: Log,
-    canonical: Canon,
-    warnings: list[schemas.WarningOut] | None = None,
-    flags: Mapping[int, WeighFlag] | None = None,
+    log: Log, canonical: Canon, warnings: list[schemas.WarningOut] | None = None
 ) -> schemas.LogOut:
     kind: Literal["workout", "weight"] = "weight" if log.kind == "weight" else "workout"
     return schemas.LogOut(
@@ -130,7 +118,7 @@ def log_out(
         logged_at=log.logged_at,
         local_date=log.local_date,
         sets=[set_out(s, canonical) for s in log.sets],
-        weigh_in=weigh_in_out(log, flags),
+        weigh_in=weigh_in_out(log),
         warnings=warnings or [],
     )
 

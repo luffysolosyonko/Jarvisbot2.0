@@ -1,4 +1,4 @@
-"""Ask Jarvis: a question about your own data -> a short answer plus tokens used.
+"""Ask Jarvis: a question about your own data -> a two-sentence answer plus tokens used.
 
 Per-user daily token cap (lower for the demo account), per-user rate limit, a 15s
 provider timeout, and every outcome is a clear JSON response.
@@ -13,7 +13,7 @@ from datetime import UTC, datetime, time
 
 from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse
-from sqlalchemy import func, select, update
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from jarvis_api import schemas
@@ -29,7 +29,10 @@ from jarvis_core.ai import Usage
 
 router = APIRouter(tags=["ask"])
 
-MAX_ANSWER_TOKENS = 4000
+# The instructions keep an answer to two short sentences; this cap does not. It is a
+# backstop only, left roomy so that an answer is never cut off in the middle of a
+# sentence (any thinking the model does counts against it too).
+MAX_ANSWER_TOKENS = 1024
 
 ERRORS: dict[str, tuple[int, str, str]] = {
     "timeout": (504, "ai_timeout", "Jarvis took too long to answer. Try again."),
@@ -216,10 +219,10 @@ HISTORY_LIMIT = 100
 
 @router.get("/ask/history")
 def ask_history(user: CurrentUser, db: DB) -> schemas.AskHistoryOut:
-    """Questions and answers still in view, oldest first (the newest 100)."""
+    """The user's questions and answers, oldest first (the newest 100)."""
     rows = db.scalars(
         select(AskMessage)
-        .where(AskMessage.user_id == user.id, AskMessage.hidden.is_(False))
+        .where(AskMessage.user_id == user.id)
         .order_by(AskMessage.asked_at.desc(), AskMessage.id.desc())
         .limit(HISTORY_LIMIT)
     ).all()
@@ -236,13 +239,3 @@ def ask_history(user: CurrentUser, db: DB) -> schemas.AskHistoryOut:
             for m in reversed(rows)
         ]
     )
-
-
-@router.post("/ask/history/clear")
-def clear_ask_history(user: CurrentUser, db: DB) -> schemas.ClearedOut:
-    """Hide every question from view. They stay in the database."""
-    visible = (AskMessage.user_id == user.id, AskMessage.hidden.is_(False))
-    count = db.scalar(select(func.count(AskMessage.id)).where(*visible)) or 0
-    db.execute(update(AskMessage).where(*visible).values(hidden=True))
-    db.commit()
-    return schemas.ClearedOut(cleared=count)

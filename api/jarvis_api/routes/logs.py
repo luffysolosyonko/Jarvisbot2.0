@@ -41,10 +41,7 @@ def logs_out(
     parsed = parse_logs(db, user, logs)
     recent = recent_exercises(data, 3)
     return [
-        log_out(
-            lg, data.canonical, warnings_out(parsed[lg.id], lg.raw_text, recent), data.weigh_flags
-        )
-        for lg in logs
+        log_out(lg, data.canonical, warnings_out(parsed[lg.id], lg.raw_text, recent)) for lg in logs
     ]
 
 
@@ -57,7 +54,7 @@ def preview(
     now = datetime.now(UTC)
     day = local_now(user, now).date()
     parsed = parse_for_user(db, user, body.text, day, body.effective_mode, now)
-    return parse_out(parsed, load_user_data(db, user), body.text, day)
+    return parse_out(parsed, load_user_data(db, user), body.text)
 
 
 @router.post("/logs", status_code=201)
@@ -68,7 +65,7 @@ def create_log(body: schemas.LogIn, user: CurrentUser, db: DB) -> schemas.SavedL
         raise ApiError(422, "nothing_parsed", NOTHING_PARSED)
     data = load_user_data(db, user)
     warnings = warnings_out(result.parsed, body.text, recent_exercises(data, 3))
-    out = log_out(result.log, data.canonical, warnings, data.weigh_flags)
+    out = log_out(result.log, data.canonical, warnings)
     return schemas.SavedLogOut(**out.model_dump())
 
 
@@ -80,25 +77,12 @@ def update_log(
     log = get_log(db, user, log_id)
     if log is None:
         raise ApiError(404, "not_found", "Log not found.")
-    parsed = edit_log(db, user, log, body.text, body.mode, body.confirm_weight)
+    parsed = edit_log(db, user, log, body.text, body.mode)
     if parsed is None:
         raise ApiError(422, "nothing_parsed", NOTHING_PARSED)
     data = load_user_data(db, user)
     warnings = warnings_out(parsed, body.text, recent_exercises(data, 3))
-    out = log_out(log, data.canonical, warnings, data.weigh_flags)
-    return schemas.SavedLogOut(**out.model_dump())
-
-
-@router.post("/logs/{log_id}/confirm")
-def confirm_weight(log_id: RowId, user: CurrentUser, db: DB) -> schemas.SavedLogOut:
-    """Keep an outlying weigh-in as written ("Keep 176.4"): it counts in the stats again."""
-    log = get_log(db, user, log_id)
-    if log is None or log.weigh_in is None:
-        raise ApiError(404, "not_found", "Weigh-in not found.")
-    log.weight_confirmed = True
-    db.commit()
-    data = load_user_data(db, user)
-    out = log_out(log, data.canonical, None, data.weigh_flags)
+    out = log_out(log, data.canonical, warnings)
     return schemas.SavedLogOut(**out.model_dump())
 
 

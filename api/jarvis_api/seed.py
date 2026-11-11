@@ -1,12 +1,19 @@
-"""Reset the demo account and fill it with 12 weeks of made-up training history.
+"""Reset the demo account and fill it with a training history.
 
     python -m jarvis_api.seed            # uses DEMO_UID and DATABASE_URL
     python -m jarvis_api.seed --tz America/New_York
+    python -m jarvis_api.seed --data path/to/folder
 
-Everything here is invented: a four-day upper/lower split with steady progression,
-a deload week, a couple of failed reps, rest-pause sets, and morning weigh-ins 4-5
-times a week drifting slowly down. Logs are written in the same shorthand a real
-user would type and go through the normal parse-and-save path.
+With an exported history (workouts.tsv and weighins.tsv, see jarvis_api.demo_export)
+in the data folder, that is loaded. The folder is --data, else DEMO_DATA_DIR, else
+/srv/demo_data, which docker compose mounts from api/demo_data.
+
+Without one, 12 weeks are made up: a four-day upper/lower split with steady
+progression, a deload week, a couple of failed reps, rest-pause sets, and morning
+weigh-ins 4-5 times a week drifting slowly down.
+
+Either way, logs are written in the same shorthand a user would type and go through
+the normal parse-and-save path.
 """
 
 from __future__ import annotations
@@ -14,8 +21,8 @@ from __future__ import annotations
 import argparse
 import random
 import sys
-from dataclasses import dataclass
 from datetime import UTC, date, datetime, time, timedelta
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from sqlalchemy import delete
@@ -23,20 +30,23 @@ from sqlalchemy.orm import Session
 
 from jarvis_api.config import Settings
 from jarvis_api.db import make_engine, make_sessionmaker
+from jarvis_api.demo_export import (
+    DemoDataError,
+    Entry,
+    Export,
+    has_export,
+    load_export,
+    set_problems,
+    weigh_in_ok,
+)
 from jarvis_api.firebase import Claims
-from jarvis_api.models import AiUsage, Alias, AskMessage, Log
-from jarvis_api.services.logs import save_log
-from jarvis_api.services.users import get_or_create_user
+from jarvis_api.models import AiUsage, Alias, AskMessage, Log, User
+from jarvis_api.services.logs import parse_for_user, save_log
+from jarvis_api.services.users import get_or_create_user, local_now
 
 WEEKS = 12
 DELOAD_WEEK = 8  # 0-based: the 9th week is lighter
 DEMO_ALIASES = {"lat raise": "lateral raise"}
-
-
-@dataclass(frozen=True)
-class Entry:
-    at: datetime  # local, naive
-    text: str
 
 
 def _w(x: float) -> str:
@@ -150,8 +160,29 @@ def build_history(today: date, seed: int = 20260302) -> list[Entry]:
     return out
 
 
-def reset_demo(db: Session, uid: str, tz_name: str, today: date | None = None) -> int:
-    """Wipe the demo user's data and recreate it. Returns the number of logs saved."""
+def _check_export_entry(db: Session, user: User, e: Entry, now: datetime) -> None:
+    """Stop before saving if this entry would be stored differently from its rows."""
+    day = local_now(user, now).date()
+    parsed = parse_for_user(db, user, e.text, day, e.kind, before=now)
+    if e.rows:
+        problems = set_problems(parsed, e.rows)
+    else:
+        problems = [] if e.weight_lb is None or weigh_in_ok(parsed, e.weight_lb) else [e.text]
+    if problems:
+        raise DemoDataError(
+            f"entry at {e.at} would not be stored as written:\n" + "\n".join(problems)
+        )
+
+
+def reset_demo(
+    db: Session,
+    uid: str,
+    tz_name: str,
+    today: date | None = None,
+    export: Export | None = None,
+) -> int:
+    """Wipe the demo user's data and recreate it, from `export` when given and from
+    the made-up history otherwise. Returns the number of logs saved."""
     tz = ZoneInfo(tz_name)
     user = get_or_create_user(db, Claims(uid=uid, name="Demo athlete", provider="custom"))
     if user.firebase_uid != uid:  # pragma: no cover - defensive
@@ -162,14 +193,18 @@ def reset_demo(db: Session, uid: str, tz_name: str, today: date | None = None) -
     db.execute(delete(AskMessage).where(AskMessage.user_id == user.id))
     user.settings.tz_name, user.settings.set_unit = tz_name, "lb"
     user.display_name = "Demo athlete"
-    db.add_all(Alias(user_id=user.id, short=s, full=f) for s, f in DEMO_ALIASES.items())
+    # The made-up history writes "lat raise"; an export brings its own aliases, if any.
+    aliases = export.aliases if export else DEMO_ALIASES
+    db.add_all(Alias(user_id=user.id, short=s, full=f) for s, f in aliases.items())
     db.commit()
 
-    today = today or datetime.now(tz).date()
+    entries = export.entries if export else build_history(today or datetime.now(tz).date())
     saved = 0
-    for e in build_history(today):
+    for e in entries:
         now = e.at.replace(tzinfo=tz).astimezone(UTC)
-        if save_log(db, user, e.text, now) is None:  # pragma: no cover - seed is all valid
+        if export:
+            _check_export_entry(db, user, e, now)
+        if save_log(db, user, e.text, now, e.kind) is None:  # pragma: no cover - all valid
             raise RuntimeError(f"seed text didn't parse: {e.text!r}")
         saved += 1
     return saved
@@ -178,15 +213,41 @@ def reset_demo(db: Session, uid: str, tz_name: str, today: date | None = None) -
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--tz", default="America/Chicago", help="demo user's time zone")
+    parser.add_argument(
+        "--data",
+        help="folder with workouts.tsv and weighins.tsv (default: DEMO_DATA_DIR); "
+        "without those files the made-up history is used",
+    )
     args = parser.parse_args(argv)
     settings = Settings()
     if not settings.demo_uid:
         print("DEMO_UID is not set; nothing to seed.", file=sys.stderr)
         return 2
+    folder = Path(args.data or settings.demo_data_dir)
+    export: Export | None = None
+    if has_export(folder):
+        try:
+            export = load_export(folder)  # checked in full before the account is touched
+        except DemoDataError as exc:
+            print(f"Nothing was changed. {exc}", file=sys.stderr)
+            return 1
+    elif args.data:
+        print(
+            f"No workouts.tsv and weighins.tsv in {folder}; nothing was changed.", file=sys.stderr
+        )
+        return 2
     engine = make_engine(settings.database_url)
     with make_sessionmaker(engine)() as db:
-        n = reset_demo(db, settings.demo_uid, args.tz)
-    print(f"Demo account reset: {n} logs.")
+        n = reset_demo(db, settings.demo_uid, args.tz, export=export)
+    if export:
+        print(
+            f"Demo account reset from {folder}: {n} logs "
+            f"({export.sets} sets, {export.weigh_ins} weigh-ins)."
+        )
+        for raw, name in export.renamed.items():
+            print(f"  exercise {raw!r} is stored as {name!r}")
+    else:
+        print(f"Demo account reset with the made-up history: {n} logs.")
     return 0
 
 

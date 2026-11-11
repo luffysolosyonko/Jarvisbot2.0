@@ -89,7 +89,6 @@ def test_ids_and_dates_outside_any_real_range_are_refused_not_crashes(client: Te
     h = auth("alice")
     big = 9223372036854775807
     assert_error(client.delete(f"/api/v1/logs/{big}", headers=h), 422, "invalid_request")
-    assert_error(client.post(f"/api/v1/logs/{big}/confirm", headers=h), 422, "invalid_request")
     assert_error(
         client.patch(f"/api/v1/logs/{big}", headers=h, json={"text": "8x 1lb a"}),
         422,

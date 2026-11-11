@@ -19,6 +19,7 @@ from jarvis_api.llm import AnthropicProvider, LLMError, LLMReply, StreamEvent, m
 from jarvis_api.main import create_app
 from jarvis_api.models import AiUsage, AskMessage
 from jarvis_api.ratelimit import RateLimiter
+from jarvis_api.routes.ask import MAX_ANSWER_TOKENS
 from jarvis_core.ai import Usage
 
 from .conftest import DEMO_UID, FakeClock, FakeVerifier, auth
@@ -92,6 +93,9 @@ def test_answer_with_tokens_and_usage_logged(
     call = provider.calls[0]
     assert "bench" in call["user"] and "Question: Is my bench going up?" in call["user"]
     assert "answer in lb" in call["system"]
+    assert "at most two short sentences" in call["system"]
+    # a backstop far below the old 4000; the two-sentence length comes from the instructions
+    assert call["max_tokens"] == MAX_ANSWER_TOKENS <= 1024
 
 
 def test_only_the_callers_data_is_sent(settings: Settings, engine: Engine) -> None:
@@ -264,9 +268,7 @@ def test_make_provider_from_settings(settings: Settings) -> None:
     )
 
 
-def test_questions_are_saved_and_can_be_cleared_from_view(
-    settings: Settings, engine: Engine, db: Session
-) -> None:
+def test_questions_are_saved_and_stay_in_the_history(settings: Settings, engine: Engine) -> None:
     client = make_client(settings, engine, FakeProvider("Bench is up 10 lb."))
     h = auth("alice")
     r = client.post("/api/v1/ask", headers=h, json={"question": "Is my bench going up?"})
@@ -282,10 +284,9 @@ def test_questions_are_saved_and_can_be_cleared_from_view(
     assert history[0]["input_tokens"] == 1200 and history[0]["output_tokens"] == 80
     assert client.get("/api/v1/ask/history", headers=auth("bob")).json()["messages"] == []
 
-    assert client.post("/api/v1/ask/history/clear", headers=h).json() == {"cleared": 2}
-    assert client.get("/api/v1/ask/history", headers=h).json()["messages"] == []
-    stored = db.scalars(select(AskMessage)).all()  # cleared from view, still in the database
-    assert len(stored) == 2 and all(m.hidden for m in stored)
+    # answers can't be hidden any more: the old endpoint is gone
+    assert client.post("/api/v1/ask/history/clear", headers=h).status_code in (404, 405)
+    assert len(client.get("/api/v1/ask/history", headers=h).json()["messages"]) == 2
 
 
 def test_failed_questions_are_not_saved(settings: Settings, engine: Engine, db: Session) -> None:

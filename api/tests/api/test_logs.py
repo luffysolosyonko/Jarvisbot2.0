@@ -61,6 +61,41 @@ def test_save_and_list(client: TestClient) -> None:
     assert [lg["id"] for lg in logs] == [w["id"], saved["id"]]  # newest first
 
 
+def test_a_weigh_in_far_from_the_average_is_saved_and_counted_as_written(
+    client: TestClient,
+) -> None:
+    h = auth("alice")
+    for text in ("155", "156", "155.4"):
+        client.post("/api/v1/logs", headers=h, json={"text": text, "mode": "weight"})
+    preview = client.post("/api/v1/parse", headers=h, json={"text": "80", "mode": "weight"}).json()
+    odd = client.post("/api/v1/logs", headers=h, json={"text": "80", "mode": "weight"}).json()
+    expected = {
+        "weight_lb": 176.4,
+        "note": None,
+        "typed": 80.0,
+        "typed_unit": "kg",
+        "unit_assumed": True,
+    }
+    assert preview["weigh_in"] == expected and odd["weigh_in"] == expected  # no warning fields
+
+    weight = client.get("/api/v1/dashboard", headers=h).json()["weight"]
+    assert set(weight) == {"points", "average_7d", "projection"}
+    assert [p["value"] for p in weight["points"]] == [176.4]  # one reading a day: the latest
+    assert client.get("/api/v1/dashboard", headers=h).json()["today"]["weight_lb"] == 176.4
+
+    # the double-check flow is gone
+    assert client.post(f"/api/v1/logs/{odd['id']}/confirm", headers=h).status_code in (404, 405)
+    assert_error(
+        client.patch(
+            f"/api/v1/logs/{odd['id']}", headers=h, json={"text": "80lb", "confirm_weight": True}
+        ),
+        422,
+        "invalid_request",
+    )
+    fixed = client.patch(f"/api/v1/logs/{odd['id']}", headers=h, json={"text": "80lb"}).json()
+    assert fixed["weigh_in"]["weight_lb"] == 80 and fixed["weigh_in"]["typed_unit"] == "lb"
+
+
 def test_nothing_parsed_is_not_saved(client: TestClient) -> None:
     h = auth("alice")
     assert_error(

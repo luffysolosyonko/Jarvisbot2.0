@@ -31,6 +31,10 @@ services:
       PORT: "8080"
     secrets:
       - firebase-service-account
+    volumes:
+      # Optional exported history for the seed (gitignored). Missing or empty: the seed
+      # makes up a history instead.
+      - ./api/demo_data:/srv/demo_data:ro
     ports:
       - "8000:8080"
     depends_on:
@@ -40,7 +44,7 @@ services:
 
 secrets:
   firebase-service-account:
-    # Gitignored. See docs/SETUP.md section 5 for how to download it.
+    # Gitignored. See docs/SETUP.md section 3 for how to download it.
     file: ./api/firebase-service-account.json
 
 volumes:
