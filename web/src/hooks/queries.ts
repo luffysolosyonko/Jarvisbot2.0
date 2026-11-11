@@ -4,7 +4,6 @@ import { api } from '@/lib/api';
 import type {
   Alias,
   AliasMatch,
-  AskAnswer,
   AskMessage,
   CalendarMonth,
   Dashboard,
@@ -129,20 +128,8 @@ export function useSaveLog(today: string) {
 export function useEditLog() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, text, mode, confirmWeight }: { id: number; text: string; mode?: LogMode; confirmWeight?: boolean }) =>
-      api<Log>(`/logs/${id}`, {
-        method: 'PATCH',
-        body: { text, ...(mode ? { mode } : {}), ...(confirmWeight ? { confirm_weight: true } : {}) },
-      }),
-    onSuccess: () => invalidateLogData(qc),
-  });
-}
-
-/** "Keep 176.4": the outlying weigh-in is right, so it counts in the stats again. */
-export function useConfirmWeight() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (id: number) => api<Log>(`/logs/${id}/confirm`, { method: 'POST' }),
+    mutationFn: ({ id, text, mode }: { id: number; text: string; mode?: LogMode }) =>
+      api<Log>(`/logs/${id}`, { method: 'PATCH', body: { text, ...(mode ? { mode } : {}) } }),
     onSuccess: () => invalidateLogData(qc),
   });
 }
@@ -155,31 +142,11 @@ export function useDeleteLog() {
   });
 }
 
-export function useAsk() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: (question: string) =>
-      api<AskAnswer>('/ask', { method: 'POST', body: { question }, timeoutMs: 30_000 }),
-    onSettled: () => {
-      void qc.invalidateQueries({ queryKey: ['ask-history'] });
-    },
-  });
-}
-
-/** Saved questions and answers still in view, oldest first. */
+/** Every saved question and answer, oldest first. */
 export function useAskHistory() {
   return useQuery({
     queryKey: ['ask-history'],
     queryFn: () => api<{ messages: AskMessage[] }>('/ask/history').then((r) => r.messages),
-  });
-}
-
-/** Hide every saved question from view (they stay in the database). */
-export function useClearAskHistory() {
-  const qc = useQueryClient();
-  return useMutation({
-    mutationFn: () => api<{ cleared: number }>('/ask/history/clear', { method: 'POST' }),
-    onSuccess: () => qc.setQueryData(['ask-history'], []),
   });
 }
 

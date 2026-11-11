@@ -1,14 +1,12 @@
 /** Response shapes from /api/v1. All weights are in lb. */
 export type Unit = 'lb' | 'kg';
 export type LogMode = 'workout' | 'weight';
-export type Mode = LogMode | 'ask';
 
 export type Me = {
   id: number;
   email: string | null;
   display_name: string | null;
   auth_provider: string;
-  is_demo: boolean;
   created_at: string;
   settings: { tz_name: string; set_unit: Unit };
 };
@@ -35,9 +33,6 @@ export type WeighIn = {
   typed: number | null; // the number as written
   typed_unit: Unit; // the unit it was read in
   unit_assumed: boolean; // no unit was written
-  flagged: boolean; // far from the 7-day average, not confirmed: left out of stats
-  avg_7d: number | null; // the average it was compared with
-  confirmed: boolean;
 };
 
 /** A one-click repair: replace `line` with `text`, or with `template` once its `{}` is filled. */
@@ -113,7 +108,7 @@ export type Dashboard = {
   week: Window;
   previous_week: Window;
   weekly: Window[];
-  weight: { points: Point[]; average_7d: Point[]; projection: Projection | null; flagged: Point[] };
+  weight: { points: Point[]; average_7d: Point[]; projection: Projection | null };
   top_lifts: TopLift[];
 };
 
@@ -177,7 +172,7 @@ export type AskAnswer = {
   topics: string[];
 };
 
-/** A saved question and answer from Ask mode. */
+/** A saved question and answer from the Ask page. */
 export type AskMessage = {
   id: number;
   asked_at: string;

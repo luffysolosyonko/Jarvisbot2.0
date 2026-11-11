@@ -18,10 +18,6 @@ describe.each(Object.entries(palettes))('%s theme', (_name, c) => {
     },
   );
 
-  it('the outlier warning text meets AA on its box', () => {
-    expect(contrastRatio(c.warnText, c.warnBg)).toBeGreaterThanOrEqual(BODY);
-  });
-
   it('onAccent on accent meets AA for body text (primary button)', () => {
     expect(contrastRatio(c.onAccent, c.accent)).toBeGreaterThanOrEqual(BODY);
   });

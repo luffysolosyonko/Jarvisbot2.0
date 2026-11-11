@@ -9,7 +9,6 @@ import { passwordOk } from '@/lib/password';
 /**
  * Change the password: the current one (Firebase asks for it again before a
  * password change), then the new one twice, with the same rules as sign-up.
- * Not offered to the shared demo account (Settings hides it).
  */
 export function ChangePassword() {
   const { hasPassword, changePassword } = useAuth();

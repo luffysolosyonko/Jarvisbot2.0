@@ -1,4 +1,4 @@
-/** The "↳" margin notes under each entry, and the outlier weigh-in wording. */
+/** The "↳" margin notes under each entry. */
 import { exerciseName, fromLb, num, weight } from './format';
 import type { ParsedSet, Unit, WeighIn } from './types';
 
@@ -33,36 +33,12 @@ export function setNotes(sets: ParsedSet[], unit: Unit): NoteLine[] {
   });
 }
 
+/**
+ * "weigh-in · 182.4 lb". A number typed without a unit, and read in the other unit
+ * than the one shown, spells out the conversion: "weigh-in · 90 kg = 198.4 lb".
+ */
 export function weighInNote(w: WeighIn, unit: Unit): NoteLine {
-  return { text: `weigh-in · ${fromLb(w.weight_lb, unit).toFixed(1)} ${unit}${w.note ? ` · ${w.note}` : ''}`, fail: null };
-}
-
-/** "80 kg = 176.4 lb?" for a reading typed in kg; "250 lb?" otherwise. */
-export function outlierTitle(w: WeighIn): string {
-  const lb = w.weight_lb.toFixed(1);
-  if (w.typed !== null && w.typed_unit === 'kg') return `${num(w.typed)} kg = ${lb} lb?`;
-  return `${lb} lb?`;
-}
-
-/** "That's 19 lb above your 7-day average. No unit was given, so kg was assumed." */
-export function outlierReason(w: WeighIn): string {
-  const parts: string[] = [];
-  if (w.avg_7d !== null) {
-    const diff = Math.round(w.weight_lb - w.avg_7d);
-    parts.push(`That's ${Math.abs(diff)} lb ${diff >= 0 ? 'above' : 'below'} your 7-day average.`);
-  }
-  if (w.unit_assumed) parts.push(`No unit was given, so ${w.typed_unit} was assumed.`);
-  return parts.join(' ');
-}
-
-/** The other unit than the one the parser assumed. */
-export function otherUnit(w: WeighIn): 'kg' | 'lb' {
-  return w.typed_unit === 'kg' ? 'lb' : 'kg';
-}
-
-/** Rewrite the typed number in `text` with an explicit unit: "80" -> "80lb". */
-export function withExplicitUnit(text: string, typed: number, unit: 'kg' | 'lb'): string {
-  const n = num(typed).replace('.', '\\.');
-  const re = new RegExp(`(^|[^\\d.])(${n}(?:\\.0+)?)(?![\\d.])\\s*(?:kgs?|lbs?|pounds)?`, 'i');
-  return re.test(text) ? text.replace(re, `$1$2${unit}`) : `${num(typed)}${unit}`;
+  const shown = `${fromLb(w.weight_lb, unit).toFixed(1)} ${unit}`;
+  const read = w.unit_assumed && w.typed !== null && w.typed_unit !== unit ? `${num(w.typed)} ${w.typed_unit} = ` : '';
+  return { text: `weigh-in · ${read}${shown}${w.note ? ` · ${w.note}` : ''}`, fail: null };
 }

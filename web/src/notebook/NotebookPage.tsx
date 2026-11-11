@@ -1,20 +1,18 @@
-import { useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router';
 
 import { Button } from '@/components/Button';
-import { Dots, InkCursor } from '@/components/Loading';
+import { InkCursor } from '@/components/Loading';
 import { EmptyState, ErrorState } from '@/components/States';
 import { useToast } from '@/components/Toast';
-import { useAskHistory, useClearAskHistory, useLogs, useMe, useSaveLog, useTz, useUnit } from '@/hooks/queries';
+import { useLogs, useSaveLog, useTz, useUnit } from '@/hooks/queries';
 import { useDelayedFlag } from '@/hooks/useDelayedFlag';
 import { useTitle } from '@/hooks/useTitle';
 import { errorMessage } from '@/lib/api';
-import { askStream } from '@/lib/askStream';
 import { UNSAVED_KEY } from '@/lib/cache';
-import { capsDate, clockTime, dayHeading, dayIn, isoDate, parseDate, todayIn } from '@/lib/format';
+import { capsDate, dayHeading, isoDate, parseDate, todayIn } from '@/lib/format';
 import { load, save } from '@/lib/storage';
-import type { Log, LogMode, Mode } from '@/lib/types';
+import type { Log, LogMode } from '@/lib/types';
 import { ToolPanel } from '@/tools/ToolPanel';
 import { MoreMenu } from '@/tools/MoreMenu';
 import type { ToolId } from '@/tools/registry';
@@ -28,21 +26,7 @@ const DEFAULT_DAYS = 30;
 const MORE_DAYS = 30;
 const MAX_DAYS = 366; // the API's limit for one request
 
-const isMode = (v: unknown): v is Mode => v === 'workout' || v === 'weight' || v === 'ask';
-
-/** A question not saved yet: in flight (its answer streaming in), or failed. */
-type PendingAsk = { id: string; question: string; at: string; answer?: string; error?: string };
-
-/** A question as shown in the feed: saved (with its answer) or pending. */
-type AskView = {
-  key: string;
-  question: string;
-  at: string;
-  answer?: string;
-  streaming?: boolean;
-  error?: string;
-  retryId?: string;
-};
+const isMode = (v: unknown): v is LogMode => v === 'workout' || v === 'weight';
 
 /** An entry whose save failed: kept (in this browser too) until it's saved or discarded. */
 type Unsaved = { key: string; text: string; mode: LogMode; at: string; day: string; error: string };
@@ -50,7 +34,7 @@ type Unsaved = { key: string; text: string; mode: LogMode; at: string; day: stri
 const isUnsavedList = (v: unknown): v is Unsaved[] =>
   Array.isArray(v) && v.every((x) => x && typeof x === 'object' && typeof (x as Unsaved).text === 'string');
 
-type FeedItem = { kind: 'log'; at: string; day: string; log: Log } | { kind: 'ask'; at: string; day: string; item: AskView };
+type FeedItem = { at: string; day: string; log: Log };
 
 function addDays(iso: string, n: number): string {
   const d = parseDate(iso);
@@ -58,47 +42,11 @@ function addDays(iso: string, n: number): string {
   return isoDate(d);
 }
 
-/** A question in the margin-timed column, then Jarvis's answer under it. */
-function AskReply({ item, onRetry, tz }: { item: AskView; onRetry: () => void; tz: string | undefined }) {
-  return (
-    <div className="entry" role="group" aria-label="Question to Jarvis">
-      <time className="entry-time" dateTime={item.at}>
-        {clockTime(item.at, tz)}
-      </time>
-      <div className="entry-main">
-        <p className="entry-text prose">{item.question}</p>
-        <div className="answer">
-          <p className="answer-label">Jarvis</p>
-          {item.error ? (
-            <div className="stack-2" role="alert">
-              {item.answer ? <p className="answer-text">{item.answer}</p> : null}
-              <p className="danger">{item.error}</p>
-              <Button size="small" onClick={onRetry}>
-                Try again
-              </Button>
-            </div>
-          ) : item.answer ? (
-            <p className={`answer-text${item.streaming ? ' streaming' : ''}`} aria-busy={item.streaming || undefined}>
-              {item.answer}
-            </p>
-          ) : (
-            <p className="note thinking" role="status">
-              ↳ thinking
-              <Dots />
-            </p>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
-
 /** "2 sets · 1 weigh-in" for a day of the feed. */
 function daySummary(items: FeedItem[]): string {
   let sets = 0;
   let weighIns = 0;
   for (const f of items) {
-    if (f.kind !== 'log') continue;
     sets += f.log.sets.length;
     if (f.log.weigh_in) weighIns += 1;
   }
@@ -108,7 +56,7 @@ function daySummary(items: FeedItem[]): string {
   return parts.join(' · ');
 }
 
-const MODES: Mode[] = ['workout', 'weight', 'ask'];
+const MODES: LogMode[] = ['workout', 'weight'];
 
 /** Typing into a field: single-key shortcuts must not fire. */
 function isTyping(el: Element | null): boolean {
@@ -125,18 +73,16 @@ function FeedLoading() {
 export function NotebookPage() {
   useTitle('Notebook');
   const unit = useUnit();
-  const me = useMe();
   const tz = useTz();
   const today = todayIn(tz);
   const [params, setParams] = useSearchParams();
   const jumpId = Number(params.get('log')) || null;
   const jumpDate = params.get('date');
 
-  const [mode, setModeState] = useState<Mode>(() => load(MODE_KEY, 'workout', isMode));
+  const [mode, setModeState] = useState<LogMode>(() => load(MODE_KEY, 'workout', isMode));
   const [text, setText] = useState('');
   const [sendError, setSendError] = useState<string | null>(null);
   const [days, setDays] = useState(DEFAULT_DAYS);
-  const [pendingAsks, setPendingAsks] = useState<PendingAsk[]>([]);
   const [unsaved, setUnsavedState] = useState<Unsaved[]>(() => load(UNSAVED_KEY, [], isUnsavedList));
   const setUnsaved = useCallback((f: (xs: Unsaved[]) => Unsaved[]) => {
     setUnsavedState((xs) => {
@@ -145,7 +91,6 @@ export function NotebookPage() {
       return next;
     });
   }, []);
-  const qc = useQueryClient();
   const [tool, setTool] = useState<ToolId | null>(null);
   const [highlight, setHighlight] = useState<number | null>(null);
   const { pendingDeletes } = useToast();
@@ -162,10 +107,8 @@ export function NotebookPage() {
   }, [today, days, jumpDate]);
   const logs = useLogs(from, addDays(today, 1));
   const save_ = useSaveLog(today);
-  const askHistory = useAskHistory();
-  const clearAsks = useClearAskHistory();
 
-  const setMode = (m: Mode) => {
+  const setMode = (m: LogMode) => {
     setModeState(m);
     save(MODE_KEY, m);
     setSendError(null);
@@ -179,7 +122,7 @@ export function NotebookPage() {
     }
   }, [location.state, navigate]);
 
-  // Shortcuts: Ctrl/Cmd+K focuses the input, 1/2/3 switch modes (when not typing),
+  // Shortcuts: Ctrl/Cmd+K focuses the input, 1/2 switch modes (when not typing),
   // Esc closes the open tool panel.
   useEffect(() => {
     function onKey(e: globalThis.KeyboardEvent) {
@@ -188,7 +131,7 @@ export function NotebookPage() {
         inputRef.current?.focus();
       } else if (e.key === 'Escape' && tool) {
         setTool(null);
-      } else if (!e.ctrlKey && !e.metaKey && !e.altKey && ['1', '2', '3'].includes(e.key) && !isTyping(document.activeElement)) {
+      } else if (!e.ctrlKey && !e.metaKey && !e.altKey && ['1', '2'].includes(e.key) && !isTyping(document.activeElement)) {
         const m = MODES[Number(e.key) - 1];
         setModeState(m);
         save(MODE_KEY, m);
@@ -202,31 +145,8 @@ export function NotebookPage() {
 
   const feed: FeedItem[] = useMemo(() => {
     const items: FeedItem[] = [
-      ...visible.map((log) => ({ kind: 'log' as const, at: log.logged_at, day: log.local_date, log })),
-      ...(askHistory.data ?? [])
-        .filter((m) => dayIn(m.asked_at, tz) >= from)
-        .map((m) => ({
-          kind: 'ask' as const,
-          at: m.asked_at,
-          day: dayIn(m.asked_at, tz),
-          item: { key: `s${m.id}`, question: m.question, at: m.asked_at, answer: m.answer },
-        })),
-      ...pendingAsks.map((p) => ({
-        kind: 'ask' as const,
-        at: p.at,
-        day: dayIn(p.at, tz),
-        item: {
-          key: `p${p.id}`,
-          question: p.question,
-          at: p.at,
-          answer: p.answer,
-          streaming: !p.error,
-          error: p.error,
-          retryId: p.id,
-        },
-      })),
+      ...visible.map((log) => ({ at: log.logged_at, day: log.local_date, log })),
       ...unsaved.map((u) => ({
-        kind: 'log' as const,
         at: u.at,
         day: u.day,
         log: {
@@ -244,7 +164,7 @@ export function NotebookPage() {
       })),
     ];
     return items.sort((a, b) => a.at.localeCompare(b.at));
-  }, [visible, askHistory.data, pendingAsks, unsaved, from, tz]);
+  }, [visible, unsaved]);
 
   const summaries = useMemo(() => {
     const byDay = new Map<string, FeedItem[]>();
@@ -254,7 +174,6 @@ export function NotebookPage() {
 
   // Start at the newest entry, like a chat; follow new entries as they arrive (but not
   // older ones loading in above).
-  const settled = pendingAsks.filter((a) => a.error).length; // a failure shows up in place, too
   // Scroll the page itself: the composer is sticky, so aligning the last entry with the
   // viewport bottom would leave it hidden behind the composer.
   // Only when the feed grows: clearing ?log= after a jump mustn't scroll away from it.
@@ -262,24 +181,12 @@ export function NotebookPage() {
   useEffect(() => {
     jumpRef.current = jumpId;
   }, [jumpId]);
-  // Also when the newest entry comes back from the server (it may grow a warning box).
+  // Also when the newest entry comes back from the server (its note fills in).
   const last = feed[feed.length - 1];
-  const tail = last
-    ? last.kind === 'log'
-      ? `${last.log.id}:${!!last.log.pending}:${!!last.log.weigh_in?.flagged}`
-      : last.item.key
-    : '';
+  const tail = last ? `${last.log.id}:${!!last.log.pending}` : '';
   useEffect(() => {
     if (!jumpRef.current) window.scrollTo({ top: document.documentElement.scrollHeight });
-  }, [settled, tail]);
-  // A streaming answer grows: keep its end in view if you're reading at the bottom.
-  const streamed = pendingAsks.reduce((n, a) => n + (a.answer?.length ?? 0), 0);
-  useEffect(() => {
-    const doc = document.documentElement;
-    if (streamed && window.scrollY + window.innerHeight >= doc.scrollHeight - 160) {
-      window.scrollTo({ top: doc.scrollHeight });
-    }
-  }, [streamed]);
+  }, [tail]);
 
   // Scrolled to the top: load the 30 days before (until there's nothing older).
   const topRef = useRef<HTMLDivElement>(null);
@@ -350,22 +257,6 @@ export function NotebookPage() {
     setParams({}, { replace: true });
   }, [jumpId, logs.data, setParams]);
 
-  const update = (id: string, f: (a: PendingAsk) => PendingAsk) =>
-    setPendingAsks((xs) => xs.map((x) => (x.id === id ? f(x) : x)));
-
-  /** "↳ thinking" at once, then the answer streams in word by word. */
-  function runAsk(question: string, id: string = crypto.randomUUID()) {
-    const at = new Date().toISOString();
-    setPendingAsks((xs) => [...xs.filter((x) => x.id !== id), { id, question, at }]);
-    askStream(question, (piece) => update(id, (a) => ({ ...a, answer: (a.answer ?? '') + piece })))
-      .then(async () => {
-        // Saved on the server: once the history has it, drop the local copy.
-        await qc.invalidateQueries({ queryKey: ['ask-history'] });
-        setPendingAsks((xs) => xs.filter((x) => x.id !== id));
-      })
-      .catch((e: unknown) => update(id, (a) => ({ ...a, error: errorMessage(e) })));
-  }
-
   function saveEntry(body: string, logMode: LogMode, retryKey?: string) {
     if (retryKey) setUnsaved((xs) => xs.filter((u) => u.key !== retryKey));
     const at = new Date().toISOString();
@@ -394,11 +285,6 @@ export function NotebookPage() {
     if (lastSend.current && lastSend.current.text === t && now - lastSend.current.at < 1000) return;
     lastSend.current = { text: t, at: now };
     setSendError(null);
-    if (mode === 'ask') {
-      runAsk(t);
-      setText('');
-      return;
-    }
     setText('');
     saveEntry(t, mode);
   }
@@ -441,10 +327,7 @@ export function NotebookPage() {
                 disabled={logs.isFetching || exhausted}>
                 {exhausted ? 'Start of your notebook' : 'Show earlier'}
               </Button>
-            ) : (
-              <span />
-            )}
-            {me.data?.is_demo ? <span className="hint">Demo account: made-up data</span> : null}
+            ) : null}
           </div>
           {logs.error && !logs.data ? (
             <ErrorState error={logs.error} onRetry={() => void logs.refetch()} />
@@ -463,19 +346,15 @@ export function NotebookPage() {
                 ) : null;
               lastDay = f.day;
               return (
-                <div key={f.kind === 'log' ? (f.log.retryKey ? `u${f.log.retryKey}` : `l${f.log.id}`) : f.item.key}>
+                <div key={f.log.retryKey ? `u${f.log.retryKey}` : `l${f.log.id}`}>
                   {header}
-                  {f.kind === 'log' ? (
-                    <Entry
-                      log={f.log}
-                      unit={unit}
-                      highlight={highlight === f.log.id}
-                      onRetry={f.log.failed ? () => saveEntry(f.log.raw_text, f.log.kind, f.log.retryKey) : undefined}
-                      onDiscard={f.log.failed ? () => setUnsaved((xs) => xs.filter((u) => u.key !== f.log.retryKey)) : undefined}
-                    />
-                  ) : (
-                    <AskReply item={f.item} tz={tz} onRetry={() => runAsk(f.item.question, f.item.retryId)} />
-                  )}
+                  <Entry
+                    log={f.log}
+                    unit={unit}
+                    highlight={highlight === f.log.id}
+                    onRetry={f.log.failed ? () => saveEntry(f.log.raw_text, f.log.kind, f.log.retryKey) : undefined}
+                    onDiscard={f.log.failed ? () => setUnsaved((xs) => xs.filter((u) => u.key !== f.log.retryKey)) : undefined}
+                  />
                 </div>
               );
             })
@@ -490,22 +369,9 @@ export function NotebookPage() {
             if (sendError) setSendError(null);
           }}
           onSend={send}
-          sending={mode === 'ask' && pendingAsks.some((a) => !a.error)}
           error={sendError}
           unit={unit}
-          tools={
-            <MoreMenu
-              onPick={setTool}
-              onHideAnswers={
-                (askHistory.data?.length ?? 0) + pendingAsks.length > 0
-                  ? () => {
-                      setPendingAsks([]);
-                      clearAsks.mutate();
-                    }
-                  : undefined
-              }
-            />
-          }
+          tools={<MoreMenu onPick={setTool} />}
           inputRef={inputRef}
         />
       </main>

@@ -1,15 +1,15 @@
 import { Trash2, Wrench } from 'lucide-react';
 import { useId, useState, type KeyboardEvent } from 'react';
 
-import { Button, IconButton } from '@/components/Button';
+import { IconButton } from '@/components/Button';
 import { ICON } from '@/components/icons';
 import { SetRows } from '@/components/SetRows';
 import { useToast } from '@/components/Toast';
-import { useConfirmWeight, useEditLog, useTz } from '@/hooks/queries';
+import { useEditLog, useTz } from '@/hooks/queries';
 import { errorMessage } from '@/lib/api';
 import { logSummary } from '@/lib/describe';
-import { clockTime, fromLb, messageTime, num, todayIn } from '@/lib/format';
-import { otherUnit, outlierReason, outlierTitle, setNotes, weighInNote, withExplicitUnit, type NoteLine } from '@/lib/notes';
+import { clockTime, messageTime, todayIn } from '@/lib/format';
+import { setNotes, weighInNote, type NoteLine } from '@/lib/notes';
 import type { Log, LogMode, Unit } from '@/lib/types';
 
 import { FixList } from './FixList';
@@ -30,46 +30,6 @@ export function Notes({ lines }: { lines: NoteLine[] }) {
         </span>
       ))}
     </>
-  );
-}
-
-/**
- * A weigh-in far from the 7-day average (or typed without a unit): ask before it
- * counts. "It was 80 lb" rewrites the entry with that unit; "Keep" confirms it.
- */
-function OutlierBox({ log, unit, onEdit }: { log: Log; unit: Unit; onEdit: () => void }) {
-  const w = log.weigh_in!;
-  const edit = useEditLog();
-  const confirm = useConfirmWeight();
-  const error = edit.error ?? confirm.error;
-  const busy = edit.isPending || confirm.isPending;
-  const alt = otherUnit(w);
-  return (
-    <div className="warn" role="group" aria-label="Check this weigh-in">
-      <p className="warn-title tnum">↳ {outlierTitle(w)}</p>
-      <p className="warn-body">{outlierReason(w)}</p>
-      <div className="warn-actions">
-        {w.unit_assumed && w.typed !== null ? (
-          <Button
-            variant="ink"
-            disabled={busy}
-            onClick={() => edit.mutate({ id: log.id, text: withExplicitUnit(log.raw_text, w.typed!, alt), confirmWeight: true })}>
-            It was {num(w.typed)} {alt}
-          </Button>
-        ) : null}
-        <Button disabled={busy} onClick={() => confirm.mutate(log.id)}>
-          Keep {fromLb(w.weight_lb, unit).toFixed(1)}
-        </Button>
-        <Button variant="ghost" disabled={busy} onClick={onEdit}>
-          Edit
-        </Button>
-      </div>
-      {error ? (
-        <p className="error-text" role="alert">
-          {errorMessage(error)}
-        </p>
-      ) : null}
-    </div>
   );
 }
 
@@ -105,7 +65,6 @@ export function Entry({
   const locked = !!log.pending || !!log.failed; // not saved yet: nothing to edit
   const lines = log.raw_text.split('\n');
   const when = messageTime(log.logged_at, tz, todayIn(tz));
-  const flagged = !!log.weigh_in?.flagged;
   const notes = log.weigh_in ? [weighInNote(log.weigh_in, unit)] : setNotes(log.sets, unit);
 
   function save(text: string, mode?: LogMode | null) {
@@ -266,8 +225,6 @@ export function Entry({
           <p className="note is-pending" role="status" aria-label="Saving">
             {notes.length ? <Notes lines={notes} /> : '↳ saving'}
           </p>
-        ) : flagged ? (
-          <OutlierBox log={log} unit={unit} onEdit={startEdit} />
         ) : notes.length ? (
           <button
             type="button"

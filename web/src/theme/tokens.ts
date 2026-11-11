@@ -14,10 +14,7 @@ export type ColorTokens = {
   onAccent: string; // paper on green
   success: string; // the parse note: also the accent
   danger: string; // --fail
-  flag: string; // a flagged weigh-in on the chart (a shape, never text)
   paperSunk: string; // the composer
-  warnBg: string;
-  warnText: string;
 };
 
 export const palette: ColorTokens = {
@@ -32,10 +29,7 @@ export const palette: ColorTokens = {
   onAccent: '#F6F2EA',
   success: '#2E5B45',
   danger: '#9A3B1E',
-  flag: '#C46A1A',
   paperSunk: '#EEE6D8',
-  warnBg: '#FBEAD2',
-  warnText: '#7A3F0C',
 };
 
 /** One color scheme only. */

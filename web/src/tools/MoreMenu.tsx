@@ -6,14 +6,13 @@ import { IconButton } from '@/components/Button';
 import { TOOLS, type ToolId } from './registry';
 
 /**
- * The Tools menu: the bot's commands, and "Hide answers" when there are answers to hide.
- * Arrow keys move between items; Escape closes it.
+ * The Tools menu: the bot's commands. Arrow keys move between items; Escape closes it.
  */
-export function MoreMenu({ onPick, onHideAnswers }: { onPick: (id: ToolId) => void; onHideAnswers?: () => void }) {
+export function MoreMenu({ onPick }: { onPick: (id: ToolId) => void }) {
   const [open, setOpen] = useState(false);
   const wrap = useRef<HTMLDivElement>(null);
   const items = useRef<(HTMLButtonElement | null)[]>([]);
-  const count = TOOLS.length + (onHideAnswers ? 1 : 0);
+  const count = TOOLS.length;
 
   useEffect(() => {
     if (!open) return;
@@ -37,11 +36,6 @@ export function MoreMenu({ onPick, onHideAnswers }: { onPick: (id: ToolId) => vo
     }
   }
 
-  function pick(fn: () => void) {
-    setOpen(false);
-    fn();
-  }
-
   return (
     <div className="menu-anchor" ref={wrap} onKeyDown={onKey}>
       <IconButton label="Tools" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen((o) => !o)}>
@@ -57,24 +51,13 @@ export function MoreMenu({ onPick, onHideAnswers }: { onPick: (id: ToolId) => vo
               }}
               type="button"
               role="menuitem"
-              onClick={() => pick(() => onPick(t.id))}>
+              onClick={() => {
+                setOpen(false);
+                onPick(t.id);
+              }}>
               {t.label}
             </button>
           ))}
-          {onHideAnswers ? (
-            <>
-              <div role="separator" />
-              <button
-                ref={(el) => {
-                  items.current[TOOLS.length] = el;
-                }}
-                type="button"
-                role="menuitem"
-                onClick={() => pick(onHideAnswers)}>
-                Hide answers
-              </button>
-            </>
-          ) : null}
         </div>
       ) : null}
     </div>

@@ -294,13 +294,6 @@ a {
   background: transparent;
 }
 
-/* Filled ink: "It was 80 lb". */
-.btn-ink {
-  background: var(--ink);
-  border-color: var(--ink);
-  color: var(--paper);
-}
-
 .btn-ghost {
   border-color: transparent;
   color: var(--accent);
@@ -318,21 +311,6 @@ a {
 
 .btn-block {
   width: 100%;
-}
-
-.btn-accent-outline {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.btn.icon-only {
-  width: var(--touch);
-  padding: 0;
-}
-
-.btn-accent-outline[aria-pressed='true'] {
-  background: var(--accent);
-  color: var(--paper);
 }
 
 .icon-btn {
@@ -859,16 +837,6 @@ input[type='number']::-webkit-outer-spin-button {
   font-size: var(--t-time);
 }
 
-.menu [role='separator'] {
-  grid-column: 1 / -1;
-  margin: var(--s1) 0;
-  border-top: 1px solid var(--rule);
-}
-
-.menu [role='separator'] + [role='menuitem'] {
-  grid-column: 1 / -1;
-}
-
 /* ---------- the notebook ---------- */
 .notebook {
   display: flex;
@@ -1276,46 +1244,6 @@ input[type='number']::-webkit-outer-spin-button {
   min-height: calc(2 * var(--ruled));
 }
 
-/* The outlier weigh-in check: a title band, the reason on as many bands as it
-   needs, and the buttons in 64px rows (two rows when they wrap). The outline is a
-   shadow so it adds no height. */
-.warn {
-  padding: 0 var(--s3);
-  border-radius: var(--radius);
-  background: var(--warn-bg);
-  box-shadow: inset 0 0 0 1px var(--warn-border);
-  color: var(--warn-text);
-}
-
-.warn-title {
-  font-family: var(--font-mono);
-  font-weight: 700;
-  font-size: var(--t-log);
-  line-height: var(--ruled);
-}
-
-.warn-body {
-  font-size: var(--t-label);
-  line-height: var(--ruled);
-}
-
-.warn-actions {
-  display: flex;
-  flex-wrap: wrap;
-  column-gap: var(--s2);
-  row-gap: calc(2 * var(--ruled) - var(--touch)); /* 20px */
-  padding: calc((2 * var(--ruled) - var(--touch)) / 2) 0;
-}
-
-.warn-actions .btn {
-  font-size: var(--t-label);
-}
-
-.warn-actions .btn-ghost {
-  color: var(--warn-text);
-  text-decoration: underline;
-}
-
 .warn-line {
   display: flex;
   align-items: flex-start;
@@ -1391,6 +1319,20 @@ input[type='number']::-webkit-outer-spin-button {
   margin: calc((2 * var(--ruled) - var(--touch)) / 2) 0; /* 64px with the button */
 }
 
+/* The Ask page with no questions yet: example questions, one per row. */
+.ask-examples {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--s2);
+}
+
+.ask-examples .btn {
+  padding-block: var(--s1); /* room when a question wraps on a narrow screen */
+  text-align: left;
+  white-space: normal;
+}
+
 /* ---------- composer ---------- */
 .composer {
   position: sticky;
@@ -1414,6 +1356,11 @@ input[type='number']::-webkit-outer-spin-button {
 .composer-label {
   display: block;
   margin: var(--s3) 0 var(--s1);
+}
+
+/* The Ask page has no bar above the label. */
+.composer-label:first-child {
+  margin-top: 0;
 }
 
 .input-row {
@@ -2077,10 +2024,6 @@ figure .legend {
   outline: 2px solid var(--fail);
   outline-offset: 2px;
   border-radius: 4px;
-}
-
-.set-center {
-  text-align: center;
 }
 
 .set-footer {

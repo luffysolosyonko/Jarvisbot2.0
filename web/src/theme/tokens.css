@@ -21,11 +21,7 @@
   /* meaning */
   --accent: #2e5b45; /* forest green: parse notes, active nav, save button, avg line */
   --accent-hover: #1f4231;
-  --warn-bg: #fbead2;
-  --warn-border: #edcb9c;
-  --warn-text: #7a3f0c;
   --fail: #9a3b1e; /* failed reps: always with a cross, never color alone */
-  --flag: #c46a1a; /* a flagged weigh-in on the chart: a hollow circle, not text */
 
   /* heatmap: sets per day, less to more */
   --heat-0: #e9e1d2;
@@ -55,7 +51,7 @@
   --s5: 24px;
   --s6: 32px;
   --s7: 48px;
-  --radius: 10px; /* inputs, buttons, warning boxes */
+  --radius: 10px; /* inputs, buttons */
   --radius-cell: 6px; /* calendar cells */
   --touch: 44px;
   --margin-w: 68px; /* the notebook's margin column */

@@ -19,7 +19,7 @@ import type { Me, Unit } from '@/lib/types';
 
 import { ChangePassword } from './ChangePassword';
 
-const PROVIDERS: Record<string, string> = { password: 'email', 'google.com': 'Google', custom: 'demo' };
+const PROVIDERS: Record<string, string> = { password: 'email', 'google.com': 'Google' };
 
 /** A labelled row: name and caption on the left, the control on the right. */
 function Row({ label, caption, children, id }: { label: ReactNode; caption?: ReactNode; children?: ReactNode; id?: string }) {
@@ -242,9 +242,7 @@ export function SettingsPage() {
                 </div>
               </div>
               <DisplayName key={m.display_name ?? ''} me={m} />
-              {m.is_demo ? (
-                <Row label="Password" caption="The shared demo account’s password can’t be changed." />
-              ) : hasPassword ? (
+              {hasPassword ? (
                 <>
                   <Row label="Password">
                     <button
@@ -300,13 +298,9 @@ export function SettingsPage() {
               <button type="button" className="btn btn-block set-signout" onClick={() => void signOut()}>
                 Sign out
               </button>
-              {m.is_demo ? (
-                <p className="set-caption set-center">The shared demo account can’t be deleted.</p>
-              ) : (
-                <button type="button" className="set-delete" onClick={() => setDeleting(true)}>
-                  Delete account and data
-                </button>
-              )}
+              <button type="button" className="set-delete" onClick={() => setDeleting(true)}>
+                Delete account and data
+              </button>
             </section>
 
             <footer className="set-footer">Jarvis 2.0</footer>

@@ -10,7 +10,7 @@ import { Notes } from './Entry';
  * Under the box: the live "↳" read of the input, as the note it will get once saved.
  * Quiet while you type: half-typed lines ("12x") get no warnings here, just the
  * example until something reads as a set. (Lines that still don't log once saved get
- * their fixes on the entry, and an outlying weigh-in its check box.)
+ * their fixes on the entry.)
  */
 export function ParseLine({
   text,

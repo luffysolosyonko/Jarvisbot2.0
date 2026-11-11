@@ -10,6 +10,7 @@ import { useDelayedFlag } from '@/hooks/useDelayedFlag';
 import { persistCache, restoreCache } from '@/lib/cache';
 import { makeQueryClient } from '@/lib/queryClient';
 import { NotebookPage } from '@/notebook/NotebookPage';
+import { AskPage } from '@/pages/AskPage';
 import { ExerciseNamesPage } from '@/pages/ExerciseNamesPage';
 import { HistoryPage } from '@/pages/HistoryPage';
 import { LiftPage } from '@/pages/LiftPage';
@@ -69,6 +70,7 @@ export function AppRoutes() {
           </RequireUser>
         }>
         <Route index element={<NotebookPage />} />
+        <Route path="ask" element={<AskPage />} />
         <Route path="history" element={<HistoryPage />} />
         <Route path="progress" element={<ProgressPage />} />
         <Route path="progress/:name" element={<LiftPage />} />

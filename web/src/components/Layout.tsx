@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { CalendarDays, ChartLine, NotebookPen, Settings, type LucideIcon } from 'lucide-react';
+import { CalendarDays, ChartLine, MessageCircle, NotebookPen, Settings, type LucideIcon } from 'lucide-react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router';
 
 import { useMe, useUpdateSettings } from '@/hooks/queries';
@@ -7,17 +7,18 @@ import { deviceTimeZone } from '@/lib/format';
 
 const LINKS: { to: string; label: string; Icon: LucideIcon; end?: boolean }[] = [
   { to: '/', label: 'Notebook', Icon: NotebookPen, end: true },
+  { to: '/ask', label: 'Ask', Icon: MessageCircle },
   { to: '/history', label: 'History', Icon: CalendarDays },
   { to: '/progress', label: 'Progress', Icon: ChartLine },
   { to: '/settings', label: 'Settings', Icon: Settings },
 ];
 
-/** New accounts start in UTC; adopt the browser's time zone once (not for the demo). */
+/** New accounts start in UTC; adopt the browser's time zone once. */
 function useAdoptBrowserTimeZone() {
   const { data: me } = useMe();
   const update = useUpdateSettings();
   const browser = deviceTimeZone();
-  const needed = !!me && !me.is_demo && me.settings.tz_name === 'UTC' && browser !== 'UTC';
+  const needed = !!me && me.settings.tz_name === 'UTC' && browser !== 'UTC';
   useEffect(() => {
     if (needed && update.isIdle) update.mutate({ tz_name: browser });
   }, [needed, browser, update]);

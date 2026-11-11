@@ -11,7 +11,6 @@ const ME: Me = {
   email: 'tom@example.com',
   display_name: 'Tom',
   auth_provider: 'google.com',
-  is_demo: false,
   created_at: '2026-01-01T00:00:00Z',
   settings: { tz_name: 'UTC', set_unit: 'lb' },
 };
@@ -31,7 +30,7 @@ vi.mock('@/auth/AuthProvider', () => ({ useAuth: () => auth }));
 beforeEach(() => {
   update.mockClear();
   del.mockClear();
-  ME.is_demo = false;
+  Object.assign(ME, { email: 'tom@example.com', auth_provider: 'google.com' });
   auth.hasPassword = false;
 });
 
@@ -98,14 +97,22 @@ describe('Settings', () => {
     expect(del).toHaveBeenCalled();
   });
 
-  it('offers a password change to email accounts, but not to the shared demo account', () => {
+  it('offers a password change to every email/password account, the demo account included', async () => {
     auth.hasPassword = true;
-    const { unmount } = renderPage();
-    expect(screen.getByRole('button', { name: 'Change' })).toBeInTheDocument();
-    unmount();
-    ME.is_demo = true;
+    // What the API sends for the demo account: the page treats it like any other.
+    Object.assign(ME, { email: 'demo@example.com', auth_provider: 'password', is_demo: true });
     renderPage();
-    expect(screen.queryByRole('button', { name: 'Change' })).not.toBeInTheDocument();
-    expect(screen.getByText(/demo account’s password can’t be changed/)).toBeInTheDocument();
+    expect(screen.getByText('signed in with email')).toBeInTheDocument();
+    expect(screen.queryByText(/demo account/i)).not.toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'Change' }));
+    expect(screen.getByLabelText('Current password')).toBeInTheDocument();
+    expect(screen.getByLabelText('New password')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Change password' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Delete account and data' })).toBeInTheDocument();
+  });
+
+  it('has no password row for a Google-only account', () => {
+    renderPage();
+    expect(screen.queryByText('Password')).not.toBeInTheDocument();
   });
 });

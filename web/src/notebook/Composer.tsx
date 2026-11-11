@@ -1,37 +1,33 @@
-import { ArrowUp, MessageCircle } from 'lucide-react';
+import { ArrowUp } from 'lucide-react';
 import { useId, useRef, type KeyboardEvent, type ReactNode, type RefObject } from 'react';
 
 import { Segmented } from '@/components/Segmented';
-import type { LogMode, Mode, Unit } from '@/lib/types';
+import type { LogMode, Unit } from '@/lib/types';
 
 import { ParseLine } from './ParseLine';
 
 /** The box shows the pattern; the line under it, an example of it. */
-const PLACEHOLDER: Record<Mode, string> = {
+const PLACEHOLDER: Record<LogMode, string> = {
   workout: '(reps)x (weight) (lift)',
-  weight: '(weight)kg/lbs',
-  ask: 'Ask about your training',
+  weight: '(weight)kg/lb',
 };
 
-const EXAMPLE: Record<Mode, string> = {
+const EXAMPLE: Record<LogMode, string> = {
   workout: 'e.g. 8x 135lb bench',
-  weight: 'e.g. 70.3kg or 155lbs',
-  ask: '',
+  weight: 'e.g. 70.3kg or 155lb',
 };
 
-const LABEL: Record<Mode, string> = {
+const LABEL: Record<LogMode, string> = {
   workout: 'Log a set',
   weight: 'Log weight',
-  ask: 'Ask Jarvis',
 };
 
 type Props = {
-  mode: Mode;
-  onModeChange: (m: Mode) => void;
+  mode: LogMode;
+  onModeChange: (m: LogMode) => void;
   text: string;
   onTextChange: (t: string) => void;
   onSend: () => void;
-  sending: boolean;
   error: string | null;
   unit: Unit;
   tools: ReactNode;
@@ -39,14 +35,13 @@ type Props = {
 };
 
 /**
- * The bottom of the page: Workout or Weight (or Ask), a labelled mono input, a
- * square save button, and a live "↳" read of what the text will log. Enter saves.
+ * The bottom of the page: Workout or Weight, a labelled mono input, a square save
+ * button, and a live "↳" read of what the text will log. Enter saves.
  */
-export function Composer({ mode, onModeChange, text, onTextChange, onSend, sending, error, unit, tools, inputRef }: Props) {
+export function Composer({ mode, onModeChange, text, onTextChange, onSend, error, unit, tools, inputRef }: Props) {
   const localRef = useRef<HTMLTextAreaElement>(null);
   const ref = inputRef ?? localRef;
   const inputId = useId();
-  const isAsk = mode === 'ask';
 
   function onKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
     if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
@@ -57,14 +52,14 @@ export function Composer({ mode, onModeChange, text, onTextChange, onSend, sendi
 
   // Grows with the text (Shift+Enter for a new line), up to 8 lines.
   const rows = Math.min(8, Math.max(1, text.split('\n').length));
-  const canSend = !!text.trim() && !(isAsk && text.trim().length < 3) && !sending;
+  const canSend = !!text.trim();
 
   return (
     <div className="composer">
       <div className="composer-bar">
         <Segmented<LogMode>
           label="Entry type"
-          value={isAsk ? null : mode}
+          value={mode}
           onChange={onModeChange}
           options={[
             { value: 'workout', label: 'Workout' },
@@ -72,22 +67,13 @@ export function Composer({ mode, onModeChange, text, onTextChange, onSend, sendi
           ]}
         />
         <span className="spacer" />
-        <button
-          type="button"
-          className="btn btn-accent-outline icon-only"
-          aria-label="Ask"
-          title="Ask Jarvis"
-          aria-pressed={isAsk}
-          onClick={() => onModeChange(isAsk ? 'workout' : 'ask')}>
-          <MessageCircle size={22} strokeWidth={1.8} aria-hidden="true" />
-        </button>
         {tools}
       </div>
 
       <label htmlFor={inputId} className="composer-label caps">
         {LABEL[mode]}
       </label>
-      <div className={`input-row${isAsk ? ' ask' : ''}`}>
+      <div className="input-row">
         <textarea
           id={inputId}
           ref={ref}
@@ -95,21 +81,14 @@ export function Composer({ mode, onModeChange, text, onTextChange, onSend, sendi
           rows={rows}
           placeholder={PLACEHOLDER[mode]}
           value={text}
-          maxLength={isAsk ? 500 : 2000}
+          maxLength={2000}
           onChange={(e) => onTextChange(e.target.value)}
           onKeyDown={onKeyDown}
-          spellCheck={isAsk}
+          spellCheck={false}
           autoComplete="off"
-          enterKeyHint={isAsk ? 'send' : 'done'}
+          enterKeyHint="done"
         />
-        <button
-          type="button"
-          className="save-btn"
-          aria-label={isAsk ? 'Send question' : 'Save entry'}
-          title={isAsk ? 'Ask (Enter)' : 'Save (Enter)'}
-          disabled={!canSend}
-          aria-busy={sending || undefined}
-          onClick={onSend}>
+        <button type="button" className="save-btn" aria-label="Save entry" title="Save (Enter)" disabled={!canSend} onClick={onSend}>
           <ArrowUp size={22} strokeWidth={2} aria-hidden="true" />
         </button>
       </div>
@@ -119,9 +98,7 @@ export function Composer({ mode, onModeChange, text, onTextChange, onSend, sendi
           {error}
         </p>
       ) : null}
-      {isAsk ? null : (
-        <ParseLine text={text} mode={mode} unit={unit} example={EXAMPLE[mode]} />
-      )}
+      <ParseLine text={text} mode={mode} unit={unit} example={EXAMPLE[mode]} />
     </div>
   );
 }

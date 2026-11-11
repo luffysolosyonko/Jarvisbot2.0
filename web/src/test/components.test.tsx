@@ -6,7 +6,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ExerciseSelect } from '@/components/ExerciseSelect';
 import { ToastProvider, UNDO_MS } from '@/components/Toast';
-import type { Log, Mode, ParseResult, ParseWarning } from '@/lib/types';
+import type { Log, LogMode, ParseResult, ParseWarning } from '@/lib/types';
 import { Composer } from '@/notebook/Composer';
 import { Entry } from '@/notebook/Entry';
 import { FixList } from '@/notebook/FixList';
@@ -61,9 +61,9 @@ beforeEach(() => {
   });
 });
 
-function ComposerHarness({ onSend, initialMode = 'workout' }: { onSend: (text: string) => void; initialMode?: Mode }) {
+function ComposerHarness({ onSend }: { onSend: (text: string) => void }) {
   const [text, setText] = useState('');
-  const [mode, setMode] = useState<Mode>(initialMode);
+  const [mode, setMode] = useState<LogMode>('workout');
   return (
     <Composer
       mode={mode}
@@ -71,7 +71,6 @@ function ComposerHarness({ onSend, initialMode = 'workout' }: { onSend: (text: s
       text={text}
       onTextChange={setText}
       onSend={() => onSend(text)}
-      sending={false}
       error={null}
       unit="lb"
       tools={null}
@@ -80,10 +79,11 @@ function ComposerHarness({ onSend, initialMode = 'workout' }: { onSend: (text: s
 }
 
 describe('Composer', () => {
-  it('has the Workout/Weight switch, an Ask toggle, a labelled box and a save button', () => {
+  it('has the Workout/Weight switch, a labelled box and a save button, and nothing for Ask', () => {
     wrap(<ComposerHarness onSend={vi.fn()} />);
+    expect(screen.getAllByRole('radio').map((r) => r.textContent)).toEqual(['Workout', 'Weight']);
     expect(screen.getByRole('radio', { name: 'Workout' })).toHaveAttribute('aria-checked', 'true');
-    expect(screen.getByRole('button', { name: 'Ask' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.queryByRole('button', { name: /Ask/ })).not.toBeInTheDocument();
     expect(screen.getByLabelText('Log a set')).toHaveAttribute('placeholder', '(reps)x (weight) (lift)');
     expect(screen.getByText('e.g. 8x 135lb bench')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Save entry' })).toBeDisabled();
@@ -134,44 +134,30 @@ describe('Composer', () => {
   it('Weight mode has its own label and placeholder', async () => {
     wrap(<ComposerHarness onSend={vi.fn()} />);
     await userEvent.click(screen.getByRole('radio', { name: 'Weight' }));
-    expect(screen.getByLabelText('Log weight')).toHaveAttribute('placeholder', '(weight)kg/lbs');
-    expect(screen.getByText('e.g. 70.3kg or 155lbs')).toBeInTheDocument();
-  });
-
-  it('Ask is a toggle: the question box, no preview, nothing selected in the switch', async () => {
-    const onSend = vi.fn();
-    wrap(<ComposerHarness onSend={onSend} />);
-    await userEvent.click(screen.getByRole('button', { name: 'Ask' }));
-    expect(screen.getByRole('button', { name: 'Ask' })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByRole('radio', { name: 'Workout' })).toHaveAttribute('aria-checked', 'false');
-    const box = screen.getByLabelText('Ask Jarvis');
-    expect(box).toHaveAttribute('placeholder', 'Ask about your training');
-    await userEvent.type(box, 'How is my squat?');
-    expect(screen.queryByText(/↳|e\.g\./)).not.toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Send question' }));
-    expect(onSend).toHaveBeenCalledWith('How is my squat?');
-    await userEvent.click(screen.getByRole('button', { name: 'Ask' }));
-    expect(screen.getByLabelText('Log a set')).toBeInTheDocument();
+    expect(screen.getByLabelText('Log weight')).toHaveAttribute('placeholder', '(weight)kg/lb');
+    expect(screen.getByText('e.g. 70.3kg or 155lb')).toBeInTheDocument();
   });
 });
 
 describe('MoreMenu', () => {
-  it('lists the tools and, when there are answers, Hide answers', async () => {
+  it('lists the tools, and only the tools', async () => {
     const onPick = vi.fn();
-    const onHide = vi.fn();
-    render(<MoreMenu onPick={onPick} onHideAnswers={onHide} />);
+    render(<MoreMenu onPick={onPick} />);
     await userEvent.click(screen.getByRole('button', { name: 'Tools' }));
+    expect(screen.getAllByRole('menuitem').map((m) => m.textContent)).toEqual([
+      'Stats',
+      'Lift',
+      'Estimate',
+      'Predict weight',
+      'Predict lift',
+      'Charts',
+      'Search',
+      'Syntax',
+    ]);
+    expect(screen.queryByRole('separator')).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole('menuitem', { name: /^Predict lift/ }));
     expect(onPick).toHaveBeenCalledWith('predict-lift');
-    await userEvent.click(screen.getByRole('button', { name: 'Tools' }));
-    await userEvent.click(screen.getByRole('menuitem', { name: 'Hide answers' }));
-    expect(onHide).toHaveBeenCalled();
-  });
-
-  it('has no Hide answers item when there is nothing to hide', async () => {
-    render(<MoreMenu onPick={vi.fn()} />);
-    await userEvent.click(screen.getByRole('button', { name: 'Tools' }));
-    expect(screen.queryByRole('menuitem', { name: 'Hide answers' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('menu')).not.toBeInTheDocument();
   });
 });
 
@@ -323,45 +309,39 @@ describe('Calendar', () => {
   });
 });
 
-const FLAGGED: Log = {
+const WEIGH_IN: Log = {
   id: 9,
   kind: 'weight',
-  raw_text: '80',
+  raw_text: '90',
   logged_at: '2026-11-10T14:00:00Z',
   local_date: '2026-11-10',
   sets: [],
-  weigh_in: { weight_lb: 176.4, note: null, typed: 80, typed_unit: 'kg', unit_assumed: true, flagged: true, avg_7d: 157.2, confirmed: false },
+  weigh_in: { weight_lb: 198.4, note: null, typed: 90, typed_unit: 'kg', unit_assumed: true },
   warnings: [],
 };
 
-describe('Outlier weigh-in', () => {
-  it('asks before counting it, with the amounts worked out', () => {
-    wrap(<Entry log={FLAGGED} unit="lb" />);
-    expect(screen.getByText('↳ 80 kg = 176.4 lb?')).toBeInTheDocument();
-    expect(screen.getByText("That's 19 lb above your 7-day average. No unit was given, so kg was assumed.")).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'It was 80 lb' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Keep 176.4' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Edit' })).toBeInTheDocument();
+describe('Weigh-in note', () => {
+  it('is a plain note of what was logged: no warning, no buttons to confirm it', () => {
+    const typed = { ...WEIGH_IN, raw_text: '250lb', weigh_in: { ...WEIGH_IN.weigh_in!, weight_lb: 250, typed: 250, typed_unit: 'lb' as const, unit_assumed: false } };
+    wrap(<Entry log={typed} unit="lb" />);
+    expect(screen.getByText('↳ weigh-in · 250.0 lb')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /^Logged: 250 lb/ })).toHaveClass('note');
+    expect(screen.queryByText(/7-day average|assumed|\?/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Check this weigh-in' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /^(Keep|It was|Edit$)/ })).not.toBeInTheDocument();
   });
 
-  it('"It was 80 lb" rewrites the entry in lb and confirms it', async () => {
-    apiMock.mockResolvedValue({ ...FLAGGED, raw_text: '80lb' });
-    wrap(<Entry log={FLAGGED} unit="lb" />);
-    await userEvent.click(screen.getByRole('button', { name: 'It was 80 lb' }));
-    await waitFor(() => expect(apiMock).toHaveBeenCalledWith('/logs/9', { method: 'PATCH', body: { text: '80lb', confirm_weight: true } }));
+  it('shows the conversion when the unit was assumed, in the same plain note', () => {
+    wrap(<Entry log={WEIGH_IN} unit="lb" />);
+    const note = screen.getByText('↳ weigh-in · 90 kg = 198.4 lb');
+    expect(note.closest('button')).toHaveClass('note');
+    expect(document.querySelector('.warn')).toBeNull();
+    expect(screen.queryByRole('button', { name: /^(Keep|It was|Edit$)/ })).not.toBeInTheDocument();
   });
 
-  it('"Keep" confirms it as is', async () => {
-    apiMock.mockResolvedValue(FLAGGED);
-    wrap(<Entry log={FLAGGED} unit="lb" />);
-    await userEvent.click(screen.getByRole('button', { name: 'Keep 176.4' }));
-    await waitFor(() => expect(apiMock).toHaveBeenCalledWith('/logs/9/confirm', { method: 'POST' }));
-  });
-
-  it('"Edit" opens the entry for editing', async () => {
-    wrap(<Entry log={FLAGGED} unit="lb" />);
-    await userEvent.click(screen.getByRole('button', { name: 'Edit' }));
-    expect(screen.getByLabelText('Edit entry text')).toHaveValue('80');
+  it('needs no conversion when the assumed unit is the one shown', () => {
+    wrap(<Entry log={WEIGH_IN} unit="kg" />);
+    expect(screen.getByText('↳ weigh-in · 90.0 kg')).toBeInTheDocument();
   });
 });
 

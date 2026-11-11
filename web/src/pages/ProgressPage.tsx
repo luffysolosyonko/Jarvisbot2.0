@@ -45,7 +45,6 @@ export function ProgressPage() {
           const avgNow = avg[avg.length - 1];
           const delta = d.week.sets - d.previous_week.sets;
           const p = d.weight.projection;
-          const nFlagged = d.weight.flagged.length;
           return (
             <>
               <section className="section" aria-labelledby="bw-label">
@@ -58,7 +57,7 @@ export function ProgressPage() {
                       {num(fromLb(latest.value, unit))}
                       <small> {unit}</small>
                     </p>
-                    <p className="secondary">Latest confirmed weigh-in, {longDate(latest.date)}.</p>
+                    <p className="secondary">Latest weigh-in, {longDate(latest.date)}.</p>
                     {avgNow ? (
                       <p className="mono t-label">
                         7-day avg {num(fromLb(avgNow.value, unit))} · {direction(avg)}
@@ -78,11 +77,8 @@ export function ProgressPage() {
                       points={pts}
                       avg={avg}
                       projection={p}
-                      flagged={d.weight.flagged}
                       unit={unit}
-                      label={`Body weight over the last 90 days: ${pts.length} weigh-ins, with a 7-day average${p ? ' and a forecast' : ''}${
-                        nFlagged ? `; ${nFlagged} flagged weigh-in${nFlagged === 1 ? '' : 's'} left out` : ''
-                      }.`}
+                      label={`Body weight over the last 90 days: ${pts.length} weigh-ins, with a 7-day average${p ? ' and a forecast' : ''}.`}
                     />
                     {p ? (
                       <p className="t-label secondary">
