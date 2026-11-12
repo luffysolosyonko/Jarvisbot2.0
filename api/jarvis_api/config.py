@@ -32,7 +32,7 @@ class Settings(BaseSettings):
     rate_limit_ask_per_min: int = 10
 
     llm_provider: str = "anthropic"
-    llm_model: str = "claude-haiku-5-5"
+    llm_model: str = "claude-opus-5-5"
     anthropic_api_key: str = Field(default="", repr=False)
     llm_timeout_s: float = 15.0
     ask_daily_token_cap: int = 500_000

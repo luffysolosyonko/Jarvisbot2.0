@@ -127,7 +127,7 @@ docs/               SETUP.md (one-time setup), DEMO.md (demo checklist)
 | Auth | Firebase Auth (JS SDK) + Admin SDK | Email/password and the Google popup without running an auth server |
 | API | FastAPI + Pydantic v2 | Typed request and response models and automatic validation |
 | Persistence | SQLAlchemy 2 + Alembic, PostgreSQL | Typed ORM, versioned migrations; SQLite in tests |
-| AI | Claude (`claude-haiku-5-5`) behind an `LLMProvider` interface | Fast, cheap answers over small contexts; provider and model are env vars |
+| AI | Claude (`claude-opus-5-5`) behind an `LLMProvider` interface | Better coaching answers than a smaller model, over small contexts; provider and model are env vars |
 | Quality | pytest, ruff, mypy strict; Vitest, ESLint, tsc | Every layer is linted, type-checked and tested in CI |
 
 ## Design system
