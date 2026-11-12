@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { MessageCircle } from 'lucide-react';
-import { Link, useLocation, useNavigate, useSearchParams } from 'react-router';
+import { useLocation, useNavigate, useSearchParams } from 'react-router';
 
 import { Button } from '@/components/Button';
 import { InkCursor } from '@/components/Loading';
@@ -14,9 +13,6 @@ import { UNSAVED_KEY } from '@/lib/cache';
 import { capsDate, dayHeading, isoDate, parseDate, todayIn } from '@/lib/format';
 import { load, save } from '@/lib/storage';
 import type { Log, LogMode } from '@/lib/types';
-import { ToolPanel } from '@/tools/ToolPanel';
-import { MoreMenu } from '@/tools/MoreMenu';
-import type { ToolId } from '@/tools/registry';
 
 import { Composer } from './Composer';
 import { Entry } from './Entry';
@@ -92,7 +88,6 @@ export function NotebookPage() {
       return next;
     });
   }, []);
-  const [tool, setTool] = useState<ToolId | null>(null);
   const [highlight, setHighlight] = useState<number | null>(null);
   const { pendingDeletes } = useToast();
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -123,15 +118,12 @@ export function NotebookPage() {
     }
   }, [location.state, navigate]);
 
-  // Shortcuts: Ctrl/Cmd+K focuses the input, 1/2 switch modes (when not typing),
-  // Esc closes the open tool panel.
+  // Shortcuts: Ctrl/Cmd+K focuses the input, 1/2 switch modes (when not typing).
   useEffect(() => {
     function onKey(e: globalThis.KeyboardEvent) {
       if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k') {
         e.preventDefault();
         inputRef.current?.focus();
-      } else if (e.key === 'Escape' && tool) {
-        setTool(null);
       } else if (!e.ctrlKey && !e.metaKey && !e.altKey && ['1', '2'].includes(e.key) && !isTyping(document.activeElement)) {
         const m = MODES[Number(e.key) - 1];
         setModeState(m);
@@ -140,7 +132,7 @@ export function NotebookPage() {
     }
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [tool]);
+  }, []);
 
   const visible = useMemo(() => (logs.data ?? []).filter((l) => !pendingDeletes.has(l.id)), [logs.data, pendingDeletes]);
 
@@ -255,8 +247,17 @@ export function NotebookPage() {
     const el = document.getElementById(`log-${jumpId}`);
     if (!el) return;
     el.scrollIntoView({ block: 'start' });
-    setParams({}, { replace: true });
-  }, [jumpId, logs.data, setParams]);
+    // Next tick, in one update: keep the feed wide enough to hold the entry once ?log=
+    // is cleared, mark the entry briefly, and clear the URL.
+    const back = jumpDate ? Math.round((parseDate(today).getTime() - parseDate(jumpDate).getTime()) / 86_400_000) + 1 : 0;
+    const timer = window.setTimeout(() => {
+      setDays((d) => Math.max(d, back));
+      setHighlight(jumpId);
+      window.setTimeout(() => setHighlight((h) => (h === jumpId ? null : h)), 3000);
+      setParams({}, { replace: true });
+    }, 0);
+    return () => window.clearTimeout(timer);
+  }, [jumpId, jumpDate, today, logs.data, setParams]);
 
   function saveEntry(body: string, logMode: LogMode, retryKey?: string) {
     if (retryKey) setUnsaved((xs) => xs.filter((u) => u.key !== retryKey));
@@ -289,20 +290,6 @@ export function NotebookPage() {
     setText('');
     saveEntry(t, mode);
   }
-
-  function jump(log: Log) {
-    // Widen the feed to include the entry (kept in state, so it survives clearing ?log=).
-    const back = Math.round((parseDate(today).getTime() - parseDate(log.local_date).getTime()) / 86_400_000) + 1;
-    setDays((d) => Math.max(d, back));
-    setTool(null); // the sheet covers the notebook: close it to show the entry
-    setHighlight(log.id);
-    window.setTimeout(() => setHighlight((h) => (h === log.id ? null : h)), 3000);
-    setParams({ log: String(log.id), date: log.local_date });
-  }
-
-  const panel = tool ? (
-    <ToolPanel id={tool} onClose={() => setTool(null)} onJump={jump} />
-  ) : null;
 
   let lastDay = '';
   return (
@@ -372,18 +359,9 @@ export function NotebookPage() {
           onSend={send}
           error={sendError}
           unit={unit}
-          tools={
-            <>
-              <Link to="/ask" className="btn btn-accent-outline icon-only" aria-label="Ask" title="Ask Jarvis">
-                <MessageCircle size={22} strokeWidth={1.8} aria-hidden="true" />
-              </Link>
-              <MoreMenu onPick={setTool} />
-            </>
-          }
           inputRef={inputRef}
         />
       </main>
-      {panel}
     </div>
   );
 }

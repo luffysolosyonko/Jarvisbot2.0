@@ -1,6 +1,7 @@
 import { useQueryClient } from '@tanstack/react-query';
 import { ArrowUp } from 'lucide-react';
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
+import { useNavigate } from 'react-router';
 
 import { Button } from '@/components/Button';
 import { Dots, InkCursor } from '@/components/Loading';
@@ -11,6 +12,9 @@ import { useTitle } from '@/hooks/useTitle';
 import { errorMessage } from '@/lib/api';
 import { askStream } from '@/lib/askStream';
 import { clockTime, dayHeading, dayIn, todayIn } from '@/lib/format';
+import { MoreMenu } from '@/tools/MoreMenu';
+import { ToolPanel } from '@/tools/ToolPanel';
+import type { ToolId } from '@/tools/registry';
 
 const MIN_LENGTH = 3;
 const MAX_LENGTH = 500;
@@ -76,7 +80,8 @@ function HistoryLoading() {
 /**
  * Ask Jarvis about your training: every question and answer so far (oldest first,
  * under day headings like the Notebook's), and the question box at the bottom.
- * Enter sends; the answer streams in under the question.
+ * Enter sends; the answer streams in under the question. The Tools menu (stats,
+ * lookups, predictions, search) sits above the question box.
  */
 export function AskPage() {
   useTitle('Ask');
@@ -88,6 +93,18 @@ export function AskPage() {
   const [pending, setPending] = useState<PendingAsk[]>([]);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const inputId = useId();
+  const [tool, setTool] = useState<ToolId | null>(null);
+  const navigate = useNavigate();
+
+  // Esc closes the open tool panel.
+  useEffect(() => {
+    if (!tool) return;
+    const onKey = (e: globalThis.KeyboardEvent) => {
+      if (e.key === 'Escape') setTool(null);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [tool]);
 
   const items: AskView[] = useMemo(
     () =>
@@ -214,9 +231,13 @@ export function AskPage() {
           )}
         </div>
         <div className="composer">
-          <label htmlFor={inputId} className="composer-label caps">
-            Ask Jarvis
-          </label>
+          <div className="composer-bar">
+            <label htmlFor={inputId} className="caps">
+              Ask Jarvis
+            </label>
+            <span className="spacer" />
+            <MoreMenu onPick={setTool} />
+          </div>
           <div className="input-row ask">
             <textarea
               id={inputId}
@@ -244,6 +265,14 @@ export function AskPage() {
           </div>
         </div>
       </main>
+      {tool ? (
+        <ToolPanel
+          id={tool}
+          onClose={() => setTool(null)}
+          // A search result opens its entry in the Notebook.
+          onJump={(log) => void navigate(`/?log=${log.id}&date=${log.local_date}`)}
+        />
+      ) : null}
     </div>
   );
 }

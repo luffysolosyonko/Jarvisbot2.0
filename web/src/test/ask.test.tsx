@@ -167,6 +167,12 @@ describe('Ask page', () => {
     expect(streams).toHaveLength(0); // filled, not sent
   });
 
+  it('has the Tools menu above the question box', async () => {
+    renderAt('/ask', <AskPage />);
+    await userEvent.click(await screen.findByRole('button', { name: 'Tools' }));
+    expect(screen.getByRole('menuitem', { name: 'Syntax' })).toBeInTheDocument();
+  });
+
   it('offers a retry when the history cannot be loaded', async () => {
     apiMock.mockImplementation(async (path: string) => {
       if (path === '/me') return ME;
@@ -223,8 +229,8 @@ describe('Notebook without Ask', () => {
     expect(screen.queryByText('How is my squat?')).not.toBeInTheDocument();
     expect(screen.queryByText(/Demo account/)).not.toBeInTheDocument();
     expect(apiMock).not.toHaveBeenCalledWith('/ask/history', undefined);
-    await userEvent.click(screen.getByRole('button', { name: 'Tools' }));
-    expect(screen.queryByRole('menuitem', { name: 'Hide answers' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: /Ask/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Tools' })).not.toBeInTheDocument();
   });
 
   it('falls back to Workout when the stored mode is the old "ask"', async () => {

@@ -294,16 +294,6 @@ a {
   background: transparent;
 }
 
-.btn-accent-outline {
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.btn.icon-only {
-  width: var(--touch);
-  padding: 0;
-}
-
 .btn-ghost {
   border-color: transparent;
   color: var(--accent);
@@ -1367,9 +1357,9 @@ input[type='number']::-webkit-outer-spin-button {
   margin: var(--s3) 0 var(--s1);
 }
 
-/* The Ask page has no bar above the label. */
-.composer-label:first-child {
-  margin-top: 0;
+/* The Ask page: the label shares the bar with the Tools menu. */
+.composer-bar + .input-row {
+  margin-top: var(--s1);
 }
 
 .input-row {

@@ -73,7 +73,6 @@ function ComposerHarness({ onSend }: { onSend: (text: string) => void }) {
       onSend={() => onSend(text)}
       error={null}
       unit="lb"
-      tools={null}
     />
   );
 }

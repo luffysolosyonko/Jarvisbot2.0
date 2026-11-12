@@ -42,7 +42,7 @@ The demo account.
   far from your 7-day average. A number typed without a unit is read as lbs or
   kg by its size, and the note spells out the conversion
   ("↳ weigh-in · 80 kg = 176.4 lbs"); edit the entry if it read wrong.
-- **Every bot command is a button.** The Tools menu (wrench): Stats (7/30/90 days), Lift,
+- **Every bot command is a button.** The Tools menu (wrench, on the Ask page): Stats (7/30/90 days), Lift,
   Estimate (maxes for 3–12 reps), Predict weight, Predict lift (the date
   you'll hit a target), Charts and Search, plus the
   Syntax cheat sheet. Exercise-name shortcuts are under Settings.

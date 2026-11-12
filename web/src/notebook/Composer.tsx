@@ -1,5 +1,5 @@
 import { ArrowUp } from 'lucide-react';
-import { useId, useRef, type KeyboardEvent, type ReactNode, type RefObject } from 'react';
+import { useId, useRef, type KeyboardEvent, type RefObject } from 'react';
 
 import { Segmented } from '@/components/Segmented';
 import type { LogMode, Unit } from '@/lib/types';
@@ -30,7 +30,6 @@ type Props = {
   onSend: () => void;
   error: string | null;
   unit: Unit;
-  tools: ReactNode;
   inputRef?: RefObject<HTMLTextAreaElement | null>;
 };
 
@@ -38,7 +37,7 @@ type Props = {
  * The bottom of the page: Workout or Weight, a labelled mono input, a square save
  * button, and a live "↳" read of what the text will log. Enter saves.
  */
-export function Composer({ mode, onModeChange, text, onTextChange, onSend, error, unit, tools, inputRef }: Props) {
+export function Composer({ mode, onModeChange, text, onTextChange, onSend, error, unit, inputRef }: Props) {
   const localRef = useRef<HTMLTextAreaElement>(null);
   const ref = inputRef ?? localRef;
   const inputId = useId();
@@ -66,8 +65,6 @@ export function Composer({ mode, onModeChange, text, onTextChange, onSend, error
             { value: 'weight', label: 'Weight' },
           ]}
         />
-        <span className="spacer" />
-        {tools}
       </div>
 
       <label htmlFor={inputId} className="composer-label caps">
