@@ -9,7 +9,7 @@ from __future__ import annotations
 import json
 from collections.abc import Iterator
 from dataclasses import dataclass
-from datetime import UTC, datetime, time
+from datetime import UTC, datetime, time, timedelta
 
 from fastapi import APIRouter, Request
 from fastapi.responses import StreamingResponse
@@ -33,6 +33,11 @@ router = APIRouter(tags=["ask"])
 # backstop only, left roomy so that an answer is never cut off in the middle of a
 # sentence (any thinking the model does counts against it too).
 MAX_ANSWER_TOKENS = 1024
+
+# A follow-up ("why?", "and squat?") is read with the last few questions asked
+# in the past half hour.
+CHAT_TURNS = 3
+CHAT_WINDOW = timedelta(minutes=30)
 
 ERRORS: dict[str, tuple[int, str, str]] = {
     "timeout": (504, "ai_timeout", "Jarvis took too long to answer. Try again."),
@@ -120,9 +125,15 @@ def prepare(
     today = now.astimezone(user_tz(user)).date()
     context, topics = ai.build_context(body.question, data.sets, data.weighins, today)
     system = ai.ASK_SYSTEM.format(unit=ai.unit_word(user.settings.set_unit))
-    return Prepared(
-        provider, now, cap, used, system, ai.user_message(body.question, context), set(topics)
-    )
+    recent = db.scalars(
+        select(AskMessage)
+        .where(AskMessage.user_id == user.id, AskMessage.asked_at >= now - CHAT_WINDOW)
+        .order_by(AskMessage.asked_at.desc(), AskMessage.id.desc())
+        .limit(CHAT_TURNS)
+    ).all()
+    earlier = [(m.question, m.answer) for m in reversed(recent)]
+    message = ai.user_message(body.question, context, earlier)
+    return Prepared(provider, now, cap, used, system, message, set(topics))
 
 
 def save_answer(

@@ -88,6 +88,9 @@ def test_no_data_and_truncation() -> None:
 def test_user_message_wraps_data() -> None:
     msg = user_message("q?", "ctx")
     assert msg.startswith("<data>\nctx\n</data>") and msg.endswith("Question: q?")
+    chat = user_message("why?", "ctx", [("how is my bench", "Up 5 lbs.")])
+    assert "<earlier>\nUser: how is my bench\nJarvis: Up 5 lbs.\n</earlier>" in chat
+    assert chat.endswith("Question: why?")
 
 
 def test_usage_from() -> None:

@@ -93,7 +93,7 @@ def test_answer_with_tokens_and_usage_logged(
     call = provider.calls[0]
     assert "bench" in call["user"] and "Question: Is my bench going up?" in call["user"]
     assert "answer in lb" in call["system"]
-    assert "concise and straight to the point" in call["system"]
+    assert "Length: short." in call["system"]
     # a backstop far below the old 4000; the short length comes from the instructions
     assert call["max_tokens"] == MAX_ANSWER_TOKENS <= 1024
 
@@ -269,7 +269,8 @@ def test_make_provider_from_settings(settings: Settings) -> None:
 
 
 def test_questions_are_saved_and_stay_in_the_history(settings: Settings, engine: Engine) -> None:
-    client = make_client(settings, engine, FakeProvider("Bench is up 10 lb."))
+    provider = FakeProvider("Bench is up 10 lb.")
+    client = make_client(settings, engine, provider)
     h = auth("alice")
     r = client.post("/api/v1/ask", headers=h, json={"question": "Is my bench going up?"})
     assert r.status_code == 200, r.text
@@ -283,6 +284,12 @@ def test_questions_are_saved_and_stay_in_the_history(settings: Settings, engine:
     ]
     assert history[0]["input_tokens"] == 1200 and history[0]["output_tokens"] == 80
     assert client.get("/api/v1/ask/history", headers=auth("bob")).json()["messages"] == []
+
+    # a follow-up is sent with the questions just asked, and only the asker's own
+    assert "<earlier>" not in provider.calls[0]["user"]
+    assert "User: Is my bench going up?" in provider.calls[1]["user"]
+    client.post("/api/v1/ask", headers=auth("bob"), json={"question": "And mine?"})
+    assert "<earlier>" not in provider.calls[2]["user"]
 
     # answers can't be hidden any more: the old endpoint is gone
     assert client.post("/api/v1/ask/history/clear", headers=h).status_code in (404, 405)
