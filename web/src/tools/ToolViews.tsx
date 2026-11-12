@@ -262,15 +262,22 @@ export function ChartsTool({ unit }: { unit: Unit }) {
           <ExerciseSelect value={lift} onChange={setLift} />
           {lift ? (
             <QueryView query={ex}>
-              {(d) => (
-                <TrendChart
-                  main={d.sessions}
-                  projection={d.forecast?.projection}
-                  unit={unit}
-                  mainLabel="Estimated 1RM per session"
-                  label={`Estimated 1-rep max for ${lift}.`}
-                />
-              )}
+              {(d) =>
+                d.sessions.length < 2 ? (
+                  // One point is not a line: say so instead of showing nothing.
+                  <EmptyState
+                    message={`A chart needs at least two sessions with a weight. ${exerciseName(lift)} has ${d.sessions.length} so far.`}
+                  />
+                ) : (
+                  <TrendChart
+                    main={d.sessions}
+                    projection={d.forecast?.projection}
+                    unit={unit}
+                    mainLabel="Estimated 1RM per session"
+                    label={`Estimated 1-rep max for ${lift}.`}
+                  />
+                )
+              }
             </QueryView>
           ) : null}
         </>
