@@ -93,7 +93,7 @@ def test_answer_with_tokens_and_usage_logged(
     call = provider.calls[0]
     assert "bench" in call["user"] and "Question: Is my bench going up?" in call["user"]
     assert "answer in lb" in call["system"]
-    assert "Length: short." in call["system"]
+    assert "Length: as short as the question allows." in call["system"]
     # a backstop far below the old 4000; the short length comes from the instructions
     assert call["max_tokens"] == MAX_ANSWER_TOKENS <= 1024
 
